@@ -20,10 +20,13 @@
       }
     }
   </script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.2/html2pdf.bundle.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700&family=Inter:wght@400;500;600&family=Noto+Sans+JP:wght@400;500;700&display=swap">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700&family=Inter:wght@400;500;600&family=Noto+Sans+JP:wght@400;500;700&display=swap">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.2/html2pdf.bundle.min.js" defer></script>
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700&family=Noto+Sans+JP:wght@300;400;500;600;700&display=swap');
 
     :root {
       /* Porsche dark palette */
@@ -65,6 +68,10 @@
     ::-webkit-scrollbar { width: 4px; }
     ::-webkit-scrollbar-track { background: var(--scrollbar-track); }
     ::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border-radius: 0; }
+
+    /* Hide scrollbar for tab nav */
+    .scrollbar-hide::-webkit-scrollbar { display: none; }
+    .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
 
     /* Grade colors */
     .grade-excellent { color: #22c55e; }
@@ -161,8 +168,9 @@
       transition: all 0.3s var(--ease-base);
     }
 
-    /* Input focus ring — Porsche red accent */
-    input:focus, select:focus { outline: none; border-color: #d5001c !important; box-shadow: 0 0 0 1px rgba(213,0,28,.2); }
+    /* Focus rings — Porsche red accent */
+    input:focus-visible, select:focus-visible { outline: none; border-color: #d5001c !important; box-shadow: 0 0 0 1px rgba(213,0,28,.2); }
+    button:focus-visible, [role="button"]:focus-visible, .tab-btn:focus-visible { outline: 2px solid #d5001c; outline-offset: 2px; }
 
     /* Porsche score card accent line */
     .score-card-accent { position: relative; overflow: hidden; }
@@ -216,24 +224,46 @@
       height: 48px;
       object-fit: cover;
     }
+
+    /* Reduced motion */
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+      }
+    }
+
+    /* Responsive background images */
+    @media (max-width: 768px) {
+      .hero-bg::before {
+        background-image: url('https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=800&q=75');
+      }
+      .dashboard-hero-img::after {
+        background-image: url('https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=800&q=75');
+      }
+      .section-img-strip { height: 80px; margin: 1rem 0; }
+    }
   </style>
 </head>
 <body class="min-h-screen antialiased">
+  <a href="#dashboard" class="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-[999] focus:bg-brand focus:text-white focus:px-4 focus:py-2 focus:text-sm">Skip to main content</a>
 
   <!-- Chart Modal -->
-  <div id="chartModal" class="chart-modal-overlay">
+  <div id="chartModal" class="chart-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="chartModalTitle">
     <div class="chart-modal">
       <div class="flex items-center justify-between mb-4">
         <h3 id="chartModalTitle" class="text-sm font-bold th-text-s"></h3>
-        <button id="chartModalClose" class="th-text-m hover:th-text text-lg leading-none">&times;</button>
+        <button id="chartModalClose" class="th-text-m hover:th-text text-lg leading-none" aria-label="Close chart">&times;</button>
       </div>
-      <canvas id="chartModalCanvas"></canvas>
+      <canvas id="chartModalCanvas" role="img" aria-label="Enlarged chart view"></canvas>
     </div>
   </div>
 
   <!-- Header — Porsche style -->
   <header class="fixed top-0 w-full z-50 th-header backdrop-blur-xl border-b" style="border-color:var(--border)">
-    <div class="max-w-[1400px] mx-auto px-8 h-[72px] flex items-center justify-between">
+    <div class="max-w-[1400px] mx-auto px-4 sm:px-8 h-[72px] flex items-center justify-between">
       <div class="flex items-center gap-4">
         <!-- Porsche-style wordmark -->
         <div class="w-7 h-7 bg-brand flex items-center justify-center flex-shrink-0" style="clip-path:polygon(0 0,100% 0,100% 75%,50% 100%,0 75%)">
@@ -247,10 +277,10 @@
         </div>
       </div>
       <div class="flex items-center gap-3">
-        <button id="langToggle" class="text-[10px] font-semibold tracking-[0.14em] uppercase px-3 py-1.5 border hover:border-brand hover:text-brand transition-all duration-300" style="border-color:var(--border-s);border-radius:0" title="Toggle language">EN / JA</button>
-        <div id="themeToggle" class="theme-toggle" title="Toggle theme">
-          <span class="theme-toggle-icon moon">🌙</span>
-          <span class="theme-toggle-icon sun">☀️</span>
+        <button id="langToggle" class="text-[10px] font-semibold tracking-[0.14em] uppercase px-3 py-1.5 border hover:border-brand hover:text-brand transition-all duration-300" style="border-color:var(--border-s);border-radius:0" title="Toggle language" aria-label="Toggle language between English and Japanese">EN / JA</button>
+        <div id="themeToggle" class="theme-toggle" title="Toggle theme" role="button" tabindex="0" aria-label="Toggle dark and light theme">
+          <span class="theme-toggle-icon moon" aria-hidden="true">🌙</span>
+          <span class="theme-toggle-icon sun" aria-hidden="true">☀️</span>
         </div>
         <button id="btnExport" class="hidden text-[10px] font-semibold tracking-[0.14em] uppercase px-5 py-2 border hover:border-brand hover:text-brand transition-all duration-300" style="border-color:var(--border-s);border-radius:0">
           <span data-i18n="Export">Export</span>
@@ -263,7 +293,7 @@
   </header>
 
   <!-- Upload Section — Porsche style with hero background -->
-  <section id="uploadSection" class="hero-bg pt-[72px] min-h-screen flex items-center justify-center px-8">
+  <section id="uploadSection" class="hero-bg pt-[72px] min-h-screen flex items-center justify-center px-4 sm:px-8">
     <div class="max-w-lg w-full fade-up">
       <!-- Porsche-style eyebrow + heading -->
       <div class="text-center mb-14">
@@ -273,7 +303,7 @@
         <p class="th-text-m text-xs tracking-[0.12em] uppercase" data-i18n="Upload your financial data to generate a comprehensive investment analysis">Upload your financial data to generate a comprehensive investment analysis</p>
       </div>
 
-      <div id="dropZone" class="upload-zone p-14 text-center cursor-pointer mb-8" style="border-radius:0">
+      <div id="dropZone" class="upload-zone p-6 sm:p-14 text-center cursor-pointer mb-8" style="border-radius:0">
         <div class="w-14 h-14 mx-auto mb-5 border flex items-center justify-center" style="border-color:var(--border-s);border-radius:0">
           <svg class="w-6 h-6 th-text-m" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"/>
@@ -286,7 +316,7 @@
       </div>
 
       <div id="metaForm" class="hidden space-y-4 mb-8">
-        <div class="grid grid-cols-3 gap-3">
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <div>
             <label class="block text-[10px] font-medium th-text-m uppercase tracking-wider mb-1.5" data-i18n="Company">Company</label>
             <input type="text" id="inputCompany" placeholder="MODEC Inc." class="w-full px-3 py-2.5 th-input rounded-lg text-sm focus:border-brand focus:outline-none transition">
@@ -301,11 +331,11 @@
               <select id="inputIndustry" class="flex-1 px-3 py-2.5 th-input rounded-lg text-sm focus:border-brand focus:outline-none transition">
                 <option value="">Loading...</option>
               </select>
-              <button id="regionToggle" type="button" onclick="toggleRegion()" class="px-3 py-2.5 rounded-lg text-sm font-medium th-input border whitespace-nowrap" style="border-color:var(--border);min-width:52px">🌐</button>
+              <button id="regionToggle" type="button" onclick="toggleRegion()" class="px-3 py-2.5 rounded-lg text-sm font-medium th-input border whitespace-nowrap" style="border-color:var(--border);min-width:52px" aria-label="Toggle region between global and Japan"><span aria-hidden="true">🌐</span></button>
             </div>
           </div>
         </div>
-        <div class="grid grid-cols-3 gap-3">
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <div>
             <label class="block text-[10px] font-medium th-text-m uppercase tracking-wider mb-1.5" data-i18n="Management">Management</label>
             <select id="inputD1" class="w-full px-3 py-2.5 th-input rounded-lg text-sm focus:border-brand focus:outline-none transition">
@@ -343,14 +373,14 @@
   </section>
 
   <!-- Dashboard — Porsche style -->
-  <section id="dashboard" class="hidden pb-16 px-8" style="padding-top:calc(72px + 2rem)">
+  <section id="dashboard" class="hidden pb-16 px-4 sm:px-8" style="padding-top:calc(72px + 2rem)">
     <div class="max-w-[1400px] mx-auto">
 
       <!-- Hero Header — Porsche architectural layout with image -->
       <div class="mb-12 fade-up dashboard-hero-img" style="padding:2rem;margin:-2rem;margin-bottom:2rem">
         <!-- Thin top rule -->
         <div class="w-full h-px mb-8" style="background:var(--border-m)"></div>
-        <div class="flex items-end justify-between">
+        <div class="flex flex-col sm:flex-row items-start sm:items-end justify-between gap-6">
           <div>
             <div class="flex items-center gap-4 mb-3">
               <span id="tickerBadge" class="text-[10px] font-bold tracking-[0.22em] uppercase px-3 py-1 text-brand" style="background:rgba(213,0,28,0.08);border:1px solid rgba(213,0,28,0.2);font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif"></span>
@@ -359,7 +389,7 @@
             </div>
             <h2 id="companyName" class="text-[clamp(2.4rem,4vw,4rem)] font-bold leading-none tracking-[0.03em] uppercase" style="font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif"></h2>
           </div>
-          <div id="verdictCard" class="text-center px-10 py-6 glow-red" style="border-radius:0">
+          <div id="verdictCard" class="text-center px-10 py-6 glow-red w-full sm:w-auto" style="border-radius:0">
             <p class="text-[9px] uppercase tracking-[0.24em] opacity-60 mb-2" style="font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif" data-i18n="Investment Verdict">Investment Verdict</p>
             <p id="verdictText" class="text-4xl font-bold tracking-[0.06em] uppercase" style="font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif"></p>
             <p id="verdictScore" class="text-[10px] opacity-50 mt-1.5 tracking-[0.14em]"></p>
@@ -369,7 +399,7 @@
       </div>
 
       <!-- Score Cards — Porsche sharp tiles with decorative images -->
-      <div class="grid grid-cols-4 gap-3 mb-4">
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
         <div id="scoreA" class="card-hover score-card-accent" style="border-radius:0"></div>
         <div id="scoreB" class="card-hover score-card-accent" style="border-radius:0"></div>
         <div id="scoreC" class="card-hover score-card-accent" style="border-radius:0"></div>
@@ -378,27 +408,31 @@
 
       <!-- Decorative image strip between score cards and tabs -->
       <div class="section-img-strip">
-        <img src="https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=1400&q=80" alt="" loading="lazy">
+        <img src="https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800&q=75"
+             srcset="https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=400&q=75 400w, https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800&q=75 800w, https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=1400&q=80 1400w"
+             sizes="100vw" alt="Financial data visualization" loading="lazy">
       </div>
 
       <!-- Tabs — Porsche thin underline style -->
       <div class="mb-8">
-        <nav class="flex gap-0 border-b" id="tabNav" style="border-color:var(--border-s)">
-          <button class="tab-btn tab-active px-6 py-4 text-[10px] font-semibold uppercase tracking-[0.18em] border-b-2 transition-all duration-300" style="font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif" data-tab="analysis" data-i18n="Analysis">Analysis</button>
-          <button class="tab-btn px-6 py-4 text-[10px] font-semibold uppercase tracking-[0.18em] th-text-m border-b-2 border-transparent transition-all duration-300" style="font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif" data-tab="roe" data-i18n="PBR Decomposition">PBR Decomposition</button>
-          <button class="tab-btn px-6 py-4 text-[10px] font-semibold uppercase tracking-[0.18em] th-text-m border-b-2 border-transparent transition-all duration-300" style="font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif" data-tab="charts" data-i18n="Time Series">Time Series</button>
-          <button class="tab-btn px-6 py-4 text-[10px] font-semibold uppercase tracking-[0.18em] th-text-m border-b-2 border-transparent transition-all duration-300" style="font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif" data-tab="custom" data-i18n="Custom">Custom</button>
-          <button class="tab-btn px-6 py-4 text-[10px] font-semibold uppercase tracking-[0.18em] th-text-m border-b-2 border-transparent transition-all duration-300" style="font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif" data-tab="competitor" data-i18n="Competitor Analysis">Competitor Analysis</button>
+        <nav class="flex gap-0 border-b overflow-x-auto scrollbar-hide" id="tabNav" role="tablist" aria-label="Analysis sections" style="border-color:var(--border-s)">
+          <button class="tab-btn tab-active px-6 py-4 text-[10px] font-semibold uppercase tracking-[0.18em] border-b-2 transition-all duration-300 whitespace-nowrap flex-shrink-0" style="font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif" role="tab" aria-selected="true" aria-controls="tab-analysis" data-tab="analysis" data-i18n="Analysis">Analysis</button>
+          <button class="tab-btn px-6 py-4 text-[10px] font-semibold uppercase tracking-[0.18em] th-text-m border-b-2 border-transparent transition-all duration-300 whitespace-nowrap flex-shrink-0" style="font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif" role="tab" aria-selected="false" aria-controls="tab-roe" data-tab="roe" data-i18n="PBR Decomposition">PBR Decomposition</button>
+          <button class="tab-btn px-6 py-4 text-[10px] font-semibold uppercase tracking-[0.18em] th-text-m border-b-2 border-transparent transition-all duration-300 whitespace-nowrap flex-shrink-0" style="font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif" role="tab" aria-selected="false" aria-controls="tab-charts" data-tab="charts" data-i18n="Time Series">Time Series</button>
+          <button class="tab-btn px-6 py-4 text-[10px] font-semibold uppercase tracking-[0.18em] th-text-m border-b-2 border-transparent transition-all duration-300 whitespace-nowrap flex-shrink-0" style="font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif" role="tab" aria-selected="false" aria-controls="tab-custom" data-tab="custom" data-i18n="Custom">Custom</button>
+          <button class="tab-btn px-6 py-4 text-[10px] font-semibold uppercase tracking-[0.18em] th-text-m border-b-2 border-transparent transition-all duration-300 whitespace-nowrap flex-shrink-0" style="font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif" role="tab" aria-selected="false" aria-controls="tab-competitor" data-tab="competitor" data-i18n="Competitor Analysis">Competitor Analysis</button>
         </nav>
       </div>
 
       <!-- Tab Content: Merged Analysis -->
-      <div id="tab-analysis" class="tab-content">
+      <div id="tab-analysis" class="tab-content" role="tabpanel" aria-labelledby="tab-analysis-btn">
         <!-- Decorative image header for analysis -->
         <div class="section-img-strip" style="height:80px;margin-top:0;margin-bottom:1.5rem">
-          <img src="https://images.unsplash.com/photo-1642790106117-e829e14a795f?w=1400&q=80" alt="" loading="lazy">
+          <img src="https://images.unsplash.com/photo-1642790106117-e829e14a795f?w=800&q=75"
+               srcset="https://images.unsplash.com/photo-1642790106117-e829e14a795f?w=400&q=75 400w, https://images.unsplash.com/photo-1642790106117-e829e14a795f?w=800&q=75 800w, https://images.unsplash.com/photo-1642790106117-e829e14a795f?w=1400&q=80 1400w"
+               sizes="100vw" alt="Financial analysis header" loading="lazy">
         </div>
-        <div class="grid grid-cols-2 gap-8">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
           <div><h3 class="text-[10px] font-bold uppercase tracking-[0.2em] th-text-m mb-5" data-i18n="Performance">Performance</h3><div id="perfItems" class="space-y-2"></div></div>
           <div><h3 class="text-[10px] font-bold uppercase tracking-[0.2em] th-text-m mb-5" data-i18n="Growth & Profitability">Growth & Profitability</h3><div id="growthItems" class="space-y-2"></div></div>
           <div><h3 class="text-[10px] font-bold uppercase tracking-[0.2em] th-text-m mb-5" data-i18n="Financial Health">Financial Health</h3><div id="healthItems" class="space-y-2"></div></div>
@@ -415,7 +449,7 @@
       </div>
 
       <!-- Tab Content: Custom Analysis -->
-      <div id="tab-custom" class="tab-content hidden">
+      <div id="tab-custom" class="tab-content hidden" role="tabpanel" aria-labelledby="tab-custom-btn">
         <div id="customEmpty" class="text-center py-16">
           <p class="th-text-m text-sm mb-4" data-i18n="custom-empty-msg">Select metrics to build your custom analysis view</p>
           <button id="btnOpenChecklist" class="px-6 py-3 bg-brand text-white text-xs font-bold uppercase tracking-widest rounded-xl hover:bg-brand-dark transition-all">
@@ -429,7 +463,7 @@
               <span data-i18n="Edit Selection">Edit Selection</span>
             </button>
           </div>
-          <div class="grid grid-cols-2 gap-8">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div id="customCat-performance" class="hidden"><h3 class="text-[10px] font-bold uppercase tracking-[0.2em] th-text-m mb-5" data-i18n="Performance">Performance</h3><div class="custom-cat-items space-y-2"></div></div>
             <div id="customCat-growth" class="hidden"><h3 class="text-[10px] font-bold uppercase tracking-[0.2em] th-text-m mb-5" data-i18n="Growth">Growth</h3><div class="custom-cat-items space-y-2"></div></div>
             <div id="customCat-profitability" class="hidden"><h3 class="text-[10px] font-bold uppercase tracking-[0.2em] th-text-m mb-5" data-i18n="Profitability">Profitability</h3><div class="custom-cat-items space-y-2"></div></div>
@@ -441,11 +475,11 @@
       </div>
 
       <!-- Metric Checklist Modal -->
-      <div id="checklistModal" class="chart-modal-overlay">
+      <div id="checklistModal" class="chart-modal-overlay" role="dialog" aria-modal="true" aria-label="Select metrics">
         <div class="chart-modal" style="max-height:85vh;overflow-y:auto">
           <div class="flex items-center justify-between mb-6">
             <h3 class="text-sm font-bold th-text-s" data-i18n="Select Metrics">Select Metrics</h3>
-            <button id="checklistClose" class="th-text-m hover:th-text text-lg leading-none">&times;</button>
+            <button id="checklistClose" class="th-text-m hover:th-text text-lg leading-none" aria-label="Close metric selection">&times;</button>
           </div>
           <div id="checklistBody" class="space-y-6"></div>
           <div class="flex justify-end gap-3 mt-6 pt-4 border-t" style="border-color:var(--border)">
@@ -455,25 +489,25 @@
         </div>
       </div>
 
-      <div id="tab-roe" class="tab-content hidden"><div id="roeTree"></div></div>
+      <div id="tab-roe" class="tab-content hidden" role="tabpanel" aria-labelledby="tab-roe-btn"><div id="roeTree"></div></div>
 
-      <div id="tab-charts" class="tab-content hidden">
-        <div class="grid grid-cols-2 gap-4">
-          <div class="th-bg-1 p-6 border th-border" style="border-radius:0"><h4 class="text-[9px] font-semibold uppercase tracking-[0.22em] th-text-m mb-4" style="font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif" data-i18n="Revenue">Revenue</h4><canvas id="chartRevenue"></canvas></div>
-          <div class="th-bg-1 p-6 border th-border" style="border-radius:0"><h4 class="text-[9px] font-semibold uppercase tracking-[0.22em] th-text-m mb-4" style="font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif" data-i18n="Net Income">Net Income</h4><canvas id="chartNetIncome"></canvas></div>
-          <div class="th-bg-1 p-6 border th-border" style="border-radius:0"><h4 class="text-[9px] font-semibold uppercase tracking-[0.22em] th-text-m mb-4" style="font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif" data-i18n="Free Cash Flow">Free Cash Flow</h4><canvas id="chartFCF"></canvas></div>
-          <div class="th-bg-1 p-6 border th-border" style="border-radius:0"><h4 class="text-[9px] font-semibold uppercase tracking-[0.22em] th-text-m mb-4" style="font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif" data-i18n="Earnings Per Share">Earnings Per Share</h4><canvas id="chartEPS"></canvas></div>
-          <div class="th-bg-1 p-6 border th-border" style="border-radius:0"><h4 class="text-[9px] font-semibold uppercase tracking-[0.22em] th-text-m mb-4" style="font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif">ROE / ROA</h4><canvas id="chartROE"></canvas></div>
-          <div class="th-bg-1 p-6 border th-border" style="border-radius:0"><h4 class="text-[9px] font-semibold uppercase tracking-[0.22em] th-text-m mb-4" style="font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif" data-i18n="Balance Sheet">Balance Sheet</h4><canvas id="chartBS"></canvas></div>
+      <div id="tab-charts" class="tab-content hidden" role="tabpanel" aria-labelledby="tab-charts-btn">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div class="th-bg-1 p-4 sm:p-6 border th-border" style="border-radius:0"><h4 class="text-[9px] font-semibold uppercase tracking-[0.22em] th-text-m mb-4" style="font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif" data-i18n="Revenue">Revenue</h4><canvas id="chartRevenue" role="img" aria-label="Revenue time series chart"></canvas></div>
+          <div class="th-bg-1 p-4 sm:p-6 border th-border" style="border-radius:0"><h4 class="text-[9px] font-semibold uppercase tracking-[0.22em] th-text-m mb-4" style="font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif" data-i18n="Net Income">Net Income</h4><canvas id="chartNetIncome" role="img" aria-label="Net income time series chart"></canvas></div>
+          <div class="th-bg-1 p-4 sm:p-6 border th-border" style="border-radius:0"><h4 class="text-[9px] font-semibold uppercase tracking-[0.22em] th-text-m mb-4" style="font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif" data-i18n="Free Cash Flow">Free Cash Flow</h4><canvas id="chartFCF" role="img" aria-label="Free cash flow time series chart"></canvas></div>
+          <div class="th-bg-1 p-4 sm:p-6 border th-border" style="border-radius:0"><h4 class="text-[9px] font-semibold uppercase tracking-[0.22em] th-text-m mb-4" style="font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif" data-i18n="Earnings Per Share">Earnings Per Share</h4><canvas id="chartEPS" role="img" aria-label="Earnings per share time series chart"></canvas></div>
+          <div class="th-bg-1 p-4 sm:p-6 border th-border" style="border-radius:0"><h4 class="text-[9px] font-semibold uppercase tracking-[0.22em] th-text-m mb-4" style="font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif">ROE / ROA</h4><canvas id="chartROE" role="img" aria-label="ROE and ROA time series chart"></canvas></div>
+          <div class="th-bg-1 p-4 sm:p-6 border th-border" style="border-radius:0"><h4 class="text-[9px] font-semibold uppercase tracking-[0.22em] th-text-m mb-4" style="font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif" data-i18n="Balance Sheet">Balance Sheet</h4><canvas id="chartBS" role="img" aria-label="Balance sheet time series chart"></canvas></div>
         </div>
       </div>
 
       <!-- Competitor Analysis Tab -->
-      <div id="tab-competitor" class="tab-content hidden">
+      <div id="tab-competitor" class="tab-content hidden" role="tabpanel" aria-labelledby="tab-competitor-btn">
         <div id="competitorUpload" class="mb-8">
           <p class="text-sm font-medium th-text-s mb-6" data-i18n="comp-upload-msg">Upload Excel files for up to 5 companies to compare</p>
           <div id="competitorSlots" class="space-y-2">
-            <div class="comp-slot flex items-center gap-3 p-4 th-bg-1 border th-border" style="border-radius:0" data-slot="0">
+            <div class="comp-slot flex flex-wrap sm:flex-nowrap items-center gap-3 p-4 th-bg-1 border th-border" style="border-radius:0" data-slot="0">
               <span class="text-xs font-bold tracking-[0.2em] w-6 text-center" style="color:#d5001c;font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif">01</span>
               <input type="text" placeholder="Company A" class="comp-name flex-1 px-3 py-2 th-input text-xs border focus:border-brand outline-none" style="border-radius:0">
               <label class="comp-file-label cursor-pointer px-4 py-2 border text-[10px] font-semibold tracking-[0.14em] uppercase hover:border-brand transition-all flex items-center gap-2" style="border-color:var(--border-s);border-radius:0;font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif">
@@ -482,9 +516,9 @@
                 <input type="file" accept=".xlsx,.xls" class="comp-file hidden">
               </label>
               <span class="comp-file-name text-[10px] th-text-m truncate max-w-[150px]"></span>
-              <button class="comp-remove text-base th-text-d hover:text-red-500 transition-all leading-none hidden">&times;</button>
+              <button class="comp-remove text-base th-text-d hover:text-red-500 transition-all leading-none hidden" aria-label="Remove competitor">&times;</button>
             </div>
-            <div class="comp-slot flex items-center gap-3 p-4 th-bg-1 border th-border" style="border-radius:0" data-slot="1">
+            <div class="comp-slot flex flex-wrap sm:flex-nowrap items-center gap-3 p-4 th-bg-1 border th-border" style="border-radius:0" data-slot="1">
               <span class="text-xs font-bold tracking-[0.2em] w-6 text-center" style="color:#3b82f6;font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif">02</span>
               <input type="text" placeholder="Company B" class="comp-name flex-1 px-3 py-2 th-input text-xs border focus:border-brand outline-none" style="border-radius:0">
               <label class="comp-file-label cursor-pointer px-4 py-2 border text-[10px] font-semibold tracking-[0.14em] uppercase hover:border-brand transition-all flex items-center gap-2" style="border-color:var(--border-s);border-radius:0;font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif">
@@ -493,9 +527,9 @@
                 <input type="file" accept=".xlsx,.xls" class="comp-file hidden">
               </label>
               <span class="comp-file-name text-[10px] th-text-m truncate max-w-[150px]"></span>
-              <button class="comp-remove text-base th-text-d hover:text-red-500 transition-all leading-none hidden">&times;</button>
+              <button class="comp-remove text-base th-text-d hover:text-red-500 transition-all leading-none hidden" aria-label="Remove competitor">&times;</button>
             </div>
-            <div class="comp-slot flex items-center gap-3 p-4 th-bg-1 border th-border" style="border-radius:0" data-slot="2">
+            <div class="comp-slot flex flex-wrap sm:flex-nowrap items-center gap-3 p-4 th-bg-1 border th-border" style="border-radius:0" data-slot="2">
               <span class="text-xs font-bold tracking-[0.2em] w-6 text-center" style="color:#22c55e;font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif">03</span>
               <input type="text" placeholder="Company C" class="comp-name flex-1 px-3 py-2 th-input text-xs border focus:border-brand outline-none" style="border-radius:0">
               <label class="comp-file-label cursor-pointer px-4 py-2 border text-[10px] font-semibold tracking-[0.14em] uppercase hover:border-brand transition-all flex items-center gap-2" style="border-color:var(--border-s);border-radius:0;font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif">
@@ -504,9 +538,9 @@
                 <input type="file" accept=".xlsx,.xls" class="comp-file hidden">
               </label>
               <span class="comp-file-name text-[10px] th-text-m truncate max-w-[150px]"></span>
-              <button class="comp-remove text-base th-text-d hover:text-red-500 transition-all leading-none hidden">&times;</button>
+              <button class="comp-remove text-base th-text-d hover:text-red-500 transition-all leading-none hidden" aria-label="Remove competitor">&times;</button>
             </div>
-            <div class="comp-slot flex items-center gap-3 p-4 th-bg-1 border th-border" style="border-radius:0" data-slot="3">
+            <div class="comp-slot flex flex-wrap sm:flex-nowrap items-center gap-3 p-4 th-bg-1 border th-border" style="border-radius:0" data-slot="3">
               <span class="text-xs font-bold tracking-[0.2em] w-6 text-center" style="color:#f59e0b;font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif">04</span>
               <input type="text" placeholder="Company D" class="comp-name flex-1 px-3 py-2 th-input text-xs border focus:border-brand outline-none" style="border-radius:0">
               <label class="comp-file-label cursor-pointer px-4 py-2 border text-[10px] font-semibold tracking-[0.14em] uppercase hover:border-brand transition-all flex items-center gap-2" style="border-color:var(--border-s);border-radius:0;font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif">
@@ -515,9 +549,9 @@
                 <input type="file" accept=".xlsx,.xls" class="comp-file hidden">
               </label>
               <span class="comp-file-name text-[10px] th-text-m truncate max-w-[150px]"></span>
-              <button class="comp-remove text-base th-text-d hover:text-red-500 transition-all leading-none hidden">&times;</button>
+              <button class="comp-remove text-base th-text-d hover:text-red-500 transition-all leading-none hidden" aria-label="Remove competitor">&times;</button>
             </div>
-            <div class="comp-slot flex items-center gap-3 p-4 th-bg-1 border th-border" style="border-radius:0" data-slot="4">
+            <div class="comp-slot flex flex-wrap sm:flex-nowrap items-center gap-3 p-4 th-bg-1 border th-border" style="border-radius:0" data-slot="4">
               <span class="text-xs font-bold tracking-[0.2em] w-6 text-center" style="color:#8b5cf6;font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif">05</span>
               <input type="text" placeholder="Company E" class="comp-name flex-1 px-3 py-2 th-input text-xs border focus:border-brand outline-none" style="border-radius:0">
               <label class="comp-file-label cursor-pointer px-4 py-2 border text-[10px] font-semibold tracking-[0.14em] uppercase hover:border-brand transition-all flex items-center gap-2" style="border-color:var(--border-s);border-radius:0;font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif">
@@ -526,7 +560,7 @@
                 <input type="file" accept=".xlsx,.xls" class="comp-file hidden">
               </label>
               <span class="comp-file-name text-[10px] th-text-m truncate max-w-[150px]"></span>
-              <button class="comp-remove text-base th-text-d hover:text-red-500 transition-all leading-none hidden">&times;</button>
+              <button class="comp-remove text-base th-text-d hover:text-red-500 transition-all leading-none hidden" aria-label="Remove competitor">&times;</button>
             </div>
           </div>
           <div class="flex items-center gap-4 mt-6">
@@ -539,7 +573,7 @@
         <!-- Summary Table -->
         <div id="competitorSummary" class="hidden mb-8"></div>
         <!-- Charts Grid -->
-        <div id="competitorCharts" class="hidden grid grid-cols-2 gap-6"></div>
+        <div id="competitorCharts" class="hidden grid grid-cols-1 md:grid-cols-2 gap-6"></div>
       </div>
 
     </div>
@@ -930,10 +964,12 @@
         renderCharts(lastTimeseries);
       }
     }
-    themeToggle.addEventListener('click', () => {
+    function toggleTheme() {
       const current = document.documentElement.getAttribute('data-theme') || 'dark';
       setTheme(current === 'dark' ? 'light' : 'dark');
-    });
+    }
+    themeToggle.addEventListener('click', toggleTheme);
+    themeToggle.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleTheme(); } });
     // Init theme from localStorage
     const savedTheme = localStorage.getItem('theme') || 'dark';
     document.documentElement.setAttribute('data-theme', savedTheme);
@@ -941,8 +977,8 @@
     // Tabs
     document.querySelectorAll('.tab-btn').forEach(btn => {
       btn.addEventListener('click', () => {
-        document.querySelectorAll('.tab-btn').forEach(b => { b.classList.remove('tab-active'); b.classList.add('border-transparent'); });
-        btn.classList.add('tab-active'); btn.classList.remove('border-transparent');
+        document.querySelectorAll('.tab-btn').forEach(b => { b.classList.remove('tab-active'); b.classList.add('border-transparent'); b.setAttribute('aria-selected', 'false'); });
+        btn.classList.add('tab-active'); btn.classList.remove('border-transparent'); btn.setAttribute('aria-selected', 'true');
         document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
         $('tab-' + btn.dataset.tab).classList.remove('hidden');
       });
@@ -1271,7 +1307,7 @@
             ${pbrEvalBadge}
           </div>
 
-          <div class="grid grid-cols-2 gap-8 max-w-4xl mx-auto">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
             <!-- Up factors -->
             <div>
               <div class="flex items-center gap-2 mb-4">
@@ -1347,7 +1383,7 @@
         </div>
 
         <!-- ===== PER & ROE side by side ===== -->
-        <div class="grid grid-cols-2 gap-8 mb-10">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10">
           <!-- PER (Market Expectation) -->
           <div class="p-6 th-bg-2 border" style="border-color:var(--border-s);border-radius:0">
             <div class="flex items-center gap-2 mb-2">
@@ -1378,7 +1414,7 @@
         <!-- ===== ROE DuPont Decomposition ===== -->
         <div class="mb-6">
           <p class="text-[10px] uppercase tracking-[0.2em] th-text-m mb-2 text-center">${t('ROE DuPont Decomposition')}</p>
-          <div class="flex justify-center gap-4 text-[11px] th-text-m mb-6">
+          <div class="flex flex-wrap justify-center gap-x-4 gap-y-1 text-[11px] th-text-m mb-6">
             <span>ROE <strong class="th-text">${fmtNum(roeVal,1)}%</strong></span>
             <span>=</span>
             <span>${t('Net Margin')} <strong class="th-text">${fmtNum(npm['現在値'],1)}%</strong></span>
@@ -1388,7 +1424,7 @@
             <span>${t('Leverage')} <strong class="th-text">${fmtNum(em['現在値'],2)}x</strong></span>
           </div>
         </div>
-        <div class="grid grid-cols-3 gap-8">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
           <div class="p-5 th-bg-2 border" style="border-color:var(--border-s);border-radius:0">
             <div class="flex items-center gap-2 mb-2"><div class="w-2 h-2 bg-blue-500" style="border-radius:0"></div><span class="text-[10px] font-bold uppercase tracking-[0.18em] th-text-m" style="font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif">${t('Net Profit Margin')}</span></div>
             <p class="text-2xl font-bold tabular-nums mb-1" style="font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif">${fmtNum(npm['現在値'],1)}<span class="text-sm th-text-m">%</span></p>
@@ -2029,7 +2065,7 @@
         const catLabel = t(catNames[cat]);
         html += `<div>
           <h4 class="text-[10px] font-bold uppercase tracking-[0.2em] th-text-m mb-3">${catLabel}</h4>
-          <div class="grid grid-cols-2 gap-2">`;
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">`;
         items.forEach(m => {
           const checked = selectedMetrics.has(m.key) ? 'checked' : '';
           const label = currentLang === 'ja' ? m.ja : m.en;
