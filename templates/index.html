@@ -168,6 +168,74 @@
     .score-card-accent { position: relative; overflow: hidden; }
     .score-card-accent::before { content:''; position:absolute; top:0; left:0; right:0; height:2px; background:#d5001c; transform:scaleX(0); transform-origin:left; transition:transform 0.4s var(--ease-luxury); }
     .score-card-accent:hover::before { transform:scaleX(1); }
+
+    /* Hero background image with dark overlay */
+    .hero-bg {
+      position: relative;
+      overflow: hidden;
+    }
+    .hero-bg::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: url('https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=1920&q=80') center/cover no-repeat;
+      opacity: 0.12;
+      filter: grayscale(100%);
+      transition: opacity 1.2s var(--ease-base);
+    }
+    [data-theme="light"] .hero-bg::before { opacity: 0.08; }
+    .hero-bg > * { position: relative; z-index: 1; }
+
+    /* Dashboard hero image strip */
+    .dashboard-hero-img {
+      position: relative;
+      overflow: hidden;
+    }
+    .dashboard-hero-img::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: url('https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=1400&q=80') center/cover no-repeat;
+      opacity: 0.06;
+      filter: grayscale(100%);
+    }
+    [data-theme="light"] .dashboard-hero-img::after { opacity: 0.04; }
+    .dashboard-hero-img > * { position: relative; z-index: 1; }
+
+    /* Section image strip */
+    .section-img-strip {
+      height: 120px;
+      position: relative;
+      overflow: hidden;
+      margin: 2rem 0;
+    }
+    .section-img-strip img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      filter: grayscale(100%);
+      opacity: 0.15;
+      transition: opacity 0.6s var(--ease-base);
+    }
+    .section-img-strip:hover img { opacity: 0.25; }
+    .section-img-strip::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(90deg, var(--bg-0), transparent 15%, transparent 85%, var(--bg-0));
+    }
+    [data-theme="light"] .section-img-strip img { opacity: 0.1; }
+    [data-theme="light"] .section-img-strip:hover img { opacity: 0.18; }
+
+    /* Score card thumbnail */
+    .score-card-img {
+      width: 100%;
+      height: 48px;
+      object-fit: cover;
+      filter: grayscale(100%);
+      opacity: 0.12;
+    }
+    [data-theme="light"] .score-card-img { opacity: 0.08; }
   </style>
 </head>
 <body class="min-h-screen antialiased">
@@ -214,8 +282,8 @@
     </div>
   </header>
 
-  <!-- Upload Section — Porsche style -->
-  <section id="uploadSection" class="pt-[72px] min-h-screen flex items-center justify-center px-8">
+  <!-- Upload Section — Porsche style with hero background -->
+  <section id="uploadSection" class="hero-bg pt-[72px] min-h-screen flex items-center justify-center px-8">
     <div class="max-w-lg w-full fade-up">
       <!-- Porsche-style eyebrow + heading -->
       <div class="text-center mb-14">
@@ -298,8 +366,8 @@
   <section id="dashboard" class="hidden pb-16 px-8" style="padding-top:calc(72px + 2rem)">
     <div class="max-w-[1400px] mx-auto">
 
-      <!-- Hero Header — Porsche architectural layout -->
-      <div class="mb-12 fade-up">
+      <!-- Hero Header — Porsche architectural layout with image -->
+      <div class="mb-12 fade-up dashboard-hero-img" style="padding:2rem;margin:-2rem;margin-bottom:2rem">
         <!-- Thin top rule -->
         <div class="w-full h-px mb-8" style="background:var(--border-m)"></div>
         <div class="flex items-end justify-between">
@@ -320,12 +388,17 @@
         <div class="w-full h-px mt-8" style="background:var(--border)"></div>
       </div>
 
-      <!-- Score Cards — Porsche sharp tiles -->
-      <div class="grid grid-cols-4 gap-3 mb-12">
+      <!-- Score Cards — Porsche sharp tiles with decorative images -->
+      <div class="grid grid-cols-4 gap-3 mb-4">
         <div id="scoreA" class="card-hover score-card-accent" style="border-radius:0"></div>
         <div id="scoreB" class="card-hover score-card-accent" style="border-radius:0"></div>
         <div id="scoreC" class="card-hover score-card-accent" style="border-radius:0"></div>
         <div id="scoreD" class="card-hover score-card-accent" style="border-radius:0"></div>
+      </div>
+
+      <!-- Decorative image strip between score cards and tabs -->
+      <div class="section-img-strip">
+        <img src="https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=1400&q=80" alt="" loading="lazy">
       </div>
 
       <!-- Tabs — Porsche thin underline style -->
@@ -341,6 +414,10 @@
 
       <!-- Tab Content: Merged Analysis -->
       <div id="tab-analysis" class="tab-content">
+        <!-- Decorative image header for analysis -->
+        <div class="section-img-strip" style="height:80px;margin-top:0;margin-bottom:1.5rem">
+          <img src="https://images.unsplash.com/photo-1642790106117-e829e14a795f?w=1400&q=80" alt="" loading="lazy">
+        </div>
         <div class="grid grid-cols-2 gap-8">
           <div><h3 class="text-[10px] font-bold uppercase tracking-[0.2em] th-text-m mb-5" data-i18n="Performance">Performance</h3><div id="perfItems" class="space-y-2"></div></div>
           <div><h3 class="text-[10px] font-bold uppercase tracking-[0.2em] th-text-m mb-5" data-i18n="Growth & Profitability">Growth & Profitability</h3><div id="growthItems" class="space-y-2"></div></div>
