@@ -12,7 +12,10 @@
           colors: {
             brand: { DEFAULT: '#d5001c', light: '#ff1a3a', dark: '#a30015' },
           },
-          fontFamily: { sans: ['"Inter"', '"Noto Sans JP"', 'system-ui', 'sans-serif'] },
+          fontFamily: {
+            sans: ['"Inter"', '"Noto Sans JP"', 'system-ui', 'sans-serif'],
+            display: ['"Barlow Condensed"', '"Arial Narrow"', 'Arial', 'sans-serif'],
+          },
         }
       }
     }
@@ -20,96 +23,151 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.2/html2pdf.bundle.min.js"></script>
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Noto+Sans+JP:wght@300;400;500;600;700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700&family=Noto+Sans+JP:wght@300;400;500;600;700&display=swap');
 
     :root {
-      --bg-0: #0a0a0a; --bg-1: #111111; --bg-2: #1a1a1a; --bg-3: #222222;
-      --text: #ffffff; --text-s: rgba(255,255,255,0.7); --text-m: rgba(255,255,255,0.4); --text-d: rgba(255,255,255,0.2);
-      --border: rgba(255,255,255,0.05); --border-s: rgba(255,255,255,0.1); --border-m: #333;
-      --card-hover-bg: #1f1f1f; --card-hover-shadow: rgba(0,0,0,0.4);
-      --upload-border: #333; --upload-hover-bg: rgba(213,0,28,0.03);
-      --scrollbar-track: #111; --scrollbar-thumb: #333;
-      --chart-text: rgba(255,255,255,0.3); --chart-grid: rgba(255,255,255,0.04); --chart-grid-y: rgba(255,255,255,0.03);
-      --metric-bar-bg: #222;
-      --input-bg: #1a1a1a;
+      /* Porsche dark palette */
+      --bg-0: #0e0e12; --bg-1: #14141a; --bg-2: #1c1c24; --bg-3: #24242e;
+      --text: #f0f0f2; --text-s: rgba(240,240,242,0.72); --text-m: rgba(240,240,242,0.42); --text-d: rgba(240,240,242,0.18);
+      --border: rgba(255,255,255,0.04); --border-s: rgba(255,255,255,0.09); --border-m: rgba(255,255,255,0.14);
+      --card-hover-bg: #1c1c24; --card-hover-shadow: rgba(0,0,0,0.55);
+      --upload-border: rgba(255,255,255,0.12); --upload-hover-bg: rgba(213,0,28,0.04);
+      --scrollbar-track: #14141a; --scrollbar-thumb: #2a2a36;
+      --chart-text: rgba(240,240,242,0.28); --chart-grid: rgba(255,255,255,0.03); --chart-grid-y: rgba(255,255,255,0.025);
+      --metric-bar-bg: #24242e;
+      --input-bg: #1c1c24;
+      /* Porsche spacing tokens */
+      --space-xs: clamp(4px, .25vw + 3px, 8px);
+      --space-sm: clamp(8px, .5vw + 6px, 16px);
+      --space-md: clamp(16px, 1.25vw + 12px, 36px);
+      --space-lg: clamp(32px, 2.75vw + 23px, 76px);
+      /* Porsche easing */
+      --ease-base: cubic-bezier(.25,.1,.25,1);
+      --ease-out: cubic-bezier(.4,0,.5,1);
+      --ease-luxury: cubic-bezier(.22,1,.36,1);
     }
     [data-theme="light"] {
-      --bg-0: #f5f5f5; --bg-1: #ffffff; --bg-2: #f0f0f0; --bg-3: #e5e5e5;
-      --text: #111111; --text-s: rgba(0,0,0,0.7); --text-m: rgba(0,0,0,0.45); --text-d: rgba(0,0,0,0.2);
-      --border: rgba(0,0,0,0.06); --border-s: rgba(0,0,0,0.1); --border-m: #ddd;
-      --card-hover-bg: #ffffff; --card-hover-shadow: rgba(0,0,0,0.08);
-      --upload-border: #ccc; --upload-hover-bg: rgba(213,0,28,0.04);
-      --scrollbar-track: #eee; --scrollbar-thumb: #ccc;
-      --chart-text: rgba(0,0,0,0.5); --chart-grid: rgba(0,0,0,0.06); --chart-grid-y: rgba(0,0,0,0.05);
-      --metric-bar-bg: #e0e0e0;
-      --input-bg: #f0f0f0;
+      --bg-0: #f2f2f4; --bg-1: #ffffff; --bg-2: #ebebef; --bg-3: #e0e0e6;
+      --text: #0e0e12; --text-s: rgba(14,14,18,0.72); --text-m: rgba(14,14,18,0.45); --text-d: rgba(14,14,18,0.2);
+      --border: rgba(0,0,0,0.05); --border-s: rgba(0,0,0,0.09); --border-m: rgba(0,0,0,0.14);
+      --card-hover-bg: #ffffff; --card-hover-shadow: rgba(0,0,0,0.07);
+      --upload-border: rgba(0,0,0,0.14); --upload-hover-bg: rgba(213,0,28,0.03);
+      --scrollbar-track: #e8e8ec; --scrollbar-thumb: #c8c8d0;
+      --chart-text: rgba(14,14,18,0.45); --chart-grid: rgba(0,0,0,0.05); --chart-grid-y: rgba(0,0,0,0.04);
+      --metric-bar-bg: #dcdce4;
+      --input-bg: #ebebef;
     }
 
     * { letter-spacing: 0.02em; }
-    body { background: var(--bg-0); color: var(--text); }
-    ::-webkit-scrollbar { width: 6px; }
+    body { background: var(--bg-0); color: var(--text); font-feature-settings: "kern","liga","ss01"; }
+
+    /* Porsche scrollbar */
+    ::-webkit-scrollbar { width: 4px; }
     ::-webkit-scrollbar-track { background: var(--scrollbar-track); }
-    ::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border-radius: 0; }
+
+    /* Grade colors */
     .grade-excellent { color: #22c55e; }
     .grade-good { color: #3b82f6; }
     .grade-warning { color: #f59e0b; }
     .grade-danger { color: #ef4444; }
-    .grade-na { color: #9ca3af; }
-    .verdict-buy { background: linear-gradient(135deg, #059669 0%, #22c55e 100%); color: #fff; }
-    .verdict-hold { background: linear-gradient(135deg, #b45309 0%, #f59e0b 100%); color: #fff; }
-    .verdict-sell { background: linear-gradient(135deg, #991b1b 0%, #ef4444 100%); color: #fff; }
-    @keyframes fadeUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
-    @keyframes slideIn { from { opacity: 0; transform: translateX(-20px); } to { opacity: 1; transform: translateX(0); } }
-    @keyframes pulse-glow { 0%, 100% { box-shadow: 0 0 20px rgba(213,0,28,0.15); } 50% { box-shadow: 0 0 40px rgba(213,0,28,0.3); } }
-    .fade-up { animation: fadeUp 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
-    .slide-in { animation: slideIn 0.4s ease-out forwards; }
-    .card-hover { transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1); }
-    .card-hover:hover { transform: translateY(-4px); background: var(--card-hover-bg); box-shadow: 0 20px 60px var(--card-hover-shadow); }
-    .upload-zone { border: 1px solid var(--upload-border); transition: all 0.4s cubic-bezier(0.22, 1, 0.36, 1); }
-    .upload-zone:hover { border-color: #d5001c; background: var(--upload-hover-bg); box-shadow: 0 0 30px rgba(213,0,28,0.08); }
-    .upload-zone.dragover { border-color: #d5001c; background: rgba(213,0,28,0.05); box-shadow: 0 0 50px rgba(213,0,28,0.15); }
-    .tab-active { color: var(--text) !important; border-color: #d5001c !important; }
-    .divider { height: 1px; background: linear-gradient(90deg, transparent, var(--border-m), transparent); }
-    canvas { max-height: 280px; }
-    .glow-red { animation: pulse-glow 3s ease-in-out infinite; }
-    .metric-bar { height: 3px; background: var(--metric-bar-bg); border-radius: 2px; overflow: hidden; }
-    .metric-bar-fill { height: 100%; border-radius: 2px; transition: width 1s ease-out; }
+    .grade-na { color: #6b7280; }
 
+    /* Verdict cards */
+    .verdict-buy  { background: linear-gradient(135deg, #064e3b 0%, #065f46 100%); color: #d1fae5; border: 1px solid rgba(34,197,94,0.2); }
+    .verdict-hold { background: linear-gradient(135deg, #451a03 0%, #78350f 100%); color: #fef3c7; border: 1px solid rgba(245,158,11,0.2); }
+    .verdict-sell { background: linear-gradient(135deg, #450a0a 0%, #7f1d1d 100%); color: #fee2e2; border: 1px solid rgba(239,68,68,0.2); }
+
+    /* Animations — Porsche timing */
+    @keyframes fadeUp   { from { opacity:0; transform:translateY(24px); } to { opacity:1; transform:translateY(0); } }
+    @keyframes slideIn  { from { opacity:0; transform:translateX(-16px); } to { opacity:1; transform:translateX(0); } }
+    @keyframes pulse-glow { 0%,100% { box-shadow:0 0 24px rgba(213,0,28,.12); } 50% { box-shadow:0 0 48px rgba(213,0,28,.24); } }
+    .fade-up  { animation: fadeUp  0.7s var(--ease-luxury) forwards; }
+    .slide-in { animation: slideIn 0.45s var(--ease-out)   forwards; }
+
+    /* Cards */
+    .card-hover { transition: transform 0.4s var(--ease-base), background 0.3s var(--ease-base), box-shadow 0.4s var(--ease-base); }
+    .card-hover:hover { transform: scale3d(1.015,1.015,1); background: var(--card-hover-bg); box-shadow: 0 24px 64px var(--card-hover-shadow); }
+
+    /* Upload zone — Porsche architectural style */
+    .upload-zone { border: 1px solid var(--upload-border); transition: all 0.5s var(--ease-base); }
+    .upload-zone:hover  { border-color: #d5001c; background: var(--upload-hover-bg); box-shadow: 0 0 0 1px rgba(213,0,28,.15), 0 8px 40px rgba(213,0,28,.06); }
+    .upload-zone.dragover { border-color: #d5001c; background: rgba(213,0,28,.05); box-shadow: 0 0 0 2px rgba(213,0,28,.3); }
+
+    /* Tabs — Porsche thin-line style */
+    .tab-active { color: var(--text) !important; border-color: #d5001c !important; }
+
+    /* Divider */
+    .divider { height: 1px; background: linear-gradient(90deg, transparent, var(--border-m), transparent); }
+
+    canvas { max-height: 280px; }
+    .glow-red { animation: pulse-glow 4s var(--ease-base) infinite; }
+
+    /* Metric bar */
+    .metric-bar      { height: 2px; background: var(--metric-bar-bg); overflow: hidden; }
+    .metric-bar-fill { height: 100%; transition: width 1.2s var(--ease-luxury); }
+
+    /* Theme utility classes */
     .th-bg-0 { background: var(--bg-0); }
     .th-bg-1 { background: var(--bg-1); }
     .th-bg-2 { background: var(--bg-2); }
-    .th-text { color: var(--text); }
+    .th-text   { color: var(--text); }
     .th-text-s { color: var(--text-s); }
     .th-text-m { color: var(--text-m); }
     .th-text-d { color: var(--text-d); }
-    .th-border { border-color: var(--border); }
+    .th-border   { border-color: var(--border); }
     .th-border-s { border-color: var(--border-s); }
     .th-border-m { border-color: var(--border-m); }
-    .th-input { background: var(--input-bg); border-color: var(--border); color: var(--text); }
-    .th-header { background: color-mix(in srgb, var(--bg-0) 90%, transparent); }
+    .th-input  { background: var(--input-bg); border-color: var(--border-s); color: var(--text); }
+    .th-header { background: color-mix(in srgb, var(--bg-0) 88%, transparent); }
 
-    .theme-toggle { position: relative; width: 48px; height: 26px; border-radius: 13px; background: var(--bg-3); border: 1px solid var(--border-s); cursor: pointer; transition: all 0.3s; }
-    .theme-toggle::after { content: ''; position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; border-radius: 50%; background: var(--text); transition: all 0.3s; }
-    [data-theme="light"] .theme-toggle::after { left: 25px; }
-    .theme-toggle-icon { position: absolute; top: 50%; transform: translateY(-50%); font-size: 12px; line-height: 1; }
-    .theme-toggle-icon.moon { left: 6px; }
-    .theme-toggle-icon.sun { right: 5px; }
+    /* Porsche-style header line */
+    header { border-bottom-color: var(--border) !important; }
 
-    /* Chart Modal */
-    .chart-modal-overlay { position: fixed; inset: 0; z-index: 100; background: rgba(0,0,0,0.7); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; opacity: 0 !important; pointer-events: none !important; transition: opacity 0.3s; }
-    .chart-modal-overlay.active { opacity: 1 !important; pointer-events: auto !important; }
-    .chart-modal { background: var(--bg-1); border: 1px solid var(--border-s); border-radius: 1rem; padding: 2rem; width: 90%; max-width: 700px; max-height: 80vh; transform: scale(0.95); transition: transform 0.3s; }
-    .chart-modal-overlay.active .chart-modal { transform: scale(1); }
-    .clickable-card { cursor: pointer; }
-    .clickable-card:hover { border-color: var(--border-m) !important; }
+    /* Theme toggle */
+    .theme-toggle { position:relative; width:44px; height:24px; border-radius:0; background:var(--bg-3); border:1px solid var(--border-s); cursor:pointer; transition:all 0.3s var(--ease-base); }
+    .theme-toggle::after { content:''; position:absolute; top:3px; left:3px; width:16px; height:16px; border-radius:0; background:var(--text); transition:all 0.3s var(--ease-base); }
+    [data-theme="light"] .theme-toggle::after { left:23px; }
+    .theme-toggle-icon { position:absolute; top:50%; transform:translateY(-50%); font-size:11px; line-height:1; }
+    .theme-toggle-icon.moon { left:5px; }
+    .theme-toggle-icon.sun  { right:4px; }
+
+    /* Porsche typography — Barlow Condensed for headings */
+    h1, h2, .font-display { font-family: 'Barlow Condensed', 'Arial Narrow', Arial, sans-serif; letter-spacing: 0.04em; }
+
+    /* Chart Modal — Porsche sharp corners */
+    .chart-modal-overlay { position:fixed; inset:0; z-index:100; background:rgba(14,14,18,0.82); backdrop-filter:blur(8px); display:flex; align-items:center; justify-content:center; opacity:0 !important; pointer-events:none !important; transition:opacity 0.35s var(--ease-base); }
+    .chart-modal-overlay.active { opacity:1 !important; pointer-events:auto !important; }
+    .chart-modal { background:var(--bg-1); border:1px solid var(--border-s); border-radius:0; padding:2.5rem; width:90%; max-width:720px; max-height:80vh; transform:scale(0.96) translateY(8px); transition:transform 0.4s var(--ease-luxury); }
+    .chart-modal-overlay.active .chart-modal { transform:scale(1) translateY(0); }
+    .clickable-card { cursor:pointer; }
+    .clickable-card:hover { border-color:var(--border-m) !important; }
 
     /* Drag & Drop */
-    .sortable-item { cursor: grab; user-select: none; }
-    .sortable-item:active { cursor: grabbing; }
-    .sortable-item.dragging { opacity: 0.4; transform: scale(0.98); }
-    .sortable-item.drag-over { border-top: 2px solid #d5001c !important; margin-top: -2px; }
-    .sortable-ghost { position: relative; }
-    .sortable-ghost::before { content: ''; position: absolute; left: 0; right: 0; top: -2px; height: 2px; background: #d5001c; border-radius: 1px; }
+    .sortable-item { cursor:grab; user-select:none; }
+    .sortable-item:active { cursor:grabbing; }
+    .sortable-item.dragging { opacity:0.35; transform:scale(0.985); }
+    .sortable-item.drag-over { border-top:1px solid #d5001c !important; margin-top:-1px; }
+    .sortable-ghost { position:relative; }
+    .sortable-ghost::before { content:''; position:absolute; left:0; right:0; top:-1px; height:1px; background:#d5001c; }
+
+    /* Porsche-style button base */
+    .btn-porsche {
+      font-family: 'Barlow Condensed', 'Arial Narrow', Arial, sans-serif;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      font-weight: 600;
+      border-radius: 0;
+      transition: all 0.3s var(--ease-base);
+    }
+
+    /* Input focus ring — Porsche red accent */
+    input:focus, select:focus { outline: none; border-color: #d5001c !important; box-shadow: 0 0 0 1px rgba(213,0,28,.2); }
+
+    /* Porsche score card accent line */
+    .score-card-accent { position: relative; overflow: hidden; }
+    .score-card-accent::before { content:''; position:absolute; top:0; left:0; right:0; height:2px; background:#d5001c; transform:scaleX(0); transform-origin:left; transition:transform 0.4s var(--ease-luxury); }
+    .score-card-accent:hover::before { transform:scaleX(1); }
   </style>
 </head>
 <body class="min-h-screen antialiased">
@@ -125,51 +183,58 @@
     </div>
   </div>
 
-  <!-- Header -->
-  <header class="fixed top-0 w-full z-50 th-header backdrop-blur-xl border-b th-border">
-    <div class="max-w-[1400px] mx-auto px-6 h-16 flex items-center justify-between">
-      <div class="flex items-center gap-3">
-        <div class="w-8 h-8 bg-brand rounded flex items-center justify-center">
-          <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z"/>
+  <!-- Header — Porsche style -->
+  <header class="fixed top-0 w-full z-50 th-header backdrop-blur-xl border-b" style="border-color:var(--border)">
+    <div class="max-w-[1400px] mx-auto px-8 h-[72px] flex items-center justify-between">
+      <div class="flex items-center gap-4">
+        <!-- Porsche-style wordmark -->
+        <div class="w-7 h-7 bg-brand flex items-center justify-center flex-shrink-0" style="clip-path:polygon(0 0,100% 0,100% 75%,50% 100%,0 75%)">
+          <svg class="w-3.5 h-3.5 text-white" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M3 3h7v7H3zm11 0h7v7h-7zM3 14h7v7H3zm11 3h2v-2h2v2h2v2h-2v2h-2v-2h-2v-2z"/>
           </svg>
         </div>
-        <span class="text-sm font-bold tracking-[0.15em] uppercase" data-i18n="Stock Analyzer">Stock Analyzer</span>
+        <div>
+          <span class="block text-[13px] font-bold tracking-[0.22em] uppercase" style="font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif" data-i18n="Stock Analyzer">Stock Analyzer</span>
+          <span class="block text-[9px] tracking-[0.18em] uppercase" style="color:var(--text-m)">Financial Intelligence</span>
+        </div>
       </div>
-      <div class="flex items-center gap-4">
-        <button id="langToggle" class="text-[10px] font-bold tracking-wider uppercase px-3 py-1.5 border th-border-s rounded-lg hover:border-brand hover:text-brand transition-all duration-300" title="Toggle language">EN / JA</button>
+      <div class="flex items-center gap-3">
+        <button id="langToggle" class="text-[10px] font-semibold tracking-[0.14em] uppercase px-3 py-1.5 border hover:border-brand hover:text-brand transition-all duration-300" style="border-color:var(--border-s);border-radius:0" title="Toggle language">EN / JA</button>
         <div id="themeToggle" class="theme-toggle" title="Toggle theme">
           <span class="theme-toggle-icon moon">🌙</span>
           <span class="theme-toggle-icon sun">☀️</span>
         </div>
-        <button id="btnExport" class="hidden text-xs font-medium tracking-wider uppercase px-5 py-2 border th-border-s hover:border-brand hover:text-brand rounded transition-all duration-300">
+        <button id="btnExport" class="hidden text-[10px] font-semibold tracking-[0.14em] uppercase px-5 py-2 border hover:border-brand hover:text-brand transition-all duration-300" style="border-color:var(--border-s);border-radius:0">
           <span data-i18n="Export">Export</span>
         </button>
-        <button id="btnReset" class="hidden text-xs font-medium tracking-wider uppercase px-5 py-2 border th-border-s hover:border-brand hover:text-brand rounded transition-all duration-300">
+        <button id="btnReset" class="hidden text-[10px] font-semibold tracking-[0.14em] uppercase px-5 py-2 border hover:border-brand hover:text-brand transition-all duration-300" style="border-color:var(--border-s);border-radius:0">
           <span data-i18n="New Analysis">New Analysis</span>
         </button>
       </div>
     </div>
   </header>
 
-  <!-- Upload Section -->
-  <section id="uploadSection" class="pt-16 min-h-screen flex items-center justify-center px-6">
-    <div class="max-w-xl w-full fade-up">
-      <div class="text-center mb-12">
-        <h1 class="text-4xl font-black tracking-tight mb-3" data-i18n="Financial Analysis">Financial Analysis</h1>
-        <p class="th-text-m text-sm tracking-wide" data-i18n="Upload your financial data to generate a comprehensive investment analysis">Upload your financial data to generate a comprehensive investment analysis</p>
+  <!-- Upload Section — Porsche style -->
+  <section id="uploadSection" class="pt-[72px] min-h-screen flex items-center justify-center px-8">
+    <div class="max-w-lg w-full fade-up">
+      <!-- Porsche-style eyebrow + heading -->
+      <div class="text-center mb-14">
+        <p class="text-[10px] font-semibold tracking-[0.28em] uppercase mb-4" style="color:#d5001c;font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif">Financial Intelligence</p>
+        <h1 class="text-[clamp(2.8rem,5vw,4.5rem)] font-bold leading-none tracking-[0.04em] uppercase mb-4" style="font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif" data-i18n="Financial Analysis">Financial Analysis</h1>
+        <div class="w-8 h-px bg-brand mx-auto mb-4"></div>
+        <p class="th-text-m text-xs tracking-[0.12em] uppercase" data-i18n="Upload your financial data to generate a comprehensive investment analysis">Upload your financial data to generate a comprehensive investment analysis</p>
       </div>
 
-      <div id="dropZone" class="upload-zone rounded-2xl p-16 text-center cursor-pointer mb-8">
-        <div class="w-16 h-16 mx-auto mb-5 rounded-full border th-border-s flex items-center justify-center">
-          <svg class="w-7 h-7 th-text-m" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+      <div id="dropZone" class="upload-zone p-14 text-center cursor-pointer mb-8" style="border-radius:0">
+        <div class="w-14 h-14 mx-auto mb-5 border flex items-center justify-center" style="border-color:var(--border-s);border-radius:0">
+          <svg class="w-6 h-6 th-text-m" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"/>
           </svg>
         </div>
-        <p class="th-text-s font-medium text-sm mb-1" data-i18n="Drop file here or click to browse">Drop file here or click to browse</p>
-        <p class="th-text-m text-xs" data-i18n="Excel (.xlsx) or JSON supported">Excel (.xlsx) or JSON supported</p>
+        <p class="th-text-s font-medium text-xs tracking-[0.1em] uppercase mb-1" data-i18n="Drop file here or click to browse">Drop file here or click to browse</p>
+        <p class="th-text-m text-[10px] tracking-wider" data-i18n="Excel (.xlsx) or JSON supported">Excel (.xlsx) or JSON supported</p>
         <input type="file" id="fileInput" accept=".xlsx,.xls,.json" class="hidden">
-        <p id="fileName" class="mt-4 text-sm text-brand font-medium hidden"></p>
+        <p id="fileName" class="mt-4 text-xs text-brand font-semibold tracking-wider hidden"></p>
       </div>
 
       <div id="metaForm" class="hidden space-y-4 mb-8">
@@ -215,58 +280,62 @@
       </div>
 
       <div class="flex gap-3">
-        <button id="btnAnalyze" class="flex-1 bg-brand hover:bg-brand-light text-white font-bold text-sm uppercase tracking-widest py-4 rounded-xl transition-all duration-300 disabled:opacity-20 disabled:cursor-not-allowed" disabled>
+        <button id="btnAnalyze" class="flex-1 bg-brand hover:bg-brand-light text-white font-semibold text-xs uppercase tracking-[0.18em] py-4 transition-all duration-300 disabled:opacity-20 disabled:cursor-not-allowed" style="border-radius:0;font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif;letter-spacing:0.18em" disabled>
           <span id="btnText" data-i18n="Analyze">Analyze</span>
           <svg id="btnSpinner" class="hidden animate-spin inline w-4 h-4 ml-2" fill="none" viewBox="0 0 24 24">
             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
           </svg>
         </button>
-        <button id="btnSample" class="px-8 py-4 border th-border-s hover:border-brand th-text-s font-medium text-xs uppercase tracking-widest rounded-xl transition-all duration-300">
+        <button id="btnSample" class="px-8 py-4 border hover:border-brand th-text-s font-semibold text-xs uppercase tracking-[0.18em] transition-all duration-300" style="border-color:var(--border-s);border-radius:0;font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif">
           <span data-i18n="Demo">Demo</span>
         </button>
       </div>
     </div>
   </section>
 
-  <!-- Dashboard -->
-  <section id="dashboard" class="hidden pt-24 pb-16 px-6">
+  <!-- Dashboard — Porsche style -->
+  <section id="dashboard" class="hidden pb-16 px-8" style="padding-top:calc(72px + 2rem)">
     <div class="max-w-[1400px] mx-auto">
 
-      <!-- Hero Header -->
-      <div class="mb-10 fade-up">
+      <!-- Hero Header — Porsche architectural layout -->
+      <div class="mb-12 fade-up">
+        <!-- Thin top rule -->
+        <div class="w-full h-px mb-8" style="background:var(--border-m)"></div>
         <div class="flex items-end justify-between">
           <div>
-            <div class="flex items-center gap-3 mb-2">
-              <span id="tickerBadge" class="text-xs font-bold tracking-widest uppercase px-3 py-1 bg-brand/10 text-brand rounded"></span>
-              <span id="industryBadge" class="text-xs tracking-wider th-text-m"></span>
+            <div class="flex items-center gap-4 mb-3">
+              <span id="tickerBadge" class="text-[10px] font-bold tracking-[0.22em] uppercase px-3 py-1 text-brand" style="background:rgba(213,0,28,0.08);border:1px solid rgba(213,0,28,0.2);font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif"></span>
+              <span class="w-px h-3" style="background:var(--border-m)"></span>
+              <span id="industryBadge" class="text-[10px] tracking-[0.14em] uppercase th-text-m" style="font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif"></span>
             </div>
-            <h2 id="companyName" class="text-5xl font-black tracking-tight"></h2>
+            <h2 id="companyName" class="text-[clamp(2.4rem,4vw,4rem)] font-bold leading-none tracking-[0.03em] uppercase" style="font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif"></h2>
           </div>
-          <div id="verdictCard" class="text-center px-10 py-5 rounded-2xl text-white glow-red">
-            <p class="text-[10px] uppercase tracking-[0.2em] opacity-70 mb-1" data-i18n="Investment Verdict">Investment Verdict</p>
-            <p id="verdictText" class="text-4xl font-black tracking-tight"></p>
-            <p id="verdictScore" class="text-xs opacity-60 mt-1 tracking-wider"></p>
+          <div id="verdictCard" class="text-center px-10 py-6 glow-red" style="border-radius:0">
+            <p class="text-[9px] uppercase tracking-[0.24em] opacity-60 mb-2" style="font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif" data-i18n="Investment Verdict">Investment Verdict</p>
+            <p id="verdictText" class="text-4xl font-bold tracking-[0.06em] uppercase" style="font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif"></p>
+            <p id="verdictScore" class="text-[10px] opacity-50 mt-1.5 tracking-[0.14em]"></p>
           </div>
         </div>
+        <div class="w-full h-px mt-8" style="background:var(--border)"></div>
       </div>
 
-      <!-- Score Cards -->
-      <div class="grid grid-cols-4 gap-4 mb-10">
-        <div id="scoreA" class="card-hover rounded-xl"></div>
-        <div id="scoreB" class="card-hover rounded-xl"></div>
-        <div id="scoreC" class="card-hover rounded-xl"></div>
-        <div id="scoreD" class="card-hover rounded-xl"></div>
+      <!-- Score Cards — Porsche sharp tiles -->
+      <div class="grid grid-cols-4 gap-3 mb-12">
+        <div id="scoreA" class="card-hover score-card-accent" style="border-radius:0"></div>
+        <div id="scoreB" class="card-hover score-card-accent" style="border-radius:0"></div>
+        <div id="scoreC" class="card-hover score-card-accent" style="border-radius:0"></div>
+        <div id="scoreD" class="card-hover score-card-accent" style="border-radius:0"></div>
       </div>
 
-      <!-- Tabs -->
+      <!-- Tabs — Porsche thin underline style -->
       <div class="mb-8">
-        <nav class="flex gap-0 border-b th-border" id="tabNav">
-          <button class="tab-btn tab-active px-6 py-4 text-xs font-semibold uppercase tracking-[0.15em] border-b-2 transition-all duration-300" data-tab="analysis" data-i18n="Analysis">Analysis</button>
-          <button class="tab-btn px-6 py-4 text-xs font-semibold uppercase tracking-[0.15em] th-text-m border-b-2 border-transparent transition-all duration-300" data-tab="roe" data-i18n="PBR Decomposition">PBR Decomposition</button>
-          <button class="tab-btn px-6 py-4 text-xs font-semibold uppercase tracking-[0.15em] th-text-m border-b-2 border-transparent transition-all duration-300" data-tab="charts" data-i18n="Time Series">Time Series</button>
-          <button class="tab-btn px-6 py-4 text-xs font-semibold uppercase tracking-[0.15em] th-text-m border-b-2 border-transparent transition-all duration-300" data-tab="custom" data-i18n="Custom">Custom</button>
-          <button class="tab-btn px-6 py-4 text-xs font-semibold uppercase tracking-[0.15em] th-text-m border-b-2 border-transparent transition-all duration-300" data-tab="competitor" data-i18n="Competitor Analysis">Competitor Analysis</button>
+        <nav class="flex gap-0 border-b" id="tabNav" style="border-color:var(--border-s)">
+          <button class="tab-btn tab-active px-6 py-4 text-[10px] font-semibold uppercase tracking-[0.18em] border-b-2 transition-all duration-300" style="font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif" data-tab="analysis" data-i18n="Analysis">Analysis</button>
+          <button class="tab-btn px-6 py-4 text-[10px] font-semibold uppercase tracking-[0.18em] th-text-m border-b-2 border-transparent transition-all duration-300" style="font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif" data-tab="roe" data-i18n="PBR Decomposition">PBR Decomposition</button>
+          <button class="tab-btn px-6 py-4 text-[10px] font-semibold uppercase tracking-[0.18em] th-text-m border-b-2 border-transparent transition-all duration-300" style="font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif" data-tab="charts" data-i18n="Time Series">Time Series</button>
+          <button class="tab-btn px-6 py-4 text-[10px] font-semibold uppercase tracking-[0.18em] th-text-m border-b-2 border-transparent transition-all duration-300" style="font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif" data-tab="custom" data-i18n="Custom">Custom</button>
+          <button class="tab-btn px-6 py-4 text-[10px] font-semibold uppercase tracking-[0.18em] th-text-m border-b-2 border-transparent transition-all duration-300" style="font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif" data-tab="competitor" data-i18n="Competitor Analysis">Competitor Analysis</button>
         </nav>
       </div>
 
@@ -332,13 +401,13 @@
       <div id="tab-roe" class="tab-content hidden"><div id="roeTree"></div></div>
 
       <div id="tab-charts" class="tab-content hidden">
-        <div class="grid grid-cols-2 gap-6">
-          <div class="th-bg-1 rounded-2xl p-6 border th-border"><h4 class="text-[10px] font-bold uppercase tracking-[0.2em] th-text-m mb-4" data-i18n="Revenue">Revenue</h4><canvas id="chartRevenue"></canvas></div>
-          <div class="th-bg-1 rounded-2xl p-6 border th-border"><h4 class="text-[10px] font-bold uppercase tracking-[0.2em] th-text-m mb-4" data-i18n="Net Income">Net Income</h4><canvas id="chartNetIncome"></canvas></div>
-          <div class="th-bg-1 rounded-2xl p-6 border th-border"><h4 class="text-[10px] font-bold uppercase tracking-[0.2em] th-text-m mb-4" data-i18n="Free Cash Flow">Free Cash Flow</h4><canvas id="chartFCF"></canvas></div>
-          <div class="th-bg-1 rounded-2xl p-6 border th-border"><h4 class="text-[10px] font-bold uppercase tracking-[0.2em] th-text-m mb-4" data-i18n="Earnings Per Share">Earnings Per Share</h4><canvas id="chartEPS"></canvas></div>
-          <div class="th-bg-1 rounded-2xl p-6 border th-border"><h4 class="text-[10px] font-bold uppercase tracking-[0.2em] th-text-m mb-4">ROE / ROA</h4><canvas id="chartROE"></canvas></div>
-          <div class="th-bg-1 rounded-2xl p-6 border th-border"><h4 class="text-[10px] font-bold uppercase tracking-[0.2em] th-text-m mb-4" data-i18n="Balance Sheet">Balance Sheet</h4><canvas id="chartBS"></canvas></div>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="th-bg-1 p-6 border th-border" style="border-radius:0"><h4 class="text-[9px] font-semibold uppercase tracking-[0.22em] th-text-m mb-4" style="font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif" data-i18n="Revenue">Revenue</h4><canvas id="chartRevenue"></canvas></div>
+          <div class="th-bg-1 p-6 border th-border" style="border-radius:0"><h4 class="text-[9px] font-semibold uppercase tracking-[0.22em] th-text-m mb-4" style="font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif" data-i18n="Net Income">Net Income</h4><canvas id="chartNetIncome"></canvas></div>
+          <div class="th-bg-1 p-6 border th-border" style="border-radius:0"><h4 class="text-[9px] font-semibold uppercase tracking-[0.22em] th-text-m mb-4" style="font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif" data-i18n="Free Cash Flow">Free Cash Flow</h4><canvas id="chartFCF"></canvas></div>
+          <div class="th-bg-1 p-6 border th-border" style="border-radius:0"><h4 class="text-[9px] font-semibold uppercase tracking-[0.22em] th-text-m mb-4" style="font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif" data-i18n="Earnings Per Share">Earnings Per Share</h4><canvas id="chartEPS"></canvas></div>
+          <div class="th-bg-1 p-6 border th-border" style="border-radius:0"><h4 class="text-[9px] font-semibold uppercase tracking-[0.22em] th-text-m mb-4" style="font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif">ROE / ROA</h4><canvas id="chartROE"></canvas></div>
+          <div class="th-bg-1 p-6 border th-border" style="border-radius:0"><h4 class="text-[9px] font-semibold uppercase tracking-[0.22em] th-text-m mb-4" style="font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif" data-i18n="Balance Sheet">Balance Sheet</h4><canvas id="chartBS"></canvas></div>
         </div>
       </div>
 
@@ -346,68 +415,68 @@
       <div id="tab-competitor" class="tab-content hidden">
         <div id="competitorUpload" class="mb-8">
           <p class="text-sm font-medium th-text-s mb-6" data-i18n="comp-upload-msg">Upload Excel files for up to 5 companies to compare</p>
-          <div id="competitorSlots" class="space-y-3">
-            <div class="comp-slot flex items-center gap-3 p-4 th-bg-1 rounded-xl border th-border" data-slot="0">
-              <span class="text-sm font-black th-text-m w-6 text-center" style="color:#d5001c">1</span>
-              <input type="text" placeholder="Company A" class="comp-name flex-1 px-3 py-2 th-input rounded-lg text-sm border th-border-s focus:border-brand outline-none">
-              <label class="comp-file-label cursor-pointer px-4 py-2 border th-border-s rounded-lg text-xs font-medium hover:border-brand transition-all flex items-center gap-2">
-                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5-5m0 0l5 5m-5-5v12"/></svg>
+          <div id="competitorSlots" class="space-y-2">
+            <div class="comp-slot flex items-center gap-3 p-4 th-bg-1 border th-border" style="border-radius:0" data-slot="0">
+              <span class="text-xs font-bold tracking-[0.2em] w-6 text-center" style="color:#d5001c;font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif">01</span>
+              <input type="text" placeholder="Company A" class="comp-name flex-1 px-3 py-2 th-input text-xs border focus:border-brand outline-none" style="border-radius:0">
+              <label class="comp-file-label cursor-pointer px-4 py-2 border text-[10px] font-semibold tracking-[0.14em] uppercase hover:border-brand transition-all flex items-center gap-2" style="border-color:var(--border-s);border-radius:0;font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif">
+                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5-5m0 0l5 5m-5-5v12"/></svg>
                 <span data-i18n="Select File">Select File</span>
                 <input type="file" accept=".xlsx,.xls" class="comp-file hidden">
               </label>
-              <span class="comp-file-name text-xs th-text-m truncate max-w-[150px]"></span>
-              <button class="comp-remove text-lg th-text-d hover:text-red-500 transition-all leading-none hidden">&times;</button>
+              <span class="comp-file-name text-[10px] th-text-m truncate max-w-[150px]"></span>
+              <button class="comp-remove text-base th-text-d hover:text-red-500 transition-all leading-none hidden">&times;</button>
             </div>
-            <div class="comp-slot flex items-center gap-3 p-4 th-bg-1 rounded-xl border th-border" data-slot="1">
-              <span class="text-sm font-black th-text-m w-6 text-center" style="color:#3b82f6">2</span>
-              <input type="text" placeholder="Company B" class="comp-name flex-1 px-3 py-2 th-input rounded-lg text-sm border th-border-s focus:border-brand outline-none">
-              <label class="comp-file-label cursor-pointer px-4 py-2 border th-border-s rounded-lg text-xs font-medium hover:border-brand transition-all flex items-center gap-2">
-                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5-5m0 0l5 5m-5-5v12"/></svg>
+            <div class="comp-slot flex items-center gap-3 p-4 th-bg-1 border th-border" style="border-radius:0" data-slot="1">
+              <span class="text-xs font-bold tracking-[0.2em] w-6 text-center" style="color:#3b82f6;font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif">02</span>
+              <input type="text" placeholder="Company B" class="comp-name flex-1 px-3 py-2 th-input text-xs border focus:border-brand outline-none" style="border-radius:0">
+              <label class="comp-file-label cursor-pointer px-4 py-2 border text-[10px] font-semibold tracking-[0.14em] uppercase hover:border-brand transition-all flex items-center gap-2" style="border-color:var(--border-s);border-radius:0;font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif">
+                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5-5m0 0l5 5m-5-5v12"/></svg>
                 <span data-i18n="Select File">Select File</span>
                 <input type="file" accept=".xlsx,.xls" class="comp-file hidden">
               </label>
-              <span class="comp-file-name text-xs th-text-m truncate max-w-[150px]"></span>
-              <button class="comp-remove text-lg th-text-d hover:text-red-500 transition-all leading-none hidden">&times;</button>
+              <span class="comp-file-name text-[10px] th-text-m truncate max-w-[150px]"></span>
+              <button class="comp-remove text-base th-text-d hover:text-red-500 transition-all leading-none hidden">&times;</button>
             </div>
-            <div class="comp-slot flex items-center gap-3 p-4 th-bg-1 rounded-xl border th-border" data-slot="2">
-              <span class="text-sm font-black th-text-m w-6 text-center" style="color:#22c55e">3</span>
-              <input type="text" placeholder="Company C" class="comp-name flex-1 px-3 py-2 th-input rounded-lg text-sm border th-border-s focus:border-brand outline-none">
-              <label class="comp-file-label cursor-pointer px-4 py-2 border th-border-s rounded-lg text-xs font-medium hover:border-brand transition-all flex items-center gap-2">
-                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5-5m0 0l5 5m-5-5v12"/></svg>
+            <div class="comp-slot flex items-center gap-3 p-4 th-bg-1 border th-border" style="border-radius:0" data-slot="2">
+              <span class="text-xs font-bold tracking-[0.2em] w-6 text-center" style="color:#22c55e;font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif">03</span>
+              <input type="text" placeholder="Company C" class="comp-name flex-1 px-3 py-2 th-input text-xs border focus:border-brand outline-none" style="border-radius:0">
+              <label class="comp-file-label cursor-pointer px-4 py-2 border text-[10px] font-semibold tracking-[0.14em] uppercase hover:border-brand transition-all flex items-center gap-2" style="border-color:var(--border-s);border-radius:0;font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif">
+                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5-5m0 0l5 5m-5-5v12"/></svg>
                 <span data-i18n="Select File">Select File</span>
                 <input type="file" accept=".xlsx,.xls" class="comp-file hidden">
               </label>
-              <span class="comp-file-name text-xs th-text-m truncate max-w-[150px]"></span>
-              <button class="comp-remove text-lg th-text-d hover:text-red-500 transition-all leading-none hidden">&times;</button>
+              <span class="comp-file-name text-[10px] th-text-m truncate max-w-[150px]"></span>
+              <button class="comp-remove text-base th-text-d hover:text-red-500 transition-all leading-none hidden">&times;</button>
             </div>
-            <div class="comp-slot flex items-center gap-3 p-4 th-bg-1 rounded-xl border th-border" data-slot="3">
-              <span class="text-sm font-black th-text-m w-6 text-center" style="color:#f59e0b">4</span>
-              <input type="text" placeholder="Company D" class="comp-name flex-1 px-3 py-2 th-input rounded-lg text-sm border th-border-s focus:border-brand outline-none">
-              <label class="comp-file-label cursor-pointer px-4 py-2 border th-border-s rounded-lg text-xs font-medium hover:border-brand transition-all flex items-center gap-2">
-                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5-5m0 0l5 5m-5-5v12"/></svg>
+            <div class="comp-slot flex items-center gap-3 p-4 th-bg-1 border th-border" style="border-radius:0" data-slot="3">
+              <span class="text-xs font-bold tracking-[0.2em] w-6 text-center" style="color:#f59e0b;font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif">04</span>
+              <input type="text" placeholder="Company D" class="comp-name flex-1 px-3 py-2 th-input text-xs border focus:border-brand outline-none" style="border-radius:0">
+              <label class="comp-file-label cursor-pointer px-4 py-2 border text-[10px] font-semibold tracking-[0.14em] uppercase hover:border-brand transition-all flex items-center gap-2" style="border-color:var(--border-s);border-radius:0;font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif">
+                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5-5m0 0l5 5m-5-5v12"/></svg>
                 <span data-i18n="Select File">Select File</span>
                 <input type="file" accept=".xlsx,.xls" class="comp-file hidden">
               </label>
-              <span class="comp-file-name text-xs th-text-m truncate max-w-[150px]"></span>
-              <button class="comp-remove text-lg th-text-d hover:text-red-500 transition-all leading-none hidden">&times;</button>
+              <span class="comp-file-name text-[10px] th-text-m truncate max-w-[150px]"></span>
+              <button class="comp-remove text-base th-text-d hover:text-red-500 transition-all leading-none hidden">&times;</button>
             </div>
-            <div class="comp-slot flex items-center gap-3 p-4 th-bg-1 rounded-xl border th-border" data-slot="4">
-              <span class="text-sm font-black th-text-m w-6 text-center" style="color:#8b5cf6">5</span>
-              <input type="text" placeholder="Company E" class="comp-name flex-1 px-3 py-2 th-input rounded-lg text-sm border th-border-s focus:border-brand outline-none">
-              <label class="comp-file-label cursor-pointer px-4 py-2 border th-border-s rounded-lg text-xs font-medium hover:border-brand transition-all flex items-center gap-2">
-                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5-5m0 0l5 5m-5-5v12"/></svg>
+            <div class="comp-slot flex items-center gap-3 p-4 th-bg-1 border th-border" style="border-radius:0" data-slot="4">
+              <span class="text-xs font-bold tracking-[0.2em] w-6 text-center" style="color:#8b5cf6;font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif">05</span>
+              <input type="text" placeholder="Company E" class="comp-name flex-1 px-3 py-2 th-input text-xs border focus:border-brand outline-none" style="border-radius:0">
+              <label class="comp-file-label cursor-pointer px-4 py-2 border text-[10px] font-semibold tracking-[0.14em] uppercase hover:border-brand transition-all flex items-center gap-2" style="border-color:var(--border-s);border-radius:0;font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif">
+                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5-5m0 0l5 5m-5-5v12"/></svg>
                 <span data-i18n="Select File">Select File</span>
                 <input type="file" accept=".xlsx,.xls" class="comp-file hidden">
               </label>
-              <span class="comp-file-name text-xs th-text-m truncate max-w-[150px]"></span>
-              <button class="comp-remove text-lg th-text-d hover:text-red-500 transition-all leading-none hidden">&times;</button>
+              <span class="comp-file-name text-[10px] th-text-m truncate max-w-[150px]"></span>
+              <button class="comp-remove text-base th-text-d hover:text-red-500 transition-all leading-none hidden">&times;</button>
             </div>
           </div>
           <div class="flex items-center gap-4 mt-6">
-            <button id="btnCompetitorAnalyze" class="bg-brand hover:bg-red-700 text-white font-bold text-xs uppercase tracking-widest py-3 px-8 rounded-xl transition-all duration-300 disabled:opacity-30" disabled>
+            <button id="btnCompetitorAnalyze" class="bg-brand hover:bg-red-700 text-white font-semibold text-[10px] uppercase tracking-[0.18em] py-3 px-8 transition-all duration-300 disabled:opacity-30" style="border-radius:0;font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif" disabled>
               <span data-i18n="Compare">Compare</span>
             </button>
-            <span id="compLoading" class="hidden text-xs th-text-m animate-pulse" data-i18n="Analyzing...">Analyzing...</span>
+            <span id="compLoading" class="hidden text-[10px] th-text-m animate-pulse tracking-wider" data-i18n="Analyzing...">Analyzing...</span>
           </div>
         </div>
         <!-- Summary Table -->
