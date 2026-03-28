@@ -28,7 +28,7 @@
     :root {
       /* Porsche dark palette */
       --bg-0: #0e0e12; --bg-1: #14141a; --bg-2: #1c1c24; --bg-3: #24242e;
-      --text: #f0f0f2; --text-s: rgba(240,240,242,0.72); --text-m: rgba(240,240,242,0.42); --text-d: rgba(240,240,242,0.18);
+      --text: #f0f0f2; --text-s: rgba(240,240,242,0.78); --text-m: rgba(240,240,242,0.55); --text-d: rgba(240,240,242,0.40);
       --border: rgba(255,255,255,0.04); --border-s: rgba(255,255,255,0.09); --border-m: rgba(255,255,255,0.14);
       --card-hover-bg: #1c1c24; --card-hover-shadow: rgba(0,0,0,0.55);
       --upload-border: rgba(255,255,255,0.12); --upload-hover-bg: rgba(213,0,28,0.04);
@@ -48,7 +48,7 @@
     }
     [data-theme="light"] {
       --bg-0: #f2f2f4; --bg-1: #ffffff; --bg-2: #ebebef; --bg-3: #e0e0e6;
-      --text: #0e0e12; --text-s: rgba(14,14,18,0.72); --text-m: rgba(14,14,18,0.45); --text-d: rgba(14,14,18,0.2);
+      --text: #0e0e12; --text-s: rgba(14,14,18,0.78); --text-m: rgba(14,14,18,0.58); --text-d: rgba(14,14,18,0.42);
       --border: rgba(0,0,0,0.05); --border-s: rgba(0,0,0,0.09); --border-m: rgba(0,0,0,0.14);
       --card-hover-bg: #ffffff; --card-hover-shadow: rgba(0,0,0,0.07);
       --upload-border: rgba(0,0,0,0.14); --upload-hover-bg: rgba(213,0,28,0.03);
@@ -1366,7 +1366,7 @@
               <span class="text-[10px] font-bold uppercase tracking-[0.18em] th-text-m" style="font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif">${t('Market Expectation')}</span>
             </div>
             <p class="text-3xl font-bold tabular-nums mb-1" style="font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif">${fmtNum(perVal,1)}<span class="text-lg th-text-m">x</span></p>
-            <p class="text-[10px] th-text-d mb-2">${t('per-desc')}</p>
+            <p class="text-[10px] th-text-m mb-2">${t('per-desc')}</p>
             <div class="mb-2">${benchBadge('pe_aggregate_all', null, 'x')}</div>
             <p class="text-[11px] th-text-m mb-3">${t('5Y Change:')} <span class="${perChg>0?'text-green-400':perChg<0?'text-red-400':'th-text-m'}">${perChg!==null?((perChg>0?'+':'')+fmtNum(perChg,1)+'x'):'—'}</span></p>
             <canvas id="roetreePERChart" style="max-height:140px"></canvas>
@@ -1379,7 +1379,7 @@
               <span class="text-[10px] font-bold uppercase tracking-[0.18em] th-text-m" style="font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif">${t('Profitability (ROE)')}</span>
             </div>
             <p class="text-3xl font-bold tabular-nums mb-1" style="font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif">${fmtNum(roeVal,1)}<span class="text-lg th-text-m">%</span></p>
-            <p class="text-[10px] th-text-d mb-1">${t('roe-desc')}</p>
+            <p class="text-[10px] th-text-m mb-1">${t('roe-desc')}</p>
             <div class="mb-1">${benchBadge(benchmarkRegion === 'japan' ? 'roe_japan' : 'roe_global', 100, '%')}</div>
             <p class="text-[11px] th-text-m mb-3">${t('5Y Change:')} ${fmtNum(roe['5年変化pt'],1)}pt</p>
             <canvas id="roetreeROEChart" style="max-height:140px"></canvas>
@@ -1403,18 +1403,18 @@
           <div class="p-5 th-bg-2 border" style="border-color:var(--border-s);border-radius:0">
             <div class="flex items-center gap-2 mb-2"><div class="w-2 h-2 bg-blue-500" style="border-radius:0"></div><span class="text-[10px] font-bold uppercase tracking-[0.18em] th-text-m" style="font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif">${t('Net Profit Margin')}</span></div>
             <p class="text-2xl font-bold tabular-nums mb-1" style="font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif">${fmtNum(npm['現在値'],1)}<span class="text-sm th-text-m">%</span></p>
-            <p class="text-[10px] th-text-d mb-1">${t('Net Margin')} = ${t('Net Income')} / ${t('Revenue')}</p>
+            <p class="text-[10px] th-text-m mb-1">${t('Net Margin')} = ${t('Net Income')} / ${t('Revenue')}</p>
             ${benchBadge('net_margin', 100, '%')}
             <p class="text-[11px] th-text-m mb-3">${t('5Y Change:')} ${fmtNum(npm['5年変化pt'],1)}pt</p>
             <canvas id="dupontNPMChart" style="max-height:120px"></canvas>
             <div class="mt-4 ml-2 pl-3 border-l border-blue-500/20">
-              <p class="text-[10px] th-text-d mb-2">&#9492; ${t('breakdown-npm')}</p>
+              <p class="text-[10px] th-text-m mb-2">&#9492; ${t('breakdown-npm')}</p>
               ${node(t('営業利益率'), (re['営業利益率']||{})['現在値'], (re['営業利益率']||{})['5年変化pt'], null, '%', 'operating_margin', 100)}
               <div class="ml-3 pl-3 border-l border-blue-500/10 mb-1">
                 ${node(t('原価率'), (re['原価率']||{})['現在値'], (re['原価率']||{})['5年変化'], (re['原価率']||{})['評価'], '%')}
                 ${node(t('販管費率'), (re['販管費率']||{})['現在値'], (re['販管費率']||{})['5年変化'], (re['販管費率']||{})['評価'], '%')}
               </div>
-              <p class="text-[10px] th-text-d mt-2 mb-1">&#9492; ${t('営業利益→純利益ギャップ')}</p>
+              <p class="text-[10px] th-text-m mt-2 mb-1">&#9492; ${t('営業利益→純利益ギャップ')}</p>
               ${node(t('金利負担率'), (re['金利負担率']||{})['現在値'], (re['金利負担率']||{})['5年変化pt'], (re['金利負担率']||{})['評価'], '%')}
               ${node(t('営業外損益率'), (re['営業外損益率']||{})['現在値'], (re['営業外損益率']||{})['5年変化pt'], (re['営業外損益率']||{})['評価'], '%')}
               ${node(t('税引後利益率'), (re['税引後利益率']||{})['現在値'], (re['税引後利益率']||{})['5年変化pt'], (re['税引後利益率']||{})['評価'], '%')}
@@ -1425,11 +1425,11 @@
           <div class="p-5 th-bg-2 border" style="border-color:var(--border-s);border-radius:0">
             <div class="flex items-center gap-2 mb-2"><div class="w-2 h-2 bg-brand" style="border-radius:0"></div><span class="text-[10px] font-bold uppercase tracking-[0.18em] th-text-m" style="font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif">${t('Asset Turnover')}</span></div>
             <p class="text-2xl font-bold tabular-nums mb-1" style="font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif">${fmtNum(at['現在値'],2)}<span class="text-sm th-text-m">x</span></p>
-            <p class="text-[10px] th-text-d mb-1">${t('Asset Turnover')} = ${t('Revenue')} / ${t('Total Assets')}</p>
+            <p class="text-[10px] th-text-m mb-1">${t('Asset Turnover')} = ${t('Revenue')} / ${t('Total Assets')}</p>
             <p class="text-[11px] th-text-m mb-3">${t('5Y Change:')} ${fmtNum(at['5年変化'],2)}</p>
             <canvas id="dupontATChart" style="max-height:120px"></canvas>
             <div class="mt-4 ml-2 pl-3 border-l border-brand/20">
-              <p class="text-[10px] th-text-d mb-2">&#9492; ${t('breakdown-at')}</p>
+              <p class="text-[10px] th-text-m mb-2">&#9492; ${t('breakdown-at')}</p>
               ${node(t('総資産回転率'), at['現在値'], at['5年変化'], at['5年変化'] > 0 ? '改善' : (at['5年変化'] < 0 ? '悪化' : '横ばい'), 'x')}
               <div class="ml-3 pl-3 border-l border-brand/10 mb-1">
                 ${node(t('固定資産回転率'), (re['固定資産回転率']||{})['現在値'], (re['固定資産回転率']||{})['5年変化'], (re['固定資産回転率']||{})['評価'])}
@@ -1441,11 +1441,11 @@
           <div class="p-5 th-bg-2 border" style="border-color:var(--border-s);border-radius:0">
             <div class="flex items-center gap-2 mb-2"><div class="w-2 h-2 bg-amber-500" style="border-radius:0"></div><span class="text-[10px] font-bold uppercase tracking-[0.18em] th-text-m" style="font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif">${t('Financial Leverage')}</span></div>
             <p class="text-2xl font-bold tabular-nums mb-1" style="font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif">${fmtNum(em['現在値'],2)}<span class="text-sm th-text-m">x</span></p>
-            <p class="text-[10px] th-text-d mb-1">${t('Leverage')} = ${t('Total Assets')} / ${t('Equity')}</p>
+            <p class="text-[10px] th-text-m mb-1">${t('Leverage')} = ${t('Total Assets')} / ${t('Equity')}</p>
             <p class="text-[11px] th-text-m mb-3">${t('5Y Change:')} ${fmtNum(em['5年変化'],2)}</p>
             <canvas id="dupontLEVChart" style="max-height:120px"></canvas>
             <div class="mt-4 ml-2 pl-3 border-l border-amber-500/20">
-              <p class="text-[10px] th-text-d mb-2">&#9492; ${t('breakdown-lev')}</p>
+              <p class="text-[10px] th-text-m mb-2">&#9492; ${t('breakdown-lev')}</p>
               ${node(t('財務レバレッジ'), em['現在値'], em['5年変化'], em['5年変化'] > 0 ? '上昇' : (em['5年変化'] < 0 ? '低下' : '横ばい'), 'x')}
               <div class="ml-3 pl-3 border-l border-amber-500/10 mb-1">
                 ${node(t('自己資本比率'), (re['自己資本比率']||{})['現在値'], null, null, '%')}
