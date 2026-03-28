@@ -994,7 +994,7 @@
       // 基準（evaluation criteria）
       let basisHtml = '';
       if (basis) {
-        basisHtml = `<div class="mt-1"><span class="text-[10px] th-text-d" style="opacity:0.7">📐 ${basis}</span></div>`;
+        basisHtml = `<div class="mt-1"><span class="text-[10px] th-text-m">📐 ${basis}</span></div>`;
       }
       return `<div class="card-hover sortable-item flex items-center justify-between p-4 rounded-xl th-bg-1 border ${clickable}" style="border-color:var(--border)" draggable="true" ${onclick}>
         <div class="flex items-center gap-3">
@@ -1034,7 +1034,7 @@
         <div class="metric-bar mb-2"><div class="metric-bar-fill" style="width:${pct}%; background:${accent}"></div></div>
         <p class="text-[11px] th-text-m mb-2">${eval_text}</p>
         ${subHtml ? `<div class="border-t pt-2 mt-1" style="border-color:var(--border)">${subHtml}</div>` : ''}
-        <p class="text-[10px] th-text-d mt-1">${t('Weight:')} ${weight}</p>
+        <p class="text-[10px] th-text-m mt-1">${t('Weight:')} ${weight}</p>
       </div>`;
     }
 
@@ -1238,7 +1238,7 @@
         const arrow = isUp ? '&#9650;' : '&#9660;';
         const catLabel = item['カテゴリ'] === 'ROE要因' ? 'ROE' : 'PER';
         const catColor = item['カテゴリ'] === 'ROE要因' ? 'bg-blue-500/20 text-blue-400' : 'bg-brand/20 text-brand';
-        const roeText = roeContrib !== null ? `<p class="text-[10px] th-text-d tabular-nums">ROE ${roeContrib > 0 ? '+' : ''}${fmtNum(roeContrib,2)}pt</p>` : '';
+        const roeText = roeContrib !== null ? `<p class="text-[10px] th-text-m tabular-nums">ROE ${roeContrib > 0 ? '+' : ''}${fmtNum(roeContrib,2)}pt</p>` : '';
 
         return `<div class="flex items-center gap-4 p-4 border ${bgColor} transition-all hover:scale-[1.01]" style="border-radius:0">
           <span class="w-8 h-8 flex items-center justify-center text-xs font-bold ${badgeColor}" style="border-radius:0;font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif">${item['順位']}</span>
@@ -1267,7 +1267,7 @@
       const pbrEvalColor = pbrEval === '割安' || pbrEval === 'やや割安' ? '#22c55e'
         : pbrEval === '適正水準' ? '#3b82f6'
         : pbrEval === 'やや割高' ? '#f59e0b' : '#ef4444';
-      const pbrEvalBadge = pbrEval ? `<div class="mt-2"><span class="text-[10px] px-3 py-1 font-bold tracking-wider uppercase" style="background:${pbrEvalColor}20;color:${pbrEvalColor};border-radius:0;font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif">${pbrEval}</span><span class="text-[10px] th-text-d ml-2">${t('適正レンジ')}: ${pbrRange}</span></div>` : '';
+      const pbrEvalBadge = pbrEval ? `<div class="mt-2"><span class="text-[10px] px-3 py-1 font-bold tracking-wider uppercase" style="background:${pbrEvalColor}20;color:${pbrEvalColor};border-radius:0;font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif">${pbrEval}</span><span class="text-[10px] th-text-m ml-2">${t('適正レンジ')}: ${pbrRange}</span></div>` : '';
 
       // PBR 5Y change summary
       const pbrChgVal = pbr.pbr_change;
@@ -1276,7 +1276,7 @@
       return `
         <div class="mt-12 pt-8 border-t" style="border-color:var(--border)">
           <div class="text-center mb-6">
-            <p class="text-[10px] uppercase tracking-[0.2em] th-text-d mb-2">${t('PBR Driver Analysis')}</p>
+            <p class="text-[10px] uppercase tracking-[0.2em] th-text-m mb-2">${t('PBR Driver Analysis')}</p>
             <p class="text-lg font-bold th-text mb-1">${pbrChgText}</p>
             <p class="text-xs th-text-m">PBR = ROE × PER / 100 — ${t('5年間の各要因がPBRに与えた影響を分解')}</p>
             ${pbrEvalBadge}
@@ -1340,7 +1340,7 @@
       $('roeTree').innerHTML = `
         <!-- ===== PBR = ROE × PER (top level) ===== -->
         <div class="text-center mb-6">
-          <p class="text-[10px] uppercase tracking-[0.2em] th-text-d mb-2">${t('PBR Decomposition')}</p>
+          <p class="text-[10px] uppercase tracking-[0.2em] th-text-m mb-2">${t('PBR Decomposition')}</p>
           <div class="inline-block px-14 py-6 th-bg-2 border-2" style="border-color:var(--brand);border-radius:0">
             <p class="text-[10px] uppercase tracking-[0.2em] th-text-m mb-1" style="font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif">PBR</p>
             <p class="text-5xl font-bold tabular-nums" style="color:var(--brand);font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif">${fmtNum(pbrVal,2)}<span class="text-2xl th-text-m">x</span></p>
@@ -1388,7 +1388,7 @@
 
         <!-- ===== ROE DuPont Decomposition ===== -->
         <div class="mb-6">
-          <p class="text-[10px] uppercase tracking-[0.2em] th-text-d mb-2 text-center">${t('ROE DuPont Decomposition')}</p>
+          <p class="text-[10px] uppercase tracking-[0.2em] th-text-m mb-2 text-center">${t('ROE DuPont Decomposition')}</p>
           <div class="flex justify-center gap-4 text-[11px] th-text-m mb-6">
             <span>ROE <strong class="th-text">${fmtNum(roeVal,1)}%</strong></span>
             <span>=</span>
@@ -1418,7 +1418,7 @@
               ${node(t('金利負担率'), (re['金利負担率']||{})['現在値'], (re['金利負担率']||{})['5年変化pt'], (re['金利負担率']||{})['評価'], '%')}
               ${node(t('営業外損益率'), (re['営業外損益率']||{})['現在値'], (re['営業外損益率']||{})['5年変化pt'], (re['営業外損益率']||{})['評価'], '%')}
               ${node(t('税引後利益率'), (re['税引後利益率']||{})['現在値'], (re['税引後利益率']||{})['5年変化pt'], (re['税引後利益率']||{})['評価'], '%')}
-              ${re['純利益率検算'] ? `<p class="text-[9px] th-text-d mt-1">${t('検算')}: ${fmtNum((re['純利益率検算']||{})['計算値'],2)}% vs ${t('実績')} ${fmtNum((re['純利益率検算']||{})['実績値'],2)}%</p>` : ''}
+              ${re['純利益率検算'] ? `<p class="text-[9px] th-text-m mt-1">${t('検算')}: ${fmtNum((re['純利益率検算']||{})['計算値'],2)}% vs ${t('実績')} ${fmtNum((re['純利益率検算']||{})['実績値'],2)}%</p>` : ''}
               <canvas id="dupontGapChart" class="mt-3" style="max-height:100px"></canvas>
             </div>
           </div>
@@ -2049,8 +2049,8 @@
             <input type="checkbox" class="metric-cb accent-brand" data-key="${m.key}" ${checked}>
             <div>
               <span class="text-xs font-medium th-text-s">${label}</span>
-              <span class="text-[10px] th-text-d">${m.unit}${latestStr}</span>
-              <span class="text-[9px] th-text-d ml-1">${m.points}pts</span>
+              <span class="text-[10px] th-text-m">${m.unit}${latestStr}</span>
+              <span class="text-[9px] th-text-m ml-1">${m.points}pts</span>
             </div>
           </label>`;
         });
