@@ -169,7 +169,7 @@
     .score-card-accent::before { content:''; position:absolute; top:0; left:0; right:0; height:2px; background:#d5001c; transform:scaleX(0); transform-origin:left; transition:transform 0.4s var(--ease-luxury); }
     .score-card-accent:hover::before { transform:scaleX(1); }
 
-    /* Hero background image */
+    /* Hero background image — upload page only, semi-transparent */
     .hero-bg {
       position: relative;
       overflow: hidden;
@@ -179,6 +179,7 @@
       position: absolute;
       inset: 0;
       background: url('https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=1920&q=80') center/cover no-repeat;
+      opacity: 0.18;
       transition: opacity 1.2s var(--ease-base);
     }
     .hero-bg > * { position: relative; z-index: 1; }
