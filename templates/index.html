@@ -1240,19 +1240,19 @@
         const catColor = item['カテゴリ'] === 'ROE要因' ? 'bg-blue-500/20 text-blue-400' : 'bg-brand/20 text-brand';
         const roeText = roeContrib !== null ? `<p class="text-[10px] th-text-d tabular-nums">ROE ${roeContrib > 0 ? '+' : ''}${fmtNum(roeContrib,2)}pt</p>` : '';
 
-        return `<div class="flex items-center gap-4 p-4 rounded-xl border ${bgColor} transition-all hover:scale-[1.01]">
-          <span class="w-8 h-8 rounded-lg flex items-center justify-center text-sm font-black ${badgeColor}">${item['順位']}</span>
+        return `<div class="flex items-center gap-4 p-4 border ${bgColor} transition-all hover:scale-[1.01]" style="border-radius:0">
+          <span class="w-8 h-8 flex items-center justify-center text-xs font-bold ${badgeColor}" style="border-radius:0;font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif">${item['順位']}</span>
           <div class="flex-1 min-w-0">
             <div class="flex items-center gap-2 mb-1">
-              <span class="text-sm font-semibold th-text">${item['指標']}</span>
-              <span class="text-[9px] px-1.5 py-0.5 rounded ${catColor} font-bold">${catLabel}</span>
+              <span class="text-xs font-semibold th-text">${item['指標']}</span>
+              <span class="text-[9px] px-1.5 py-0.5 ${catColor} font-bold tracking-wider" style="border-radius:0">${catLabel}</span>
             </div>
-            <div class="w-full h-2 rounded-full th-bg-3 overflow-hidden">
-              <div class="h-full rounded-full transition-all" style="width:${barWidth}%;background:${color}"></div>
+            <div class="w-full h-1.5 th-bg-3 overflow-hidden" style="border-radius:0">
+              <div class="h-full transition-all" style="width:${barWidth}%;background:${color};border-radius:0"></div>
             </div>
           </div>
           <div class="text-right shrink-0 min-w-[120px]">
-            <p class="text-sm font-bold tabular-nums ${textColor}">${arrow} PBR ${pbrImpact > 0 ? '+' : ''}${fmtNum(pbrImpact,3)}x</p>
+            <p class="text-xs font-bold tabular-nums ${textColor}" style="font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif">${arrow} PBR ${pbrImpact > 0 ? '+' : ''}${fmtNum(pbrImpact,3)}x</p>
             ${roeText}
           </div>
         </div>`;
@@ -1267,7 +1267,7 @@
       const pbrEvalColor = pbrEval === '割安' || pbrEval === 'やや割安' ? '#22c55e'
         : pbrEval === '適正水準' ? '#3b82f6'
         : pbrEval === 'やや割高' ? '#f59e0b' : '#ef4444';
-      const pbrEvalBadge = pbrEval ? `<div class="mt-2"><span class="text-xs px-3 py-1 rounded-full font-bold" style="background:${pbrEvalColor}20;color:${pbrEvalColor}">${pbrEval}</span><span class="text-[10px] th-text-d ml-2">${t('適正レンジ')}: ${pbrRange}</span></div>` : '';
+      const pbrEvalBadge = pbrEval ? `<div class="mt-2"><span class="text-[10px] px-3 py-1 font-bold tracking-wider uppercase" style="background:${pbrEvalColor}20;color:${pbrEvalColor};border-radius:0;font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif">${pbrEval}</span><span class="text-[10px] th-text-d ml-2">${t('適正レンジ')}: ${pbrRange}</span></div>` : '';
 
       // PBR 5Y change summary
       const pbrChgVal = pbr.pbr_change;
@@ -1309,7 +1309,7 @@
       if (v === undefined || v === null) return '';
       if (invert) v = 1 - v;
       if (multiply) v = v * multiply;
-      return `<span class="text-[10px] px-2 py-0.5 rounded-full" style="background:rgba(59,130,246,0.15);color:#3b82f6">${t('Industry Avg')}: ${fmtNum(v, unit === '%' ? 1 : 2)}${unit}</span>`;
+      return `<span class="text-[9px] px-2 py-0.5 tracking-wider" style="background:rgba(59,130,246,0.15);color:#3b82f6;border-radius:0;font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif">${t('Industry Avg')}: ${fmtNum(v, unit === '%' ? 1 : 2)}${unit}</span>`;
     }
 
     function renderROETree(re, r) {
@@ -1317,8 +1317,8 @@
         const clr = grade==='改善'?'#22c55e':(grade==='悪化'?'#ef4444':'#9ca3af');
         const arrow = grade==='改善'?'&#9650;':(grade==='悪化'?'&#9660;':'');
         const bb = benchField ? benchBadge(benchField, benchMul, unit, benchInvert) : '';
-        return `<div class="flex items-center justify-between p-3 rounded-lg th-bg-2 border mb-2" style="border-color:var(--border)">
-          <div class="flex items-center gap-2"><span class="text-xs font-medium th-text-s">${label}</span>${bb}</div>
+        return `<div class="flex items-center justify-between p-3 th-bg-2 border mb-2" style="border-color:var(--border);border-radius:0">
+          <div class="flex items-center gap-2"><span class="text-[11px] font-medium th-text-s">${label}</span>${bb}</div>
           <div class="flex items-center gap-3 tabular-nums">
             <span class="text-xs font-bold th-text">${fmtNum(val,2)}${unit}</span>
             ${chg!==null&&chg!==undefined?`<span class="text-[11px] font-semibold" style="color:${clr}">${arrow} ${fmtNum(chg,2)}</span>`:''}
@@ -1341,31 +1341,31 @@
         <!-- ===== PBR = ROE × PER (top level) ===== -->
         <div class="text-center mb-6">
           <p class="text-[10px] uppercase tracking-[0.2em] th-text-d mb-2">${t('PBR Decomposition')}</p>
-          <div class="inline-block px-14 py-6 th-bg-2 border-2 rounded-2xl" style="border-color:var(--brand)">
-            <p class="text-[10px] uppercase tracking-[0.2em] th-text-m mb-1">PBR</p>
-            <p class="text-5xl font-black tabular-nums" style="color:var(--brand)">${fmtNum(pbrVal,2)}<span class="text-2xl th-text-m">x</span></p>
+          <div class="inline-block px-14 py-6 th-bg-2 border-2" style="border-color:var(--brand);border-radius:0">
+            <p class="text-[10px] uppercase tracking-[0.2em] th-text-m mb-1" style="font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif">PBR</p>
+            <p class="text-5xl font-bold tabular-nums" style="color:var(--brand);font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif">${fmtNum(pbrVal,2)}<span class="text-2xl th-text-m">x</span></p>
             <p class="text-xs mt-2">${pbrData['判定']==='○'?'<span class="text-green-500">適正水準</span>':pbrData['判定']==='◎'?'<span class="text-green-500">割安</span>':pbrData['判定']==='▲'?'<span class="text-amber-500">やや割高</span>':pbrData['判定']==='×'?'<span class="text-red-500">割高</span>':'<span class="th-text-m">—</span>'}</p>
             <p class="text-[11px] th-text-m mt-1">${t('5Y Change:')} <span class="${pbrChg>0?'text-green-400':pbrChg<0?'text-red-400':'th-text-m'}">${pbrChg!==null?((pbrChg>0?'+':'')+fmtNum(pbrChg,2)+'x'):'—'}</span></p>
             ${benchBadge('pbr', null, 'x')}
           </div>
         </div>
         <div class="flex justify-center items-center gap-3 mb-8 text-sm th-text-m">
-          <span class="px-4 py-2 th-bg-2 border rounded-lg font-bold" style="border-color:var(--border)">PBR <strong class="th-text">${fmtNum(pbrVal,2)}x</strong></span>
+          <span class="px-4 py-2 th-bg-2 border font-bold text-xs tracking-wider" style="border-color:var(--border);border-radius:0;font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif">PBR <strong class="th-text">${fmtNum(pbrVal,2)}x</strong></span>
           <span class="text-lg">=</span>
-          <span class="px-4 py-2 th-bg-2 border rounded-lg font-bold cursor-pointer hover:border-brand/50 transition-all" style="border-color:var(--border)" onclick="showItemChart('roe','ROE')">ROE <strong class="th-text">${fmtNum(roeVal,1)}%</strong></span>
-          <span class="text-lg">×</span>
-          <span class="px-4 py-2 th-bg-2 border rounded-lg font-bold cursor-pointer hover:border-brand/50 transition-all" style="border-color:var(--border)" onclick="showItemChart('pe_ratio','PER')">PER <strong class="th-text">${fmtNum(perVal,1)}x</strong></span>
+          <span class="px-4 py-2 th-bg-2 border font-bold text-xs tracking-wider cursor-pointer hover:border-brand/50 transition-all" style="border-color:var(--border);border-radius:0;font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif" onclick="showItemChart('roe','ROE')">ROE <strong class="th-text">${fmtNum(roeVal,1)}%</strong></span>
+          <span class="text-lg">&times;</span>
+          <span class="px-4 py-2 th-bg-2 border font-bold text-xs tracking-wider cursor-pointer hover:border-brand/50 transition-all" style="border-color:var(--border);border-radius:0;font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif" onclick="showItemChart('pe_ratio','PER')">PER <strong class="th-text">${fmtNum(perVal,1)}x</strong></span>
         </div>
 
         <!-- ===== PER & ROE side by side ===== -->
         <div class="grid grid-cols-2 gap-8 mb-10">
           <!-- PER (Market Expectation) -->
-          <div class="p-6 th-bg-2 border rounded-2xl" style="border-color:var(--border-s)">
+          <div class="p-6 th-bg-2 border" style="border-color:var(--border-s);border-radius:0">
             <div class="flex items-center gap-2 mb-2">
-              <div class="w-3 h-3 bg-brand rounded-full"></div>
-              <span class="text-xs font-bold uppercase tracking-[0.15em] th-text-m">${t('Market Expectation')}</span>
+              <div class="w-3 h-3 bg-brand" style="border-radius:0"></div>
+              <span class="text-[10px] font-bold uppercase tracking-[0.18em] th-text-m" style="font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif">${t('Market Expectation')}</span>
             </div>
-            <p class="text-3xl font-black tabular-nums mb-1">${fmtNum(perVal,1)}<span class="text-lg th-text-m">x</span></p>
+            <p class="text-3xl font-bold tabular-nums mb-1" style="font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif">${fmtNum(perVal,1)}<span class="text-lg th-text-m">x</span></p>
             <p class="text-[10px] th-text-d mb-2">${t('per-desc')}</p>
             <div class="mb-2">${benchBadge('pe_aggregate_all', null, 'x')}</div>
             <p class="text-[11px] th-text-m mb-3">${t('5Y Change:')} <span class="${perChg>0?'text-green-400':perChg<0?'text-red-400':'th-text-m'}">${perChg!==null?((perChg>0?'+':'')+fmtNum(perChg,1)+'x'):'—'}</span></p>
@@ -1373,12 +1373,12 @@
           </div>
 
           <!-- ROE (Profitability) -->
-          <div class="p-6 th-bg-2 border rounded-2xl" style="border-color:var(--border-s)">
+          <div class="p-6 th-bg-2 border" style="border-color:var(--border-s);border-radius:0">
             <div class="flex items-center gap-2 mb-2">
-              <div class="w-3 h-3 bg-green-500 rounded-full"></div>
-              <span class="text-xs font-bold uppercase tracking-[0.15em] th-text-m">${t('Profitability (ROE)')}</span>
+              <div class="w-3 h-3 bg-green-500" style="border-radius:0"></div>
+              <span class="text-[10px] font-bold uppercase tracking-[0.18em] th-text-m" style="font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif">${t('Profitability (ROE)')}</span>
             </div>
-            <p class="text-3xl font-black tabular-nums mb-1">${fmtNum(roeVal,1)}<span class="text-lg th-text-m">%</span></p>
+            <p class="text-3xl font-bold tabular-nums mb-1" style="font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif">${fmtNum(roeVal,1)}<span class="text-lg th-text-m">%</span></p>
             <p class="text-[10px] th-text-d mb-1">${t('roe-desc')}</p>
             <div class="mb-1">${benchBadge(benchmarkRegion === 'japan' ? 'roe_japan' : 'roe_global', 100, '%')}</div>
             <p class="text-[11px] th-text-m mb-3">${t('5Y Change:')} ${fmtNum(roe['5年変化pt'],1)}pt</p>
@@ -1400,9 +1400,9 @@
           </div>
         </div>
         <div class="grid grid-cols-3 gap-8">
-          <div class="p-5 th-bg-2 border rounded-2xl" style="border-color:var(--border-s)">
-            <div class="flex items-center gap-2 mb-2"><div class="w-2 h-2 bg-blue-500 rounded-full"></div><span class="text-xs font-bold uppercase tracking-[0.15em] th-text-m">${t('Net Profit Margin')}</span></div>
-            <p class="text-2xl font-black tabular-nums mb-1">${fmtNum(npm['現在値'],1)}<span class="text-sm th-text-m">%</span></p>
+          <div class="p-5 th-bg-2 border" style="border-color:var(--border-s);border-radius:0">
+            <div class="flex items-center gap-2 mb-2"><div class="w-2 h-2 bg-blue-500" style="border-radius:0"></div><span class="text-[10px] font-bold uppercase tracking-[0.18em] th-text-m" style="font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif">${t('Net Profit Margin')}</span></div>
+            <p class="text-2xl font-bold tabular-nums mb-1" style="font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif">${fmtNum(npm['現在値'],1)}<span class="text-sm th-text-m">%</span></p>
             <p class="text-[10px] th-text-d mb-1">${t('Net Margin')} = ${t('Net Income')} / ${t('Revenue')}</p>
             ${benchBadge('net_margin', 100, '%')}
             <p class="text-[11px] th-text-m mb-3">${t('5Y Change:')} ${fmtNum(npm['5年変化pt'],1)}pt</p>
@@ -1422,9 +1422,9 @@
               <canvas id="dupontGapChart" class="mt-3" style="max-height:100px"></canvas>
             </div>
           </div>
-          <div class="p-5 th-bg-2 border rounded-2xl" style="border-color:var(--border-s)">
-            <div class="flex items-center gap-2 mb-2"><div class="w-2 h-2 bg-brand rounded-full"></div><span class="text-xs font-bold uppercase tracking-[0.15em] th-text-m">${t('Asset Turnover')}</span></div>
-            <p class="text-2xl font-black tabular-nums mb-1">${fmtNum(at['現在値'],2)}<span class="text-sm th-text-m">x</span></p>
+          <div class="p-5 th-bg-2 border" style="border-color:var(--border-s);border-radius:0">
+            <div class="flex items-center gap-2 mb-2"><div class="w-2 h-2 bg-brand" style="border-radius:0"></div><span class="text-[10px] font-bold uppercase tracking-[0.18em] th-text-m" style="font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif">${t('Asset Turnover')}</span></div>
+            <p class="text-2xl font-bold tabular-nums mb-1" style="font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif">${fmtNum(at['現在値'],2)}<span class="text-sm th-text-m">x</span></p>
             <p class="text-[10px] th-text-d mb-1">${t('Asset Turnover')} = ${t('Revenue')} / ${t('Total Assets')}</p>
             <p class="text-[11px] th-text-m mb-3">${t('5Y Change:')} ${fmtNum(at['5年変化'],2)}</p>
             <canvas id="dupontATChart" style="max-height:120px"></canvas>
@@ -1438,9 +1438,9 @@
               </div>
             </div>
           </div>
-          <div class="p-5 th-bg-2 border rounded-2xl" style="border-color:var(--border-s)">
-            <div class="flex items-center gap-2 mb-2"><div class="w-2 h-2 bg-amber-500 rounded-full"></div><span class="text-xs font-bold uppercase tracking-[0.15em] th-text-m">${t('Financial Leverage')}</span></div>
-            <p class="text-2xl font-black tabular-nums mb-1">${fmtNum(em['現在値'],2)}<span class="text-sm th-text-m">x</span></p>
+          <div class="p-5 th-bg-2 border" style="border-color:var(--border-s);border-radius:0">
+            <div class="flex items-center gap-2 mb-2"><div class="w-2 h-2 bg-amber-500" style="border-radius:0"></div><span class="text-[10px] font-bold uppercase tracking-[0.18em] th-text-m" style="font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif">${t('Financial Leverage')}</span></div>
+            <p class="text-2xl font-bold tabular-nums mb-1" style="font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif">${fmtNum(em['現在値'],2)}<span class="text-sm th-text-m">x</span></p>
             <p class="text-[10px] th-text-d mb-1">${t('Leverage')} = ${t('Total Assets')} / ${t('Equity')}</p>
             <p class="text-[11px] th-text-m mb-3">${t('5Y Change:')} ${fmtNum(em['5年変化'],2)}</p>
             <canvas id="dupontLEVChart" style="max-height:120px"></canvas>
