@@ -116,10 +116,15 @@ def analyze():
             from analyzer import generate_dynamic_thresholds
             result['dynamic_thresholds'] = generate_dynamic_thresholds(benchmark)
         return jsonify(result)
+    except ImportError as e:
+        return jsonify({'error': f'必要なライブラリが不足しています: {str(e)}'}), 500
     except Exception as e:
         import traceback
         traceback.print_exc()
-        return jsonify({'error': f'分析中にエラーが発生しました: {str(e)}'}), 500
+        err_msg = str(e)
+        if 'openpyxl does not support' in err_msg or '.xls' in err_msg:
+            return jsonify({'error': '.xlsファイルの読み込みに失敗しました。xlrdライブラリをインストールしてください。'}), 500
+        return jsonify({'error': f'分析中にエラーが発生しました: {err_msg}'}), 500
 
 
 @app.route('/api/sample')

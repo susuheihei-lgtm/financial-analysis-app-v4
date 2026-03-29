@@ -1,9 +1,471 @@
 """
 Excelファイルからstock_data.json形式のデータを抽出するパーサー
 シートが不足していても利用可能なデータだけで分析を行う
+.xls（旧形式）および日本語ラベルの縦型レイアウトにも対応
 """
+import os
 import openpyxl
+try:
+    import xlrd
+    HAS_XLRD = True
+except ImportError:
+    HAS_XLRD = False
 
+
+# ---------- xlrd → openpyxl 互換アダプタ ----------
+
+class _XlrdCellAdapter:
+    """xlrdのセル値をopenpyxlのcell.valueインターフェースで返す"""
+    def __init__(self, value):
+        self.value = value
+
+
+class _XlrdSheetAdapter:
+    """xlrdのシートをopenpyxlのワークシート互換で返す"""
+    def __init__(self, xlrd_sheet):
+        self._sheet = xlrd_sheet
+        self.max_row = xlrd_sheet.nrows
+        self.max_column = xlrd_sheet.ncols
+        self.title = xlrd_sheet.name
+
+    def cell(self, row, column):
+        try:
+            v = self._sheet.cell_value(row - 1, column - 1)
+            if v == '':
+                v = None
+            return _XlrdCellAdapter(v)
+        except IndexError:
+            return _XlrdCellAdapter(None)
+
+
+class _XlrdWorkbookAdapter:
+    """xlrdのワークブックをopenpyxl互換で返す"""
+    def __init__(self, xlrd_wb):
+        self._wb = xlrd_wb
+        self.sheetnames = xlrd_wb.sheet_names()
+
+    def __getitem__(self, name):
+        return _XlrdSheetAdapter(self._wb.sheet_by_name(name))
+
+
+def _load_workbook(filepath):
+    """拡張子に応じてopenpyxlまたはxlrdでワークブックを開く"""
+    ext = os.path.splitext(filepath)[1].lower()
+    if ext == '.xls':
+        if not HAS_XLRD:
+            raise ImportError(
+                '.xlsファイルの読み込みにはxlrdが必要です。'
+                'pip install xlrd でインストールしてください。'
+            )
+        wb = xlrd.open_workbook(filepath)
+        return _XlrdWorkbookAdapter(wb)
+    else:
+        return openpyxl.load_workbook(filepath, data_only=True)
+
+
+# ---------- 日本語縦型レイアウト検出・パーサー ----------
+
+# セクションヘッダー
+_JP_SECTION_HEADERS = {'業績', '財務', 'CF', 'キャッシュフロー', '配当', '株価指標'}
+
+# 日本語ラベル → 内部キーのマッピング
+_JP_LABEL_MAP = {
+    # 業績セクション
+    '売上高': 'revenue',
+    '営業利益': 'op_income',
+    '経常利益': 'ordinary_income',
+    '純利益': 'net_income',
+    '当期純利益': 'net_income',
+    'EPS': 'eps',
+    '一株益': 'eps',
+    '1株益': 'eps',
+    'ROE': 'roe',
+    'ROA': 'roa',
+    '営業利益率': 'op_margin_pct',
+    '営業CFマージン': 'ocf_margin_pct',
+    # 財務セクション
+    '総資産': 'total_assets',
+    '純資産': 'net_assets',
+    '株主資本': 'total_equity',
+    '自己資本': 'total_equity',
+    '利益剰余金': 'retained_earnings',
+    '短期借入金': 'short_term_debt',
+    '長期借入金': 'long_term_debt',
+    '有利子負債': 'total_debt',
+    'BPS': 'bps',
+    '一株純資産': 'bps',
+    '1株純資産': 'bps',
+    '自己資本比率': 'equity_ratio_pct',
+    # CFセクション
+    '営業CF': 'ocf',
+    '投資CF': 'investing_cf',
+    '財務CF': 'financing_cf',
+    '設備投資': 'capex',
+    '現金同等物': 'cash',
+    '現金及び現金同等物': 'cash',
+    'フリーCF': 'fcf',
+    # 配当セクション
+    '一株配当': 'dividend_per_share',
+    '1株配当': 'dividend_per_share',
+    '配当性向': 'payout_ratio_pct',
+    '総還元性向': 'total_return_ratio',
+    '剰余金の配当': 'dividend_total',
+    '自社株買い': 'buyback',
+    '純資産配当率': 'doe',
+}
+
+
+def _is_japanese_vertical_layout(wb):
+    """日本語の縦型レイアウト（1シートに業績・財務・CF等が並ぶ）かどうかを判定"""
+    if len(wb.sheetnames) > 4:
+        return False
+    ws = wb[wb.sheetnames[0]]
+    found_sections = set()
+    for r in range(1, min(ws.max_row + 1, 50)):
+        val = ws.cell(row=r, column=1).value
+        if val is not None and str(val).strip() in _JP_SECTION_HEADERS:
+            found_sections.add(str(val).strip())
+    return len(found_sections) >= 2
+
+
+def _parse_numeric(v):
+    """値を数値に変換。'-'や空文字、'（予想）'等はNoneにする"""
+    if v is None:
+        return None
+    if isinstance(v, (int, float)):
+        return v
+    s = str(v).strip().replace(',', '')
+    if s in ('-', '－', '', '―', 'N/A', 'n/a'):
+        return None
+    try:
+        return float(s)
+    except (ValueError, TypeError):
+        return None
+
+
+def _parse_japanese_vertical(wb):
+    """日本語縦型レイアウトのExcelをパースしてanalyzer用のdictとts_dataを返す"""
+    ws = wb[wb.sheetnames[0]]
+
+    # 全行を読み込み
+    rows = []
+    for r in range(1, ws.max_row + 1):
+        row = []
+        for c in range(1, ws.max_column + 1):
+            row.append(ws.cell(row=r, column=c).value)
+        rows.append(row)
+
+    # 会社名の検出（1行目）
+    company_name = str(rows[0][0]).strip() if rows and rows[0][0] else ''
+
+    # セクションごとにデータを読み取る
+    # 各セクションはヘッダー行の次にラベル行（年度, 売上高, ...）、その後にデータ行が続く
+    raw_data = {}  # key -> [値のリスト（古い→新しい順）]
+    dates_by_section = {}
+    current_section = None
+    header_row = None
+    skip_forecast = False
+
+    for i, row in enumerate(rows):
+        first_cell = str(row[0]).strip() if row[0] is not None else ''
+
+        # セクションヘッダーを検出
+        if first_cell in _JP_SECTION_HEADERS:
+            current_section = first_cell
+            header_row = None
+            continue
+
+        # セクション内のラベル行を検出（年度, 売上高, ...のような行）
+        if current_section and header_row is None:
+            if first_cell in ('年度', '決算期', '決算年度'):
+                header_row = row
+                continue
+            continue
+
+        # データ行を処理
+        if current_section and header_row is not None:
+            # 空行でセクション終了
+            if not first_cell:
+                current_section = None
+                header_row = None
+                continue
+
+            # 予想行はスキップ
+            last_cell = row[-1] if row else None
+            if last_cell and '予想' in str(last_cell):
+                continue
+
+            # 年度を取得
+            date_val = first_cell
+            if current_section not in dates_by_section:
+                dates_by_section[current_section] = []
+            dates_by_section[current_section].append(date_val)
+
+            # 各列のデータを対応するキーに格納
+            for col_idx in range(1, len(header_row)):
+                label = str(header_row[col_idx]).strip() if header_row[col_idx] else ''
+                if not label or label == '':
+                    continue
+                key = _JP_LABEL_MAP.get(label)
+                if key is None:
+                    continue
+                val = _parse_numeric(row[col_idx] if col_idx < len(row) else None)
+                if key not in raw_data:
+                    raw_data[key] = []
+                raw_data[key].append(val)
+
+    # 日付を取得（業績セクションを優先）
+    dates_raw = dates_by_section.get('業績', dates_by_section.get(
+        list(dates_by_section.keys())[0] if dates_by_section else '', []))
+
+    # データは古い→新しい順で並んでいるので、新しい順に反転
+    for key in raw_data:
+        raw_data[key] = list(reversed(raw_data[key]))
+    dates_raw = list(reversed(dates_raw))
+
+    # ヘルパー
+    def g(key, idx):
+        lst = raw_data.get(key, [])
+        return lst[idx] if idx < len(lst) else None
+
+    def g_list(key):
+        return raw_data.get(key, [])
+
+    # ROE/ROAは%値として直接入っている場合がある（10.86 = 10.86%）
+    # 既に%単位なのでto_pctは不要
+    roe_list = g_list('roe')
+    roa_list = g_list('roa')
+    roe_now = g('roe', 0)
+    roe_3y = g('roe', 2)
+    roe_5y = g('roe', 4)
+    roa_now = g('roa', 0)
+    roa_3y = g('roa', 2)
+    roa_5y = g('roa', 4)
+    roe_growth = roe_now - roe_5y if (roe_now is not None and roe_5y is not None) else None
+
+    # 自己資本比率（%値で直接入っている）
+    equity_ratio = g('equity_ratio_pct', 0)
+    equity_ratio_5y = g('equity_ratio_pct', 4)
+    # equity_ratio_pctがなければ、株主資本/総資産から計算
+    if equity_ratio is None and g('total_equity', 0) and g('total_assets', 0):
+        equity_ratio = (g('total_equity', 0) / g('total_assets', 0)) * 100
+    if equity_ratio_5y is None and g('total_equity', 4) and g('total_assets', 4):
+        equity_ratio_5y = (g('total_equity', 4) / g('total_assets', 4)) * 100
+
+    # 営業利益率の計算
+    revenue = g_list('revenue')
+    op_income = g_list('op_income')
+    net_income = g_list('net_income')
+    op_margin_vals = []
+    if g_list('op_margin_pct'):
+        op_margin_vals = g_list('op_margin_pct')[:5]
+    elif op_income and revenue:
+        for i in range(min(5, len(op_income))):
+            oi = g('op_income', i)
+            rev = g('revenue', i)
+            if oi is not None and rev and rev != 0:
+                op_margin_vals.append(round(oi / rev * 100, 2))
+            else:
+                op_margin_vals.append(None)
+
+    # FCF計算（営業CF - 設備投資の絶対値）
+    ocf_list = g_list('ocf')
+    capex_list = g_list('capex')
+    fcf_list = g_list('fcf')
+    if not fcf_list and ocf_list and capex_list:
+        fcf_list = []
+        for i in range(min(len(ocf_list), len(capex_list))):
+            o = ocf_list[i]
+            c = capex_list[i]
+            if o is not None and c is not None:
+                fcf_list.append(o + c)  # capexは通常マイナス値
+            else:
+                fcf_list.append(None)
+
+    # 配当性向（%値）
+    payout_pct = g('payout_ratio_pct', 0)
+    payout_pct_5y = g('payout_ratio_pct', 4)
+
+    # NOPAT
+    nopat = g('op_income', 0) * 0.75 if g('op_income', 0) else None
+    nopat_5y = g('op_income', 4) * 0.75 if g('op_income', 4) else None
+
+    data = {
+        "company": company_name,
+        "ticker": "",
+        "industry": "製造・サービス",
+
+        "revenue": [g('revenue', i) for i in range(min(5, len(revenue)))],
+        "fcf": [fcf_list[i] if i < len(fcf_list) else None for i in range(min(5, len(fcf_list)))],
+        "eps": [g('eps', i) for i in range(min(5, len(g_list('eps'))))],
+
+        "roe": [roe_now, roe_3y, roe_5y],
+        "roe_growth_rate": roe_growth,
+        "roa": [roa_now, roa_3y, roa_5y],
+
+        "equity_ratio": equity_ratio,
+        "equity_ratio_5y": equity_ratio_5y,
+        "quick_ratio": None,
+        "quick_ratio_5y": None,
+        "current_ratio": None,
+        "current_ratio_5y": None,
+
+        "operating_cf": [g('ocf', i) for i in range(min(5, len(ocf_list)))],
+        "investing_cf": [g('investing_cf', i) for i in range(min(5, len(g_list('investing_cf'))))],
+        "financing_cf": [g('financing_cf', i) for i in range(min(5, len(g_list('financing_cf'))))],
+        "op_margin": op_margin_vals,
+        "ebitda_margin": None,
+        "ebitda_margin_5y": None,
+
+        "debt_fcf": None,
+        "debt_fcf_5y": None,
+        "nd_ebitda": None,
+        "ev": None,
+        "per": None,
+        "per_5y": None,
+        "pbr": None,
+        "pbr_5y": None,
+
+        "nopat": nopat,
+        "nopat_5y": nopat_5y,
+        "invested_capital": None,
+        "invested_capital_5y": None,
+        "wacc": None,
+
+        "accounts_receivable": None,
+        "accounts_receivable_5y": None,
+        "inventory": None,
+        "inventory_5y": None,
+        "accounts_payable": None,
+        "accounts_payable_5y": None,
+        "cogs": None,
+        "cogs_5y": None,
+        "sga_ratio": None,
+        "sga_ratio_5y": None,
+
+        "total_assets": g('total_assets', 0),
+        "total_assets_5y": g('total_assets', 4),
+        "fixed_assets": None,
+        "fixed_assets_5y": None,
+        "tangible_fixed_assets": None,
+        "tangible_fixed_assets_5y": None,
+        "intangible_fixed_assets": None,
+        "intangible_fixed_assets_5y": None,
+
+        "net_income_val": g('net_income', 0),
+        "net_income_val_5y": g('net_income', 4),
+        "op_income_val": g('op_income', 0),
+        "op_income_val_5y": g('op_income', 4),
+        "interest_exp": None,
+        "interest_exp_5y": None,
+        "other_exp": None,
+        "other_exp_5y": None,
+        "pretax_income": None,
+        "pretax_income_5y": None,
+        "income_tax": None,
+        "income_tax_5y": None,
+        "total_equity": g('total_equity', 0),
+        "total_equity_5y": g('total_equity', 4),
+
+        "dividend_yield": None,
+        "dividend_yield_5y": None,
+        "payout_ratio": payout_pct,
+        "payout_ratio_5y": payout_pct_5y,
+
+        "d1_mgmt_change": "○",
+        "d2_ownership": "○",
+        "d3_esg": "○",
+    }
+
+    # 時系列データ（チャート用）
+    def to_pct(v):
+        return v * 100 if v is not None else None
+
+    date_strs = [str(d)[:4] if d else "" for d in dates_raw]
+    investing_cf_list = g_list('investing_cf')
+    financing_cf_list = g_list('financing_cf')
+    eps_list = g_list('eps')
+
+    ts_data = {
+        "dates": date_strs,
+        "revenue": list(revenue),
+        "net_income": list(net_income),
+        "fcf": list(fcf_list),
+        "eps": list(eps_list),
+        "ocf": list(ocf_list),
+        "investing_cf": list(investing_cf_list),
+        "financing_cf": list(financing_cf_list),
+        "ebitda": [],
+        "total_assets": list(g_list('total_assets')),
+        "total_equity": list(g_list('total_equity')),
+        "total_debt": list(g_list('total_debt')),
+        "roe": list(roe_list),
+        "roa": list(roa_list),
+        "op_margin": list(op_margin_vals) + [None] * max(0, len(revenue) - len(op_margin_vals)),
+        "quick_ratio": [],
+        "current_ratio": [],
+        "equity_ratio": list(g_list('equity_ratio_pct')),
+        "ebitda_margin": [],
+        "debt_fcf": [],
+        "roic": [],
+        "capex": list(capex_list),
+        "sga": [],
+        "da": [],
+        "pe_ratio": [],
+        "pb_ratio": [],
+        "debt_ebitda": [],
+        "nd_ebitda": [],
+        "dividend_yield": [],
+        "payout_ratio": list(g_list('payout_ratio_pct')),
+    }
+
+    # 営業利益率の時系列計算
+    if not ts_data["op_margin"] or all(v is None for v in ts_data["op_margin"]):
+        ts_data["op_margin"] = []
+        for i in range(len(op_income)):
+            oi = op_income[i] if i < len(op_income) else None
+            rev = revenue[i] if i < len(revenue) else None
+            if oi is not None and rev and rev != 0:
+                ts_data["op_margin"].append(round(oi / rev * 100, 2))
+            else:
+                ts_data["op_margin"].append(None)
+
+    # DuPont分解
+    max_len = len(revenue) if revenue else 0
+    total_assets_list = g_list('total_assets')
+    total_equity_list = g_list('total_equity')
+    net_margin_ts = []
+    asset_turnover_ts = []
+    fin_leverage_ts = []
+    for i in range(max_len):
+        ni = net_income[i] if i < len(net_income) else None
+        rev = revenue[i] if i < len(revenue) else None
+        ta = total_assets_list[i] if i < len(total_assets_list) else None
+        eq = total_equity_list[i] if i < len(total_equity_list) else None
+        if ni is not None and rev and rev != 0:
+            net_margin_ts.append(round(ni / rev * 100, 2))
+        else:
+            net_margin_ts.append(None)
+        if rev is not None and ta and ta != 0:
+            asset_turnover_ts.append(round(rev / ta, 3))
+        else:
+            asset_turnover_ts.append(None)
+        if ta is not None and eq and eq != 0:
+            fin_leverage_ts.append(round(ta / eq, 3))
+        else:
+            fin_leverage_ts.append(None)
+
+    ts_data["net_margin"] = net_margin_ts
+    ts_data["asset_turnover"] = asset_turnover_ts
+    ts_data["financial_leverage"] = fin_leverage_ts
+    ts_data["interest_burden"] = []
+    ts_data["nonop_burden"] = []
+    ts_data["tax_burden"] = []
+
+    return data, ts_data
+
+
+# ---------- 既存のヘルパー関数 ----------
 
 def _get_row_data(ws, row_label):
     """指定ラベルの行データを取得（新しい順）"""
@@ -47,10 +509,18 @@ def _try_labels(ws, labels):
     return []
 
 
+# ---------- メインパース関数 ----------
+
 def parse_excel(filepath):
     """Excelファイルをパースしてanalyzer用のdictを返す。
-    シートが存在しない場合はそのシートのデータを空として扱う。"""
-    wb = openpyxl.load_workbook(filepath, data_only=True)
+    .xls/.xlsx両対応。日本語縦型レイアウトも自動検出する。"""
+    wb = _load_workbook(filepath)
+
+    # 日本語縦型レイアウトの検出
+    if _is_japanese_vertical_layout(wb):
+        return _parse_japanese_vertical(wb)
+
+    # --- 以下、従来の英語マルチシート形式 ---
 
     # シートの自動検出（複数の名前パターンに対応）
     inc = _find_sheet(wb, ['Income-Annual', 'Income Statement', 'Income', 'Export', 'income'])
@@ -398,9 +868,9 @@ def parse_excel(filepath):
     ts_data["financial_leverage"] = fin_leverage_ts
 
     # 純利益率の分解時系列: 金利負担率・営業外損益率・税引後利益率
-    interest_burden_ts = []  # (営業利益+金利)/ 営業利益 → Pretax前の金利影響
-    tax_burden_ts = []       # 純利益 / 税引前利益
-    nonop_burden_ts = []     # 税引前利益 / (営業利益+金利)
+    interest_burden_ts = []
+    tax_burden_ts = []
+    nonop_burden_ts = []
     for i in range(max_len):
         oi = g(op_income, i)
         pt = g(pretax_income_list, i)
@@ -408,23 +878,18 @@ def parse_excel(filepath):
         ie = g(interest_exp_list, i)
         oe = g(other_exp_list, i)
 
-        # 金利負担率: 金利控除後 / 営業利益
-        # 営業利益 + 金利(通常マイナスが費用) = 金利控除後利益
         if oi is not None and oi != 0 and ie is not None:
             interest_burden_ts.append(round((oi + ie) / oi * 100, 2))
         elif oi is not None and oi != 0 and pt is not None:
-            # fallback: pretax/op_income includes both interest and other
             interest_burden_ts.append(None)
         else:
             interest_burden_ts.append(None)
 
-        # 営業外損益率: 税引前利益 / (営業利益 + 金利)
         if oi is not None and ie is not None and (oi + ie) != 0 and pt is not None:
             nonop_burden_ts.append(round(pt / (oi + ie) * 100, 2))
         else:
             nonop_burden_ts.append(None)
 
-        # 税引後利益率: 純利益 / 税引前利益
         if pt is not None and pt != 0 and ni is not None:
             tax_burden_ts.append(round(ni / pt * 100, 2))
         else:
@@ -486,7 +951,12 @@ METRIC_CATALOG = [
 
 def scan_available_metrics(filepath):
     """Excelファイルをスキャンし、可視化可能なメトリクス一覧を返す"""
-    wb = openpyxl.load_workbook(filepath, data_only=True)
+    wb = _load_workbook(filepath)
+
+    # 日本語縦型レイアウトの場合は専用処理
+    if _is_japanese_vertical_layout(wb):
+        return _scan_japanese_metrics(wb)
+
     sheet_map = {
         'inc': _find_sheet(wb, ['Income-Annual', 'Income Statement', 'Income', 'Export', 'income']),
         'bs':  _find_sheet(wb, ['Balance-Sheet-Annual', 'Balance Sheet', 'Balance', 'balance']),
@@ -515,9 +985,66 @@ def scan_available_metrics(filepath):
     return available
 
 
+def _scan_japanese_metrics(wb):
+    """日本語縦型レイアウトからメトリクス一覧を返す"""
+    data, _ = _parse_japanese_vertical(wb)
+    # dataの各キーからMETRIC_CATALOGに対応するものを抽出
+    jp_key_to_catalog = {
+        'revenue': 'revenue', 'op_income': 'op_income', 'net_income': 'net_income',
+        'eps': 'eps', 'ocf': 'ocf', 'investing_cf': 'investing_cf',
+        'financing_cf': 'financing_cf', 'total_assets': 'total_assets',
+        'total_equity': 'total_equity',
+    }
+    catalog_map = {m['key']: m for m in METRIC_CATALOG}
+    available = []
+
+    # data辞書からリスト形式のデータを検出
+    check_keys = {
+        'revenue': data.get('revenue', []),
+        'op_income': [data.get('op_income_val')],
+        'net_income': [data.get('net_income_val')],
+        'eps': data.get('eps', []),
+        'ocf': data.get('operating_cf', []),
+        'investing_cf': data.get('investing_cf', []),
+        'financing_cf': data.get('financing_cf', []),
+        'total_assets': [data.get('total_assets')],
+        'total_equity': [data.get('total_equity')],
+        'roe': data.get('roe', []),
+        'roa': data.get('roa', []),
+        'payout_ratio': [data.get('payout_ratio')],
+    }
+
+    for key, vals in check_keys.items():
+        m = catalog_map.get(key)
+        if m is None:
+            continue
+        numeric = [v for v in vals if v is not None and isinstance(v, (int, float))]
+        if numeric:
+            available.append({
+                "key": m['key'],
+                "ja": m['ja'],
+                "en": m['en'],
+                "cat": m['cat'],
+                "unit": m['unit'],
+                "data_points": len(numeric),
+                "latest_value": numeric[0],
+            })
+    return available
+
+
 def extract_custom_timeseries(filepath, selected_keys):
     """選択されたメトリクスの時系列データを返す"""
-    wb = openpyxl.load_workbook(filepath, data_only=True)
+    wb = _load_workbook(filepath)
+
+    # 日本語縦型レイアウトの場合
+    if _is_japanese_vertical_layout(wb):
+        _, ts_data = _parse_japanese_vertical(wb)
+        result = {"dates": ts_data.get("dates", [])}
+        for key in selected_keys:
+            if key in ts_data:
+                result[key] = ts_data[key]
+        return result
+
     sheet_map = {
         'inc': _find_sheet(wb, ['Income-Annual', 'Income Statement', 'Income', 'Export', 'income']),
         'bs':  _find_sheet(wb, ['Balance-Sheet-Annual', 'Balance Sheet', 'Balance', 'balance']),
