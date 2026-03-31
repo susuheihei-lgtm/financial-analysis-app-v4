@@ -117,8 +117,67 @@ def consecutive_increase(vals):
     return all(clean[i] > clean[i + 1] for i in range(len(clean) - 1))
 
 
-def analyze_quantitative(d):
+def get_latest_value(vals):
+    """配列から最初の非None値を返す（最新利用可能データ）"""
+    if not vals:
+        return None, None
+    for idx, v in enumerate(vals):
+        if v is not None:
+            return v, idx
+    return None, None
+
+
+def generate_evaluation_criteria(benchmark=None):
+    """業種ベンチマークから動的な評価基準を生成。
+
+    Returns:
+        dict: メトリクス名 → 評価基準（eval_◎/○/▲/×の条件）
+    """
+    criteria = {}
+
+    if not benchmark:
+        # デフォルト固定基準
+        criteria["ROE"] = {
+            "◎": {"roe_min": 15, "growth_min": 5, "improve_3y": True},
+            "○": {"roe_min": 10, "growth_min": 3},
+            "▲": {"roe_min": 0, "growth_min": 0},
+            "評価軸": "ROE水準と5年成長率 + 3年比較"
+        }
+        criteria["ROA"] = {"評価軸": "ROA水準のみ表示（ベンチマーク無し時は目安なし）"}
+        criteria["配当利回り"] = {
+            "◎": 4.0,
+            "○": 2.0,
+            "▲": 1.0,
+            "評価軸": "配当利回り水準"
+        }
+        return criteria
+
+    # ベンチマークから相対基準を計算
+    roe_median = benchmark.get("roe_median") or benchmark.get("roe", 0)
+    roa_median = benchmark.get("roa_median") or benchmark.get("roa", 0)
+
+    criteria["ROE"] = {
+        "◎": {"rel_min": 1.5, "growth_min": 5},
+        "○": {"rel_min": 1.0, "growth_min": 3},
+        "▲": {"rel_min": 0.5, "growth_min": 0},
+        "業種中央値": roe_median,
+        "評価軸": f"業種中央値（{roe_median:.1f}%）との相対比較 + 成長トレンド"
+    }
+
+    criteria["ROA"] = {
+        "◎": {"rel_min": 1.5},
+        "○": {"rel_min": 1.0},
+        "▲": {"rel_min": 0.5},
+        "業種中央値": roa_median,
+        "評価軸": f"業種中央値（{roa_median:.1f}%）との相対比較"
+    }
+
+    return criteria
+
+
+def analyze_quantitative(d, benchmark=None):
     results = {}
+    evaluation_criteria = generate_evaluation_criteria(benchmark)
     rev = d.get("revenue")
     fcf = d.get("fcf")
     eps = d.get("eps")
@@ -149,8 +208,12 @@ def analyze_quantitative(d):
 
     # 売上高推移
     if rev and len(rev) >= 4:
-        r5 = rate_change(rev[0], rev[3])
-        r3 = rate_change(rev[0], rev[2])
+        # 最新利用可能データを取得
+        latest_rev, rev_idx = get_latest_value(rev)
+        data_warning = rev_idx > 0  # 最新年でない場合は警告
+
+        r5 = rate_change(latest_rev, rev[3]) if latest_rev else None
+        r3 = rate_change(latest_rev, rev[2]) if latest_rev else None
         c3 = consecutive_increase([rev[0], rev[1], rev[2]])
         c5 = consecutive_increase([rev[0], rev[1], rev[2], rev[3]])
         if r5 is None:
@@ -164,8 +227,9 @@ def analyze_quantitative(d):
         else:
             ev_rev = "×"
         results["売上高推移"] = {
-            "最新値": rev[0], "5年変化率": r5, "3年変化率": r3,
+            "最新値": latest_rev, "5年変化率": r5, "3年変化率": r3,
             "3年連続増加": c3, "5年連続増加": c5, "評価": ev_rev,
+            "data_warning": data_warning,
         }
     else:
         results["売上高推移"] = {"評価": "未入力"}
@@ -234,37 +298,65 @@ def analyze_quantitative(d):
 
     # ROE
     if roe and len(roe) >= 3:
-        roe_now, roe_3y, roe_5y_val = roe[0], roe[1], roe[2]
+        # 最新利用可能データを取得
+        roe_now, roe_idx = get_latest_value(roe)
+        roe_data_warning = roe_idx > 0  # 最新年でない場合は警告
+        roe_3y, roe_5y_val = roe[1], roe[2]
         roe_growth = d.get("roe_growth_rate")
         c3 = roe_now > roe_3y if (roe_now is not None and roe_3y is not None) else None
         c5 = roe_now > roe_5y_val if (roe_now is not None and roe_5y_val is not None) else None
         rg = roe_growth if roe_growth is not None else (roe_now - roe_5y_val if roe_now and roe_5y_val else None)
+
         if roe_now is None:
             ev_roe = "未入力"
-        elif roe_now >= 15 and rg is not None and rg >= 5 and c3:
-            ev_roe = "◎"
-        elif roe_now >= 10 and rg is not None and rg >= 3:
-            ev_roe = "○"
-        elif roe_now >= 0 and rg is not None and rg >= 0:
-            ev_roe = "▲"
+        elif benchmark and "ROE" in evaluation_criteria:
+            # 業種ベンチマーク相対評価
+            roe_median = evaluation_criteria["ROE"].get("業種中央値", roe_now)
+            if roe_median and roe_median != 0:
+                roe_rel = roe_now / roe_median if roe_median > 0 else 0
+                if roe_rel >= 1.5 and rg is not None and rg >= 5:
+                    ev_roe = "◎"
+                elif roe_rel >= 1.0 and rg is not None and rg >= 3:
+                    ev_roe = "○"
+                elif roe_rel >= 0.5 and rg is not None and rg >= 0:
+                    ev_roe = "▲"
+                else:
+                    ev_roe = "×"
+            else:
+                ev_roe = "×"
         else:
-            ev_roe = "×"
+            # デフォルト固定基準
+            if roe_now >= 15 and rg is not None and rg >= 5 and c3:
+                ev_roe = "◎"
+            elif roe_now >= 10 and rg is not None and rg >= 3:
+                ev_roe = "○"
+            elif roe_now >= 0 and rg is not None and rg >= 0:
+                ev_roe = "▲"
+            else:
+                ev_roe = "×"
+
         results["ROE"] = {
             "現在値": roe_now,
-            "3年変化pt": roe_now - roe_3y if roe_3y is not None else None,
-            "5年変化pt": roe_now - roe_5y_val if roe_5y_val is not None else None,
+            "3年変化pt": roe_now - roe_3y if (roe_now is not None and roe_3y is not None) else None,
+            "5年変化pt": roe_now - roe_5y_val if (roe_now is not None and roe_5y_val is not None) else None,
             "評価": ev_roe,
+            "評価軸": evaluation_criteria.get("ROE", {}).get("評価軸", ""),
+            "data_warning": roe_data_warning,
         }
     else:
         results["ROE"] = {"評価": "未入力"}
 
     # ROA
     if roa and len(roa) >= 3:
-        roa_now, roa_3y, roa_5y_val = roa[0], roa[1], roa[2]
+        # 最新利用可能データを取得
+        roa_now, roa_idx = get_latest_value(roa)
+        roa_data_warning = roa_idx > 0  # 最新年でない場合は警告
+        roa_3y, roa_5y_val = roa[1], roa[2]
         results["ROA"] = {
             "現在値": roa_now,
-            "3年変化pt": roa_now - roa_3y if roa_3y is not None else None,
-            "5年変化pt": roa_now - roa_5y_val if roa_5y_val is not None else None,
+            "3年変化pt": roa_now - roa_3y if (roa_now is not None and roa_3y is not None) else None,
+            "5年変化pt": roa_now - roa_5y_val if (roa_now is not None and roa_5y_val is not None) else None,
+            "data_warning": roa_data_warning,
         }
     else:
         results["ROA"] = {"評価": "未入力"}
@@ -391,10 +483,11 @@ def analyze_quantitative(d):
 
     # 営業利益率推移
     if op_margin and len(op_margin) >= 1:
-        opm_now = op_margin[0]
+        opm_now, opm_idx = get_latest_value(op_margin)
+        opm_data_warning = opm_idx > 0  # 最新年でない場合は警告
         opm_5y = op_margin[4] if len(op_margin) >= 5 else None
         opm_chg = opm_now - opm_5y if (opm_now is not None and opm_5y is not None) else None
-        results["営業利益率Q"] = {"現在値": opm_now, "5年変化pt": opm_chg}
+        results["営業利益率Q"] = {"現在値": opm_now, "5年変化pt": opm_chg, "data_warning": opm_data_warning}
 
     # Debt/FCF推移
     debt_fcf_5y = d.get("debt_fcf_5y")
@@ -538,7 +631,10 @@ def analyze_screening(d, q_results, benchmark=None):
 
     op_m = d.get("op_margin", [])
     if len(op_m) >= 3:
-        op_now, op_1y, op_2y = op_m[0], op_m[1], op_m[2]
+        # 最新利用可能データを取得
+        op_now, op_idx = get_latest_value(op_m)
+        op_data_warning = op_idx > 0
+        op_1y, op_2y = op_m[1], op_m[2]
         if op_now is not None and op_1y is not None and op_2y is not None:
             if op_now < op_1y and op_1y < op_2y:
                 b3_val, b3 = "連続低下（3期）", "×"
@@ -552,8 +648,9 @@ def analyze_screening(d, q_results, benchmark=None):
             b3_val, b3 = None, "未入力"
     else:
         b3_val, b3 = None, "未入力"
+        op_data_warning = False
     b3_basis = f"○≧{th['op_margin_tri']}% ▲≧{th['op_margin_x']}% ×<{th['op_margin_x']}%または3期連続低下（業界平均の30%/60%基準）"
-    results["B-3_営業利益率"] = {"状況": b3_val, "判定": b3, "基準": b3_basis}
+    results["B-3_営業利益率"] = {"状況": b3_val, "判定": b3, "基準": b3_basis, "data_warning": op_data_warning}
 
     eps = d.get("eps", [])
     if len(eps) >= 4 and eps[0] and eps[3]:
@@ -1051,11 +1148,12 @@ def compute_pbr_contribution(roe_tree, screening, data, benchmark=None):
 
 
 def run_full_analysis(data, benchmark=None):
-    q_results = analyze_quantitative(data)
+    q_results = analyze_quantitative(data, benchmark=benchmark)
     s_results = analyze_screening(data, q_results, benchmark=benchmark)
     r_results = analyze_roa_tree(data)
     roe_results = analyze_roe_tree(data)
     pbr_contrib = compute_pbr_contribution(roe_results, s_results, data, benchmark=benchmark)
+    evaluation_criteria = generate_evaluation_criteria(benchmark)
     return {
         "company": data.get("company", "Unknown"),
         "ticker": data.get("ticker", ""),
@@ -1065,6 +1163,7 @@ def run_full_analysis(data, benchmark=None):
         "roa_tree": r_results,
         "roe_tree": roe_results,
         "pbr_contribution": pbr_contrib,
+        "evaluation_criteria": evaluation_criteria,
         "raw_data": {
             "revenue": data.get("revenue"),
             "fcf": data.get("fcf"),

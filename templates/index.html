@@ -261,6 +261,17 @@
     </div>
   </div>
 
+  <!-- Evaluation Criteria Modal -->
+  <div id="criteriaModal" class="chart-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="criteriaTitle" onclick="this.classList.remove('active')">
+    <div class="chart-modal" style="max-width:500px" onclick="event.stopPropagation()">
+      <div class="flex items-center justify-between mb-4">
+        <h3 id="criteriaTitle" class="text-sm font-bold th-text-s"></h3>
+        <button class="th-text-m hover:th-text text-lg leading-none" onclick="document.getElementById('criteriaModal').classList.remove('active')">&times;</button>
+      </div>
+      <div id="criteriaContent" class="text-sm th-text-s"></div>
+    </div>
+  </div>
+
   <!-- Header — Porsche style -->
   <header class="fixed top-0 w-full z-50 th-header backdrop-blur-xl border-b" style="border-color:var(--border)">
     <div class="max-w-[1400px] mx-auto px-4 sm:px-8 h-[72px] flex items-center justify-between">
@@ -303,6 +314,30 @@
         <p class="th-text-m text-xs tracking-[0.12em] uppercase" data-i18n="Upload your financial data to generate a comprehensive investment analysis">Upload your financial data to generate a comprehensive investment analysis</p>
       </div>
 
+      <!-- Ticker Quick Search -->
+      <div class="mb-6">
+        <div class="flex gap-2 items-stretch">
+          <div class="relative flex-1">
+            <input type="text" id="tickerInput" placeholder="7203.T / AAPL" class="w-full px-4 py-3.5 th-input text-sm tracking-wider focus:border-brand focus:outline-none transition pr-8" style="border-radius:0;font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif">
+            <span class="absolute right-3 top-1/2 -translate-y-1/2 th-text-m text-[10px] tracking-wider pointer-events-none">TICKER</span>
+          </div>
+          <button id="btnTickerFetch" class="px-6 bg-brand hover:bg-brand-light text-white font-semibold text-xs uppercase tracking-[0.18em] transition-all duration-300" style="border-radius:0;font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif">
+            <span id="btnTickerText" data-i18n="Fetch & Analyze">Fetch &amp; Analyze</span>
+            <svg id="btnTickerSpinner" class="hidden animate-spin inline w-4 h-4 ml-1" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+            </svg>
+          </button>
+        </div>
+        <p id="tickerError" class="hidden mt-2 text-xs text-red-500 tracking-wider"></p>
+      </div>
+
+      <div class="flex items-center gap-4 mb-6">
+        <div class="flex-1 h-px" style="background:var(--border-m)"></div>
+        <span class="text-[10px] th-text-m tracking-[0.2em] uppercase" style="font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif" data-i18n="or upload file">or upload file</span>
+        <div class="flex-1 h-px" style="background:var(--border-m)"></div>
+      </div>
+
       <div id="dropZone" class="upload-zone p-6 sm:p-14 text-center cursor-pointer mb-8" style="border-radius:0">
         <div class="w-14 h-14 mx-auto mb-5 border flex items-center justify-center" style="border-color:var(--border-s);border-radius:0">
           <svg class="w-6 h-6 th-text-m" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
@@ -333,6 +368,26 @@
               </select>
               <button id="regionToggle" type="button" onclick="toggleRegion()" class="px-3 py-2.5 rounded-lg text-sm font-medium th-input border whitespace-nowrap" style="border-color:var(--border);min-width:52px" aria-label="Toggle region between global and Japan"><span aria-hidden="true">🌐</span></button>
             </div>
+          </div>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div>
+            <label class="block text-[10px] font-medium th-text-m uppercase tracking-wider mb-1.5" data-i18n="Currency">Currency</label>
+            <select id="inputCurrency" class="w-full px-3 py-2.5 th-input rounded-lg text-sm focus:border-brand focus:outline-none transition">
+              <option value="JPY">¥ JPY — 日本円</option>
+              <option value="USD">$ USD — 米ドル</option>
+              <option value="EUR">€ EUR — ユーロ</option>
+              <option value="GBP">£ GBP — 英ポンド</option>
+              <option value="HKD">HK$ HKD — 香港ドル</option>
+              <option value="KRW">₩ KRW — 韓国ウォン</option>
+              <option value="AUD">A$ AUD — 豪ドル</option>
+              <option value="CAD">C$ CAD — カナダドル</option>
+              <option value="CNY">¥ CNY — 人民元</option>
+              <option value="SGD">S$ SGD — シンガポールドル</option>
+            </select>
+          </div>
+          <div class="sm:col-span-2 flex items-end">
+            <p class="text-[10px] th-text-m tracking-wider" data-i18n="currency-hint">Excelファイルの財務データの通貨を選択してください。ティッカー取得時は自動判定されます。</p>
           </div>
         </div>
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -382,8 +437,9 @@
         <div class="w-full h-px mb-8" style="background:var(--border-m)"></div>
         <div class="flex flex-col sm:flex-row items-start sm:items-end justify-between gap-6">
           <div>
-            <div class="flex items-center gap-4 mb-3">
+            <div class="flex items-center gap-4 mb-3 flex-wrap">
               <span id="tickerBadge" class="text-[10px] font-bold tracking-[0.22em] uppercase px-3 py-1 text-brand" style="background:rgba(213,0,28,0.08);border:1px solid rgba(213,0,28,0.2);font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif"></span>
+              <span id="currencyBadge" class="text-[10px] font-bold tracking-[0.18em] uppercase px-3 py-1 hidden" style="background:rgba(59,130,246,0.08);border:1px solid rgba(59,130,246,0.2);color:#3b82f6;font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif"></span>
               <span class="w-px h-3" style="background:var(--border-m)"></span>
               <span id="industryBadge" class="text-[10px] tracking-[0.14em] uppercase th-text-m" style="font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif"></span>
             </div>
@@ -505,12 +561,14 @@
       <!-- Competitor Analysis Tab -->
       <div id="tab-competitor" class="tab-content hidden" role="tabpanel" aria-labelledby="tab-competitor-btn">
         <div id="competitorUpload" class="mb-8">
-          <p class="text-sm font-medium th-text-s mb-6" data-i18n="comp-upload-msg">Upload Excel files for up to 5 companies to compare</p>
+          <p class="text-sm font-medium th-text-s mb-6" data-i18n="comp-upload-msg">Enter ticker symbols or upload Excel files for up to 5 companies to compare</p>
           <div id="competitorSlots" class="space-y-2">
-            <div class="comp-slot flex flex-wrap sm:flex-nowrap items-center gap-3 p-4 th-bg-1 border th-border" style="border-radius:0" data-slot="0">
+            <div class="comp-slot flex flex-wrap sm:flex-nowrap items-center gap-3 p-4 th-bg-1 border th-border" style="border-radius:0" data-slot="0" data-mode="ticker">
               <span class="text-xs font-bold tracking-[0.2em] w-6 text-center" style="color:#d5001c;font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif">01</span>
-              <input type="text" placeholder="Company A" class="comp-name flex-1 px-3 py-2 th-input text-xs border focus:border-brand outline-none" style="border-radius:0">
-              <label class="comp-file-label cursor-pointer px-4 py-2 border text-[10px] font-semibold tracking-[0.14em] uppercase hover:border-brand transition-all flex items-center gap-2" style="border-color:var(--border-s);border-radius:0;font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif">
+              <input type="text" placeholder="Company A" class="comp-name px-3 py-2 th-input text-xs border focus:border-brand outline-none" style="border-radius:0;width:120px;min-width:90px">
+              <button class="comp-mode-toggle px-2 py-2 border text-[10px] font-semibold tracking-wider hover:border-brand transition-all" style="border-color:var(--border-s);border-radius:0;font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif" title="Toggle File/Ticker">TKR</button>
+              <input type="text" placeholder="7203.T" class="comp-ticker flex-1 px-3 py-2 th-input text-xs border focus:border-brand outline-none" style="border-radius:0">
+              <label class="comp-file-label cursor-pointer px-4 py-2 border text-[10px] font-semibold tracking-[0.14em] uppercase hover:border-brand transition-all flex items-center gap-2 hidden" style="border-color:var(--border-s);border-radius:0;font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif">
                 <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5-5m0 0l5 5m-5-5v12"/></svg>
                 <span data-i18n="Select File">Select File</span>
                 <input type="file" accept=".xlsx,.xls" class="comp-file hidden">
@@ -518,10 +576,12 @@
               <span class="comp-file-name text-[10px] th-text-m truncate max-w-[150px]"></span>
               <button class="comp-remove text-base th-text-d hover:text-red-500 transition-all leading-none hidden" aria-label="Remove competitor">&times;</button>
             </div>
-            <div class="comp-slot flex flex-wrap sm:flex-nowrap items-center gap-3 p-4 th-bg-1 border th-border" style="border-radius:0" data-slot="1">
+            <div class="comp-slot flex flex-wrap sm:flex-nowrap items-center gap-3 p-4 th-bg-1 border th-border" style="border-radius:0" data-slot="1" data-mode="ticker">
               <span class="text-xs font-bold tracking-[0.2em] w-6 text-center" style="color:#3b82f6;font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif">02</span>
-              <input type="text" placeholder="Company B" class="comp-name flex-1 px-3 py-2 th-input text-xs border focus:border-brand outline-none" style="border-radius:0">
-              <label class="comp-file-label cursor-pointer px-4 py-2 border text-[10px] font-semibold tracking-[0.14em] uppercase hover:border-brand transition-all flex items-center gap-2" style="border-color:var(--border-s);border-radius:0;font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif">
+              <input type="text" placeholder="Company B" class="comp-name px-3 py-2 th-input text-xs border focus:border-brand outline-none" style="border-radius:0;width:120px;min-width:90px">
+              <button class="comp-mode-toggle px-2 py-2 border text-[10px] font-semibold tracking-wider hover:border-brand transition-all" style="border-color:var(--border-s);border-radius:0;font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif" title="Toggle File/Ticker">TKR</button>
+              <input type="text" placeholder="AAPL" class="comp-ticker flex-1 px-3 py-2 th-input text-xs border focus:border-brand outline-none" style="border-radius:0">
+              <label class="comp-file-label cursor-pointer px-4 py-2 border text-[10px] font-semibold tracking-[0.14em] uppercase hover:border-brand transition-all flex items-center gap-2 hidden" style="border-color:var(--border-s);border-radius:0;font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif">
                 <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5-5m0 0l5 5m-5-5v12"/></svg>
                 <span data-i18n="Select File">Select File</span>
                 <input type="file" accept=".xlsx,.xls" class="comp-file hidden">
@@ -529,10 +589,12 @@
               <span class="comp-file-name text-[10px] th-text-m truncate max-w-[150px]"></span>
               <button class="comp-remove text-base th-text-d hover:text-red-500 transition-all leading-none hidden" aria-label="Remove competitor">&times;</button>
             </div>
-            <div class="comp-slot flex flex-wrap sm:flex-nowrap items-center gap-3 p-4 th-bg-1 border th-border" style="border-radius:0" data-slot="2">
+            <div class="comp-slot flex flex-wrap sm:flex-nowrap items-center gap-3 p-4 th-bg-1 border th-border" style="border-radius:0" data-slot="2" data-mode="ticker">
               <span class="text-xs font-bold tracking-[0.2em] w-6 text-center" style="color:#22c55e;font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif">03</span>
-              <input type="text" placeholder="Company C" class="comp-name flex-1 px-3 py-2 th-input text-xs border focus:border-brand outline-none" style="border-radius:0">
-              <label class="comp-file-label cursor-pointer px-4 py-2 border text-[10px] font-semibold tracking-[0.14em] uppercase hover:border-brand transition-all flex items-center gap-2" style="border-color:var(--border-s);border-radius:0;font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif">
+              <input type="text" placeholder="Company C" class="comp-name px-3 py-2 th-input text-xs border focus:border-brand outline-none" style="border-radius:0;width:120px;min-width:90px">
+              <button class="comp-mode-toggle px-2 py-2 border text-[10px] font-semibold tracking-wider hover:border-brand transition-all" style="border-color:var(--border-s);border-radius:0;font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif" title="Toggle File/Ticker">TKR</button>
+              <input type="text" placeholder="9984.T" class="comp-ticker flex-1 px-3 py-2 th-input text-xs border focus:border-brand outline-none" style="border-radius:0">
+              <label class="comp-file-label cursor-pointer px-4 py-2 border text-[10px] font-semibold tracking-[0.14em] uppercase hover:border-brand transition-all flex items-center gap-2 hidden" style="border-color:var(--border-s);border-radius:0;font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif">
                 <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5-5m0 0l5 5m-5-5v12"/></svg>
                 <span data-i18n="Select File">Select File</span>
                 <input type="file" accept=".xlsx,.xls" class="comp-file hidden">
@@ -540,10 +602,12 @@
               <span class="comp-file-name text-[10px] th-text-m truncate max-w-[150px]"></span>
               <button class="comp-remove text-base th-text-d hover:text-red-500 transition-all leading-none hidden" aria-label="Remove competitor">&times;</button>
             </div>
-            <div class="comp-slot flex flex-wrap sm:flex-nowrap items-center gap-3 p-4 th-bg-1 border th-border" style="border-radius:0" data-slot="3">
+            <div class="comp-slot flex flex-wrap sm:flex-nowrap items-center gap-3 p-4 th-bg-1 border th-border" style="border-radius:0" data-slot="3" data-mode="ticker">
               <span class="text-xs font-bold tracking-[0.2em] w-6 text-center" style="color:#f59e0b;font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif">04</span>
-              <input type="text" placeholder="Company D" class="comp-name flex-1 px-3 py-2 th-input text-xs border focus:border-brand outline-none" style="border-radius:0">
-              <label class="comp-file-label cursor-pointer px-4 py-2 border text-[10px] font-semibold tracking-[0.14em] uppercase hover:border-brand transition-all flex items-center gap-2" style="border-color:var(--border-s);border-radius:0;font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif">
+              <input type="text" placeholder="Company D" class="comp-name px-3 py-2 th-input text-xs border focus:border-brand outline-none" style="border-radius:0;width:120px;min-width:90px">
+              <button class="comp-mode-toggle px-2 py-2 border text-[10px] font-semibold tracking-wider hover:border-brand transition-all" style="border-color:var(--border-s);border-radius:0;font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif" title="Toggle File/Ticker">TKR</button>
+              <input type="text" placeholder="6758.T" class="comp-ticker flex-1 px-3 py-2 th-input text-xs border focus:border-brand outline-none" style="border-radius:0">
+              <label class="comp-file-label cursor-pointer px-4 py-2 border text-[10px] font-semibold tracking-[0.14em] uppercase hover:border-brand transition-all flex items-center gap-2 hidden" style="border-color:var(--border-s);border-radius:0;font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif">
                 <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5-5m0 0l5 5m-5-5v12"/></svg>
                 <span data-i18n="Select File">Select File</span>
                 <input type="file" accept=".xlsx,.xls" class="comp-file hidden">
@@ -551,10 +615,12 @@
               <span class="comp-file-name text-[10px] th-text-m truncate max-w-[150px]"></span>
               <button class="comp-remove text-base th-text-d hover:text-red-500 transition-all leading-none hidden" aria-label="Remove competitor">&times;</button>
             </div>
-            <div class="comp-slot flex flex-wrap sm:flex-nowrap items-center gap-3 p-4 th-bg-1 border th-border" style="border-radius:0" data-slot="4">
+            <div class="comp-slot flex flex-wrap sm:flex-nowrap items-center gap-3 p-4 th-bg-1 border th-border" style="border-radius:0" data-slot="4" data-mode="ticker">
               <span class="text-xs font-bold tracking-[0.2em] w-6 text-center" style="color:#8b5cf6;font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif">05</span>
-              <input type="text" placeholder="Company E" class="comp-name flex-1 px-3 py-2 th-input text-xs border focus:border-brand outline-none" style="border-radius:0">
-              <label class="comp-file-label cursor-pointer px-4 py-2 border text-[10px] font-semibold tracking-[0.14em] uppercase hover:border-brand transition-all flex items-center gap-2" style="border-color:var(--border-s);border-radius:0;font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif">
+              <input type="text" placeholder="Company E" class="comp-name px-3 py-2 th-input text-xs border focus:border-brand outline-none" style="border-radius:0;width:120px;min-width:90px">
+              <button class="comp-mode-toggle px-2 py-2 border text-[10px] font-semibold tracking-wider hover:border-brand transition-all" style="border-color:var(--border-s);border-radius:0;font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif" title="Toggle File/Ticker">TKR</button>
+              <input type="text" placeholder="MSFT" class="comp-ticker flex-1 px-3 py-2 th-input text-xs border focus:border-brand outline-none" style="border-radius:0">
+              <label class="comp-file-label cursor-pointer px-4 py-2 border text-[10px] font-semibold tracking-[0.14em] uppercase hover:border-brand transition-all flex items-center gap-2 hidden" style="border-color:var(--border-s);border-radius:0;font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif">
                 <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5-5m0 0l5 5m-5-5v12"/></svg>
                 <span data-i18n="Select File">Select File</span>
                 <input type="file" accept=".xlsx,.xls" class="comp-file hidden">
@@ -736,6 +802,26 @@
       'comp-mode-indexed': { ja: 'インデックス', en: 'Indexed' },
       'comp-base': { ja: '基準年', en: 'Base Year' },
       'PBR Decomposition':    { ja: 'PBR分解' },
+      // Data states
+      'No Data': { ja: 'データなし', en: 'No Data' },
+      'Range:': { ja: '範囲:', en: 'Range:' },
+      'データなし': { ja: 'データなし', en: 'No Data' },
+      'データ不足': { ja: 'データ不足', en: 'Insufficient Data' },
+      '時系列データなし': { ja: '時系列データなし', en: 'No Time Series Data' },
+      'PBR変化：データ不足': { ja: 'PBR変化：データ不足', en: 'PBR Change: Insufficient Data' },
+      // Evaluation criteria
+      '評価基準': { ja: '評価基準', en: 'Evaluation Criteria' },
+      '基準値:': { ja: '基準値:', en: 'Benchmark:' },
+      // Valuation judgments
+      '適正水準': { ja: '適正水準', en: 'Fair Value' },
+      '割安': { ja: '割安', en: 'Undervalued' },
+      'やや割安': { ja: 'やや割安', en: 'Slightly Undervalued' },
+      'やや割高': { ja: 'やや割高', en: 'Slightly Overvalued' },
+      '割高': { ja: '割高', en: 'Overvalued' },
+      // Currency
+      '円': { ja: '円', en: 'JPY' },
+      // Warning messages
+      'PBR貢献度分析データ不足': { ja: 'PBR, PER, ROEの5年間データが不足しているため、貢献度分析を実施できません', en: 'Insufficient 5-year data for PBR, PER, ROE to perform contribution analysis' },
       'ROA Tree':    { ja: 'ROAツリー' },
       'Time Series': { ja: '時系列' },
       // Custom tab
@@ -883,6 +969,30 @@
       fileName.classList.remove('hidden');
       btnAnalyze.disabled = false;
       metaForm.classList.toggle('hidden', !(file.name.endsWith('.xlsx') || file.name.endsWith('.xls')));
+
+      // Auto-populate company/ticker from filename
+      const baseName = file.name.replace(/\.(xlsx?|xls)$/i, '');
+
+      // Try to extract ticker (numbers at start, or numbers after common separators)
+      const tickerMatch = baseName.match(/^(\d{4,5})|[-_](\d{4,5})[-_]/);
+      if (tickerMatch && !$('inputTicker').value) {
+        $('inputTicker').value = tickerMatch[1] || tickerMatch[2];
+      }
+
+      // Use filename as company name if not already filled
+      if (!$('inputCompany').value) {
+        // Clean up filename: remove ticker if found, remove common suffixes
+        let cleanName = baseName
+          .replace(/^(\d{4,5})[-_]?/, '')  // Remove leading ticker
+          .replace(/[-_]?(\d{4,5})[-_]?/, '') // Remove ticker in middle
+          .replace(/[-_](financials?|data|report|statements?)$/i, '') // Remove common suffixes
+          .replace(/[-_]+/g, ' ')  // Replace dashes/underscores with spaces
+          .trim();
+
+        if (cleanName) {
+          $('inputCompany').value = cleanName;
+        }
+      }
     }
 
     btnAnalyze.addEventListener('click', async () => {
@@ -899,6 +1009,7 @@
         fd.append('d1', $('inputD1').value);
         fd.append('d2', $('inputD2').value);
         fd.append('d3', $('inputD3').value);
+        fd.append('currency', $('inputCurrency').value);
         const res = await fetch('/api/analyze', { method: 'POST', body: fd });
         const data = await res.json();
         if (data.error) { alert(data.error); return; }
@@ -932,10 +1043,60 @@
       finally { setLoading(false); btnSample.disabled = false; }
     });
 
+    // Ticker fetch & analyze
+    const tickerInput = $('tickerInput');
+    const btnTickerFetch = $('btnTickerFetch');
+    const tickerError = $('tickerError');
+
+    function setTickerLoading(on) {
+      $('btnTickerText').textContent = on ? t('Fetching...') : t('Fetch & Analyze');
+      $('btnTickerSpinner').classList.toggle('hidden', !on);
+      btnTickerFetch.disabled = on;
+      tickerInput.disabled = on;
+    }
+
+    btnTickerFetch.addEventListener('click', async () => {
+      const symbol = tickerInput.value.trim();
+      if (!symbol) { tickerError.textContent = t('Please enter a ticker symbol'); tickerError.classList.remove('hidden'); return; }
+      tickerError.classList.add('hidden');
+      setTickerLoading(true);
+      try {
+        const body = { ticker: symbol, d1: '○', d2: '○', d3: '○' };
+        const res = await fetch('/api/fetch_ticker', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body) });
+        const data = await res.json();
+        if (data.error) { tickerError.textContent = data.error; tickerError.classList.remove('hidden'); return; }
+        renderDashboard(data);
+      } catch (e) { tickerError.textContent = e.message; tickerError.classList.remove('hidden'); }
+      finally { setTickerLoading(false); }
+    });
+
+    tickerInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') { e.preventDefault(); btnTickerFetch.click(); }
+    });
+
+    // Currency selector: live re-render charts when changed (Excel data only)
+    const inputCurrency = $('inputCurrency');
+    if (inputCurrency) {
+      inputCurrency.addEventListener('change', () => {
+        if (!lastData) return;
+        // Only apply to Excel data — yfinance sets currency automatically
+        const source = lastData.timeseries && lastData.timeseries._source;
+        if (source === 'excel' || !source) {
+          currentCurrencyCode = inputCurrency.value;
+          currentCurrencySymbol = CURRENCY_SYMBOLS[currentCurrencyCode] || '¥';
+          const currBadge = $('currencyBadge');
+          if (currBadge) currBadge.textContent = currentCurrencySymbol + ' ' + currentCurrencyCode;
+          // Re-render charts with new currency symbol
+          if (lastTimeseries) renderCharts(lastTimeseries);
+        }
+      });
+    }
+
     btnReset.addEventListener('click', () => {
       dashboard.classList.add('hidden'); uploadSection.classList.remove('hidden'); btnReset.classList.add('hidden'); $('btnExport').classList.add('hidden');
       Object.values(charts).forEach(c => c.destroy()); charts = {};
       selectedFile = null; fileInput.value = ''; fileName.classList.add('hidden'); metaForm.classList.add('hidden'); btnAnalyze.disabled = true; lastBenchmark = null;
+      tickerInput.value = ''; tickerError.classList.add('hidden');
     });
 
     $('btnExport').addEventListener('click', () => {
@@ -992,10 +1153,60 @@
       if (s === '×') return `<span class="grade-danger text-lg">&#10005;</span>`;
       return `<span class="grade-na text-lg">&#8212;</span>`;
     }
-    function fmtNum(v, d = 2, s = '') { if (v === null || v === undefined || isNaN(v)) return 'No Data'; return Number(v).toFixed(d) + s; }
+    function fmtNum(v, d = 2, s = '') { if (v === null || v === undefined || isNaN(v)) return t('No Data'); return Number(v).toFixed(d) + s; }
     function fmt5Y(val, decimals, unit) {
-      if (val !== undefined && val !== null) return `5Y: ${fmtNum(val, decimals)}${unit}`;
-      return 'no data available';
+      if (val !== undefined && val !== null && !isNaN(val)) return `5Y: ${fmtNum(val, decimals)}${unit}`;
+      return '';  // データがない場合は空文字を返す
+    }
+
+    // 計算式定義
+    const metricFormulas = {
+      'ROE': 'ROE (%) = 当期純利益 ÷ 自己資本 × 100',
+      'ROA': 'ROA (%) = 当期純利益 ÷ 総資産 × 100',
+      '配当利回り': '配当利回り (%) = 1株当たり配当金 ÷ 株価 × 100',
+      '配当性向': '配当性向 (%) = 配当金総額 ÷ 当期純利益 × 100',
+      '自己資本比率': '自己資本比率 (%) = 自己資本 ÷ 総資産 × 100',
+      '当座比率': '当座比率 (%) = (流動資産 - 棚卸資産) ÷ 流動負債 × 100',
+      '流動比率': '流動比率 (%) = 流動資産 ÷ 流動負債 × 100',
+      '営業CF推移': '営業CF = 営業活動によるキャッシュフロー',
+      'FCF推移': 'FCF (フリーキャッシュフロー) = 営業CF - 投資CF',
+      '投資CF推移': '投資CF = 投資活動によるキャッシュフロー',
+      '財務CF推移': '財務CF = 財務活動によるキャッシュフロー',
+      '売上高推移': '売上高 = 企業の総収益',
+      'EPS推移': 'EPS (1株当たり利益) = 当期純利益 ÷ 発行済株式数',
+      'EBITDA Margin': 'EBITDAマージン (%) = EBITDA ÷ 売上高 × 100<br>EBITDA = 営業利益 + 減価償却費',
+      '営業利益率': '営業利益率 (%) = 営業利益 ÷ 売上高 × 100',
+      'Debt/FCF': 'Debt/FCF (倍) = 有利子負債 ÷ フリーキャッシュフロー',
+      'EV/FCF': 'EV/FCF (倍) = 企業価値 (EV) ÷ フリーキャッシュフロー',
+    };
+
+    function showEvaluationCriteria(metricName) {
+      const criteria = evaluationCriteria[metricName];
+      const formula = metricFormulas[metricName];
+      if (!criteria && !formula) return;
+
+      const modal = document.getElementById('criteriaModal');
+      const modalTitle = document.getElementById('criteriaTitle');
+      const modalContent = document.getElementById('criteriaContent');
+      modalTitle.textContent = metricName;
+
+      let html = '';
+      if (formula) {
+        html += `<div class="mb-3 pb-3 border-b" style="border-color:var(--border)">
+          <p class="text-xs font-bold th-text-m uppercase mb-1">計算式</p>
+          <p class="text-sm th-text-s">${formula}</p>
+        </div>`;
+      }
+      if (criteria && criteria.評価軸) {
+        html += `<div class="mb-2">
+          <p class="text-xs font-bold th-text-m uppercase mb-1">${t('評価基準')}</p>
+          <p class="text-sm th-text-s">${criteria.評価軸}</p>
+          ${criteria.業種中央値 !== undefined ? `<p class="text-xs th-text-m mt-1">${t('基準値:')} ${criteria.業種中央値.toFixed(1)}</p>` : ''}
+        </div>`;
+      }
+
+      modalContent.innerHTML = html;
+      modal.classList.add('active');
     }
 
     function makeItemCard(label, grade, value, detail, chartKey, basis) {
@@ -1016,10 +1227,10 @@
           }
         }
       }
-      // 基準（evaluation criteria）
+      // 評価軸（evaluation criteria）— replace basis with "?" button
       let basisHtml = '';
-      if (basis) {
-        basisHtml = `<div class="mt-1"><span class="text-[10px] th-text-m">📐 ${basis}</span></div>`;
+      if (evaluationCriteria[label]) {
+        basisHtml = `<div class="mt-1"><button class="text-[10px] px-2 py-0.5 rounded-full th-text-m hover:th-text-s" style="background:rgba(100,116,139,0.2);border:none;cursor:pointer" onclick="showEvaluationCriteria('${label}')">?</button></div>`;
       }
       return `<div class="card-hover sortable-item flex items-center justify-between p-4 rounded-xl th-bg-1 border ${clickable}" style="border-color:var(--border)" draggable="true" ${onclick}>
         <div class="flex items-center gap-3">
@@ -1067,6 +1278,30 @@
       lastData = data;
       uploadSection.classList.add('hidden'); dashboard.classList.remove('hidden'); btnReset.classList.remove('hidden'); $('btnExport').classList.remove('hidden');
       window.scrollTo(0, 0);
+
+      // Set data scaling flags from timeseries metadata
+      isJPYData = data.timeseries && data.timeseries._is_jpy ? true : false;
+      dataUnitScale = data.timeseries && data.timeseries._unit_scale ? data.timeseries._unit_scale : null;
+      evaluationCriteria = data.evaluation_criteria || {};
+
+      // Set currency symbol — yfinance: auto from _currency / Excel: from user selector
+      const detectedCurrency = data.timeseries && data.timeseries._currency ? data.timeseries._currency : '';
+      if (detectedCurrency && CURRENCY_SYMBOLS[detectedCurrency]) {
+        currentCurrencyCode = detectedCurrency;
+        currentCurrencySymbol = CURRENCY_SYMBOLS[detectedCurrency];
+      } else {
+        // Excel without currency tag — use selector
+        const sel = $('inputCurrency');
+        currentCurrencyCode = sel ? sel.value : 'JPY';
+        currentCurrencySymbol = CURRENCY_SYMBOLS[currentCurrencyCode] || '¥';
+      }
+      // Show currency badge in dashboard header
+      const currBadge = $('currencyBadge');
+      if (currBadge) {
+        currBadge.textContent = currentCurrencySymbol + ' ' + currentCurrencyCode;
+        currBadge.classList.remove('hidden');
+      }
+
       const s = data.screening, q = data.quantitative, r = data.roa_tree, re = data.roe_tree;
 
       $('companyName').textContent = data.company || 'Untitled';
@@ -1112,8 +1347,8 @@
       const a3Item = s['A-3_ROE_ROA']||{};
       const qDy = q['配当利回り']||{}, qPo = q['配当性向']||{};
       $('perfItems').innerHTML = [
-        makeItemCard('ROE', qRoe['評価'], fmtNum(qRoe['現在値'],1,'%'), fmt5Y(qRoe['5年変化pt'],1,'pt'), 'roe', a3Item['基準']),
-        makeItemCard('ROA', qRoa['評価'], fmtNum(qRoa['現在値'],1,'%'), fmt5Y(qRoa['5年変化pt'],1,'pt'), 'roa'),
+        makeItemCard('ROE', qRoe['評価'], qRoe['現在値']!==undefined?(qRoe['data_warning']?'⚠️ ':'')+fmtNum(qRoe['現在値'],1,'%'):'', fmt5Y(qRoe['5年変化pt'],1,'pt'), 'roe', a3Item['基準']),
+        makeItemCard('ROA', qRoa['評価'], qRoa['現在値']!==undefined?(qRoa['data_warning']?'⚠️ ':'')+fmtNum(qRoa['現在値'],1,'%'):'', fmt5Y(qRoa['5年変化pt'],1,'pt'), 'roa'),
         qDy['現在値'] !== undefined ? makeItemCard(t('配当利回り'), qDy['評価'], fmtNum(qDy['現在値'],2,'%'), fmt5Y(qDy['5年変化pt'],2,'pt'), 'dividend_yield') : '',
         qPo['現在値'] !== undefined ? makeItemCard(t('配当性向'), qPo['評価'], fmtNum(qPo['現在値'],1,'%'), fmt5Y(qPo['5年変化pt'],1,'pt'), 'payout_ratio') : '',
       ].filter(Boolean).join('');
@@ -1130,29 +1365,29 @@
       const b1 = s['B-1_売上高CAGR']||{}, b2 = s['B-2_EBITDAマージン']||{}, b3 = s['B-3_営業利益率']||{}, b4 = s['B-4_EPS成長率']||{};
       const qRev = q['売上高推移']||{}, qFcf = q['FCF推移']||{}, qEps = q['EPS推移']||{};
       $('growthItems').innerHTML = [
-        makeItemCard(t('売上高推移'), qRev['評価'], qRev['最新値']!==undefined?fmtNum(qRev['最新値'],1)+' 百万':'', fmt5Y(qRev['5年変化率'],1,'%'), 'revenue', b1['基準']),
-        makeItemCard(t('EPS推移'), qEps['評価'], qEps['最新値']!==undefined?fmtNum(qEps['最新値'],1)+' 円':'', fmt5Y(qEps['5年変化率'],1,'%'), 'eps', b4['基準']),
+        makeItemCard(t('売上高推移'), qRev['評価'], qRev['最新値']!==undefined?(qRev['data_warning']?'⚠️ ':'')+smartFormat(qRev['最新値']):'', fmt5Y(qRev['5年変化率'],1,'%'), 'revenue', b1['基準']),
+        makeItemCard(t('EPS推移'), qEps['評価'], qEps['最新値']!==undefined?fmtNum(qEps['最新値'],1)+' '+t('円'):'', fmt5Y(qEps['5年変化率'],1,'%'), 'eps', b4['基準']),
         makeItemCard(t('EBITDA Margin'), b2['判定'], fmtNum(b2['実績値'],1,'%'), fmt5Y((q['EBITDAマージン']||{})['5年変化pt'],1,'pt'), 'ebitda', b2['基準']),
-        makeItemCard(t('営業利益率'), b3['判定'], typeof b3['状況']==='number'?fmtNum(b3['状況'],1,'%'):(b3['状況']||'—'), fmt5Y((q['営業利益率Q']||{})['5年変化pt'],1,'pt'), 'op_margin', b3['基準']),
+        makeItemCard(t('営業利益率'), b3['判定'], typeof b3['状況']==='number'?(b3['data_warning']?'⚠️ ':'')+fmtNum(b3['状況'],1,'%'):(b3['状況']||'—'), fmt5Y((q['営業利益率Q']||{})['5年変化pt'],1,'pt'), 'op_margin', b3['基準']),
       ].join('');
 
       // Valuation & Risk (from screening C + quantitative risk)
       const c1 = s['C-1_PER']||{}, c2 = s['C-2_PBR']||{}, c3 = s['C-3_NetDebt_EBITDA']||{}, c4 = s['C-4_流動比率']||{};
       const qDfc = q['Debt/FCF']||{}, qEvf = q['EV/FCF']||{};
       $('valuationItems').innerHTML = [
-        makeItemCard(t('P/E Ratio'), c1['判定'], fmtNum(c1['実績値'],1,'x'), `Range: ${c1['閾値_下限']}–${c1['閾値_上限']}`, 'pe_ratio', c1['基準']),
-        makeItemCard(t('P/B Ratio'), c2['判定'], fmtNum(c2['実績値'],2,'x'), `Range: ${c2['閾値_下限']}–${c2['閾値_上限']}`, 'pb_ratio', c2['基準']),
-        makeItemCard(t('Net Debt / EBITDA'), c3['判定'], fmtNum(c3['実績値'],2,'x'), 'no data available', 'nd_ebitda', c3['基準']),
+        makeItemCard(t('P/E Ratio'), c1['判定'], fmtNum(c1['実績値'],1,'x'), `${t('Range:')} ${c1['閾値_下限']}–${c1['閾値_上限']}`, 'pe_ratio', c1['基準']),
+        makeItemCard(t('P/B Ratio'), c2['判定'], fmtNum(c2['実績値'],2,'x'), `${t('Range:')} ${c2['閾値_下限']}–${c2['閾値_上限']}`, 'pb_ratio', c2['基準']),
+        makeItemCard(t('Net Debt / EBITDA'), c3['判定'], fmtNum(c3['実績値'],2,'x'), '', 'nd_ebitda', c3['基準']),
         makeItemCard('Debt/FCF', qDfc['評価'], fmtNum(qDfc['現在値'],2), fmt5Y((q['Debt/FCF_detail']||{})['5年変化'],2,''), 'debt_fcf'),
-        makeItemCard('EV/FCF', qEvf['評価'], fmtNum(qEvf['現在値'],2), 'no data available'),
+        makeItemCard('EV/FCF', qEvf['評価'], fmtNum(qEvf['現在値'],2), ''),
       ].join('');
 
       // ROIC / WACC
       $('roicItems').innerHTML = ['ROIC','WACC','ROIC_vs_WACC'].map(k => {
         const v=q[k]||{}; let val='', detail='';
         if(k==='ROIC') { val=fmtNum(v['ROIC'],1,'%'); detail=fmt5Y(v['ROIC_5年変化pt'],1,'pt'); }
-        else if(k==='WACC') { val=fmtNum(v['現在値'],1,'%'); detail='no data available'; }
-        else { val=fmtNum(v['スプレッド'],1,'pt'); detail='no data available'; }
+        else if(k==='WACC') { val=fmtNum(v['現在値'],1,'%'); detail=''; }
+        else { val=fmtNum(v['スプレッド'],1,'pt'); detail=''; }
         const ck = k==='ROIC' ? 'roic' : null;
         return makeItemCard(t(k.replace(/_/g,' ')), v['評価'], val, detail, ck);
       }).join('');
@@ -1167,10 +1402,10 @@
       const patIcon = cfPat['理想型'] ? '◎' : '⚠';
       const patColor = cfPat['理想型'] ? '#22c55e' : '#f59e0b';
       $('cfItems').innerHTML = [
-        makeItemCard(t('営業CF推移'), qCf['評価']||cfItem['判定'], qCf['最新値']!==undefined?fmtNum(qCf['最新値'],1)+' 百万':(cfItem['状況']||'—'), fmt5Y(qCf['5年変化率'],1,'%'), 'ocf', cfItem['基準']),
-        makeItemCard(t('FCF推移'), qFcf['評価'], qFcf['最新値']!==undefined?fmtNum(qFcf['最新値'],1)+' 百万':'', fmt5Y(qFcf['5年変化率'],1,'%'), 'fcf'),
-        makeItemCard(t('投資CF推移'), qInv['評価'], qInv['最新値']!==undefined?fmtNum(qInv['最新値'],1)+' 百万':'', fmt5Y(qInv['5年変化率'],1,'%'), 'investing_cf'),
-        makeItemCard(t('財務CF推移'), qFin['評価'], qFin['最新値']!==undefined?fmtNum(qFin['最新値'],1)+' 百万':'', fmt5Y(qFin['5年変化率'],1,'%'), 'financing_cf'),
+        makeItemCard(t('営業CF推移'), qCf['評価']||cfItem['判定'], qCf['最新値']!==undefined?smartFormat(qCf['最新値']):(cfItem['状況']||'—'), fmt5Y(qCf['5年変化率'],1,'%'), 'ocf', cfItem['基準']),
+        makeItemCard(t('FCF推移'), qFcf['評価'], qFcf['最新値']!==undefined?smartFormat(qFcf['最新値']):'', fmt5Y(qFcf['5年変化率'],1,'%'), 'fcf'),
+        makeItemCard(t('投資CF推移'), qInv['評価'], qInv['最新値']!==undefined?smartFormat(qInv['最新値']):'', fmt5Y(qInv['5年変化率'],1,'%'), 'investing_cf'),
+        makeItemCard(t('財務CF推移'), qFin['評価'], qFin['最新値']!==undefined?smartFormat(qFin['最新値']):'', fmt5Y(qFin['5年変化率'],1,'%'), 'financing_cf'),
         `<div class="flex items-center justify-between p-4 rounded-xl th-bg-1 border mt-3" style="border-color:var(--border)">
           <div class="flex items-center gap-3">
             <span class="text-lg" style="color:${patColor}">${patIcon}</span>
@@ -1244,10 +1479,19 @@
 
     function buildPBRContribution() {
       const pbr = lastData ? lastData.pbr_contribution : null;
-      if (!pbr) return '';
-      const upItems = pbr.up_ranking || [];
-      const downItems = pbr.down_ranking || [];
-      if (upItems.length === 0 && downItems.length === 0) return '';
+
+      // データが不足していても、セクション自体は常に表示する
+      const upItems = pbr ? (pbr.up_ranking || []) : [];
+      const downItems = pbr ? (pbr.down_ranking || []) : [];
+      const hasData = upItems.length > 0 || downItems.length > 0;
+
+      // データ不足の警告メッセージ
+      const dataWarning = !hasData ? `
+        <div class="flex items-center justify-center gap-2 p-4 mb-4 border border-yellow-500/20 bg-yellow-500/5" style="border-radius:0">
+          <span class="text-yellow-400 text-lg">⚠</span>
+          <p class="text-xs th-text-m">${t('PBR貢献度分析データ不足')}</p>
+        </div>
+      ` : '';
 
       const allItems = [...upItems, ...downItems];
       const maxAbs = Math.max(...allItems.map(it => Math.abs(it['PBR寄与度'])), 0.001);
@@ -1287,16 +1531,17 @@
       const downRows = downItems.map(it => buildRow(it, false)).join('');
 
       // PBR evaluation badge
-      const pbrEval = pbr.pbr_eval || '';
-      const pbrRange = pbr.pbr_range || '';
-      const pbrEvalColor = pbrEval === '割安' || pbrEval === 'やや割安' ? '#22c55e'
-        : pbrEval === '適正水準' ? '#3b82f6'
-        : pbrEval === 'やや割高' ? '#f59e0b' : '#ef4444';
-      const pbrEvalBadge = pbrEval ? `<div class="mt-2"><span class="text-[10px] px-3 py-1 font-bold tracking-wider uppercase" style="background:${pbrEvalColor}20;color:${pbrEvalColor};border-radius:0;font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif">${pbrEval}</span><span class="text-[10px] th-text-m ml-2">${t('適正レンジ')}: ${pbrRange}</span></div>` : '';
+      const pbrEval = pbr ? (pbr.pbr_eval || t('データなし')) : t('データなし');
+      const pbrRange = pbr ? (pbr.pbr_range || '—') : '—';
+      const pbrEvalColor = pbrEval === '割安' || pbrEval === t('割安') || pbrEval === 'やや割安' || pbrEval === t('やや割安') ? '#22c55e'
+        : pbrEval === '適正水準' || pbrEval === t('適正水準') ? '#3b82f6'
+        : pbrEval === 'やや割高' || pbrEval === t('やや割高') ? '#f59e0b'
+        : pbrEval === 'データなし' || pbrEval === t('データなし') ? '#9ca3af' : '#ef4444';
+      const pbrEvalBadge = `<div class="mt-2"><span class="text-[10px] px-3 py-1 font-bold tracking-wider uppercase" style="background:${pbrEvalColor}20;color:${pbrEvalColor};border-radius:0;font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif">${pbrEval}</span><span class="text-[10px] th-text-m ml-2">${t('適正レンジ')}: ${pbrRange}</span></div>`;
 
       // PBR 5Y change summary
-      const pbrChgVal = pbr.pbr_change;
-      const pbrChgText = pbrChgVal !== null ? `PBR ${t('5Y Change:')} ${pbrChgVal > 0 ? '+' : ''}${fmtNum(pbrChgVal,2)}x` : '';
+      const pbrChgVal = pbr ? pbr.pbr_change : null;
+      const pbrChgText = pbrChgVal !== null ? `PBR ${t('5Y Change:')} ${pbrChgVal > 0 ? '+' : ''}${fmtNum(pbrChgVal,2)}x` : t('PBR変化：データ不足');
 
       return `
         <div class="mt-12 pt-8 border-t" style="border-color:var(--border)">
@@ -1306,6 +1551,8 @@
             <p class="text-xs th-text-m">PBR = ROE × PER / 100 — ${t('5年間の各要因がPBRに与えた影響を分解')}</p>
             ${pbrEvalBadge}
           </div>
+
+          ${dataWarning}
 
           <div class="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
             <!-- Up factors -->
@@ -1369,7 +1616,7 @@
           <div class="inline-block px-14 py-6 th-bg-2 border-2" style="border-color:var(--brand);border-radius:0">
             <p class="text-[10px] uppercase tracking-[0.2em] th-text-m mb-1" style="font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif">PBR</p>
             <p class="text-5xl font-bold tabular-nums" style="color:var(--brand);font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif">${fmtNum(pbrVal,2)}<span class="text-2xl th-text-m">x</span></p>
-            <p class="text-xs mt-2">${pbrData['判定']==='○'?'<span class="text-green-500">適正水準</span>':pbrData['判定']==='◎'?'<span class="text-green-500">割安</span>':pbrData['判定']==='▲'?'<span class="text-amber-500">やや割高</span>':pbrData['判定']==='×'?'<span class="text-red-500">割高</span>':'<span class="th-text-m">—</span>'}</p>
+            <p class="text-xs mt-2">${pbrData['判定']==='○'?`<span class="text-green-500">${t('適正水準')}</span>`:pbrData['判定']==='◎'?`<span class="text-green-500">${t('割安')}</span>`:pbrData['判定']==='▲'?`<span class="text-amber-500">${t('やや割高')}</span>`:pbrData['判定']==='×'?`<span class="text-red-500">${t('割高')}</span>`:'<span class="th-text-m">—</span>'}</p>
             <p class="text-[11px] th-text-m mt-1">${t('5Y Change:')} <span class="${pbrChg>0?'text-green-400':pbrChg<0?'text-red-400':'th-text-m'}">${pbrChg!==null?((pbrChg>0?'+':'')+fmtNum(pbrChg,2)+'x'):'—'}</span></p>
             ${benchBadge('pbr', null, 'x')}
           </div>
@@ -1390,11 +1637,16 @@
               <div class="w-3 h-3 bg-brand" style="border-radius:0"></div>
               <span class="text-[10px] font-bold uppercase tracking-[0.18em] th-text-m" style="font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif">${t('Market Expectation')}</span>
             </div>
-            <p class="text-3xl font-bold tabular-nums mb-1" style="font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif">${fmtNum(perVal,1)}<span class="text-lg th-text-m">x</span></p>
+            <div class="flex items-baseline gap-2 mb-1">
+              <p class="text-3xl font-bold tabular-nums" style="font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif">${perVal !== null && perVal !== undefined ? fmtNum(perVal,1) : '—'}<span class="text-lg th-text-m">x</span></p>
+              <span id="perYearBadge" class="text-[9px] px-2 py-0.5 tracking-wider" style="background:rgba(213,0,28,0.15);color:#d5001c;border-radius:0;font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif"></span>
+            </div>
             <p class="text-[10px] th-text-m mb-2">${t('per-desc')}</p>
             <div class="mb-2">${benchBadge('pe_aggregate_all', null, 'x')}</div>
             <p class="text-[11px] th-text-m mb-3">${t('5Y Change:')} <span class="${perChg>0?'text-green-400':perChg<0?'text-red-400':'th-text-m'}">${perChg!==null?((perChg>0?'+':'')+fmtNum(perChg,1)+'x'):'—'}</span></p>
-            <canvas id="roetreePERChart" style="max-height:140px"></canvas>
+            <div id="perChartContainer">
+              <canvas id="roetreePERChart" style="max-height:140px"></canvas>
+            </div>
           </div>
 
           <!-- ROE (Profitability) -->
@@ -1403,11 +1655,16 @@
               <div class="w-3 h-3 bg-green-500" style="border-radius:0"></div>
               <span class="text-[10px] font-bold uppercase tracking-[0.18em] th-text-m" style="font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif">${t('Profitability (ROE)')}</span>
             </div>
-            <p class="text-3xl font-bold tabular-nums mb-1" style="font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif">${fmtNum(roeVal,1)}<span class="text-lg th-text-m">%</span></p>
+            <div class="flex items-baseline gap-2 mb-1">
+              <p class="text-3xl font-bold tabular-nums" style="font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif">${roeVal !== null && roeVal !== undefined ? fmtNum(roeVal,1) : '—'}<span class="text-lg th-text-m">%</span></p>
+              <span id="roeYearBadge" class="text-[9px] px-2 py-0.5 tracking-wider" style="background:rgba(34,197,94,0.15);color:#22c55e;border-radius:0;font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif"></span>
+            </div>
             <p class="text-[10px] th-text-m mb-1">${t('roe-desc')}</p>
             <div class="mb-1">${benchBadge(benchmarkRegion === 'japan' ? 'roe_japan' : 'roe_global', 100, '%')}</div>
             <p class="text-[11px] th-text-m mb-3">${t('5Y Change:')} ${fmtNum(roe['5年変化pt'],1)}pt</p>
-            <canvas id="roetreeROEChart" style="max-height:140px"></canvas>
+            <div id="roeChartContainer">
+              <canvas id="roetreeROEChart" style="max-height:140px"></canvas>
+            </div>
           </div>
         </div>
 
@@ -1488,32 +1745,54 @@
       requestAnimationFrame(() => {
         const ts = lastTimeseries || {};
         const dates = (ts.dates || []).slice().reverse();
+        const latestYear = dates.length > 0 ? dates[dates.length - 1] : null;
+
         const cs = getComputedStyle(document.documentElement);
         const chartText = cs.getPropertyValue('--chart-text').trim();
         const chartGridY = cs.getPropertyValue('--chart-grid-y').trim();
-        const miniOpts = (color) => ({
+        const miniOpts = (color, fmtCb) => ({
           type: 'bar', options: {
             responsive: true, maintainAspectRatio: true,
             plugins: { legend: { display: false } },
             scales: {
               x: { grid: { display: false }, ticks: { font: { size: 8 }, color: chartText, maxRotation: 45 } },
-              y: { grid: { color: chartGridY }, ticks: { font: { size: 8 }, color: chartText } },
+              y: { grid: { color: chartGridY }, ticks: { font: { size: 8 }, color: chartText, callback: fmtCb || (v => smartFormat(v)) } },
             },
           },
         });
+
         // PER chart
         const perCanvas = document.getElementById('roetreePERChart');
-        if (perCanvas && ts.pe_ratio) {
-          new Chart(perCanvas, { ...miniOpts('#d5001c'), data: {
+        const perYearBadge = document.getElementById('perYearBadge');
+        const perChartContainer = document.getElementById('perChartContainer');
+
+        if (latestYear && perYearBadge) {
+          perYearBadge.textContent = latestYear + '年度';
+        }
+
+        if (perCanvas && ts.pe_ratio && ts.pe_ratio.length > 0) {
+          new Chart(perCanvas, { ...miniOpts('#d5001c', metricFmt('pe_ratio')), data: {
             labels: dates, datasets: [{ data: ts.pe_ratio.slice().reverse(), backgroundColor: '#d5001c33', borderColor: '#d5001c', borderWidth: 1, borderRadius: 2 }]
           }});
+        } else if (perChartContainer) {
+          perChartContainer.innerHTML = `<div class="flex items-center justify-center gap-2 p-3 border border-yellow-500/20 bg-yellow-500/5" style="border-radius:0"><span class="text-yellow-400">⚠</span><p class="text-[10px] th-text-m">${t('時系列データなし')}</p></div>`;
         }
+
         // ROE chart
         const roeCanvas = document.getElementById('roetreeROEChart');
-        if (roeCanvas && ts.roe) {
-          new Chart(roeCanvas, { ...miniOpts('#22c55e'), data: {
+        const roeYearBadge = document.getElementById('roeYearBadge');
+        const roeChartContainer = document.getElementById('roeChartContainer');
+
+        if (latestYear && roeYearBadge) {
+          roeYearBadge.textContent = latestYear + '年度';
+        }
+
+        if (roeCanvas && ts.roe && ts.roe.length > 0) {
+          new Chart(roeCanvas, { ...miniOpts('#22c55e', metricFmt('roe')), data: {
             labels: dates, datasets: [{ data: ts.roe.slice().reverse(), backgroundColor: '#22c55e33', borderColor: '#22c55e', borderWidth: 1, borderRadius: 2 }]
           }});
+        } else if (roeChartContainer) {
+          roeChartContainer.innerHTML = `<div class="flex items-center justify-center gap-2 p-3 border border-yellow-500/20 bg-yellow-500/5" style="border-radius:0"><span class="text-yellow-400">⚠</span><p class="text-[10px] th-text-m">${t('時系列データなし')}</p></div>`;
         }
         // DuPont decomposition charts
         const dupontCharts = [
@@ -1524,7 +1803,7 @@
         dupontCharts.forEach(({ id, key, color }) => {
           const canvas = document.getElementById(id);
           if (canvas && ts[key]) {
-            new Chart(canvas, { ...miniOpts(color), data: {
+            new Chart(canvas, { ...miniOpts(color, metricFmt(key)), data: {
               labels: dates, datasets: [{ data: ts[key].slice().reverse(), backgroundColor: color + '33', borderColor: color, borderWidth: 1, borderRadius: 2 }]
             }});
           }
@@ -1550,7 +1829,7 @@
               responsive: true, maintainAspectRatio: false,
               plugins: { legend: { display: true, labels: { font: { size: 9 }, color: chartText, boxWidth: 12 } } },
               scales: {
-                x: { display: false },
+                x: { grid: { display: false }, ticks: { font: { size: 8 }, color: chartText, maxRotation: 45 } },
                 y: { ticks: { font: { size: 9 }, color: chartText, callback: v => v + '%' }, grid: { color: chartGridY } }
               }
             }
@@ -1559,9 +1838,56 @@
       });
     }
 
+    // Currency symbol map and globals
+    const CURRENCY_SYMBOLS = {
+      JPY:'¥', USD:'$', EUR:'€', GBP:'£', HKD:'HK$', KRW:'₩',
+      AUD:'A$', CAD:'C$', CNY:'¥', CHF:'Fr', INR:'₹', SGD:'S$', TWD:'NT$'
+    };
+    let currentCurrencyCode = 'JPY';
+    let currentCurrencySymbol = '¥';
+
+    // Smart number formatter for chart axes and tooltips
+    let isJPYData = false;  // kept for backward compat (no longer used in smartFormat)
+    let dataUnitScale = null;  // Track if data is already in millions
+    let evaluationCriteria = {};  // Store evaluation criteria from backend
+
+    function smartFormat(value) {
+      if (value == null || isNaN(value)) return '0';
+      if (value === 0) return '0';
+
+      const sym = currentCurrencySymbol;
+      const abs = Math.abs(value);
+
+      // Excel data is already stored in millions
+      if (dataUnitScale === 'millions') {
+        if (abs >= 1e6) return sym + (value / 1e6).toFixed(1) + 'T';   // ≥1M million = ≥1T
+        if (abs >= 1e3) return sym + (value / 1e3).toFixed(1) + 'B';   // ≥1K million = ≥1B
+        if (abs >= 1)   return sym + value.toFixed(1) + 'M';
+        if (abs >= 0.01) return sym + value.toFixed(2) + 'M';
+        return '0';
+      }
+
+      // yfinance raw values — apply T/B/M/K tiers directly
+      if (abs >= 1e12) return sym + (value / 1e12).toFixed(1) + 'T';
+      if (abs >= 1e9)  return sym + (value / 1e9).toFixed(1) + 'B';
+      if (abs >= 1e6)  return sym + (value / 1e6).toFixed(1) + 'M';
+      if (abs >= 1e3)  return sym + (value / 1e3).toFixed(1) + 'K';
+      if (abs >= 1)    return sym + value.toFixed(1);
+      if (abs >= 0.01) return sym + value.toFixed(2);
+      return '0';
+    }
+
+    // Metric-aware formatter — %/ratio keys bypass JPY scaling in smartFormat
+    const _PCT_KEYS  = new Set(['roe','roa','op_margin','ebitda_margin','net_margin','equity_ratio','roic','dividend_yield','payout_ratio','interest_burden','nonop_burden','tax_burden']);
+    const _RATIO_KEYS = new Set(['asset_turnover','financial_leverage','pe_ratio','pb_ratio','debt_fcf','debt_ebitda','nd_ebitda','quick_ratio','current_ratio']);
+    function metricFmt(key) {
+      if (_PCT_KEYS.has(key))   return v => (v != null && !isNaN(v)) ? v.toFixed(1) + '%' : '';
+      if (_RATIO_KEYS.has(key)) return v => (v != null && !isNaN(v)) ? v.toFixed(2) + 'x' : '';
+      return v => smartFormat(v);
+    }
+
     function renderCharts(ts) {
       Object.values(charts).forEach(c => c.destroy()); charts = {};
-      // Reverse so charts go from oldest (left) to newest (right)
       const revArr = a => Array.isArray(a) ? a.slice().reverse() : a;
       const dates = revArr(ts.dates || []);
       const tsR = {};
@@ -1575,32 +1901,47 @@
 
       const opts = {
         responsive: true, maintainAspectRatio: true,
-        plugins: { legend: { display: true, position: 'bottom', labels: { boxWidth: 8, padding: 16, font: { size: 10, family: 'Inter' }, color: chartText } } },
-        scales: { x: { grid: { display: false }, ticks: { font: { size: 9 }, color: chartText, maxRotation: 45 } }, y: { grid: { color: chartGridY }, ticks: { font: { size: 9 }, color: chartText } } },
+        plugins: {
+          legend: { display: true, position: 'bottom', labels: { boxWidth: 8, padding: 16, font: { size: 10, family: 'Inter' }, color: chartText } },
+          tooltip: { callbacks: { label: ctx => ctx.dataset.label + ': ' + smartFormat(ctx.parsed.y) } },
+        },
+        scales: {
+          x: { grid: { display: false }, ticks: { font: { size: 9 }, color: chartText, maxRotation: 45 } },
+          y: { grid: { color: chartGridY }, ticks: { font: { size: 9 }, color: chartText, callback: v => smartFormat(v) } },
+        },
+        elements: { point: { radius: 2, hoverRadius: 4 }, line: { tension: 0.4, borderWidth: 2 } },
       };
 
-      function bar(id, label, data, color) {
-        charts[id] = new Chart($(id), { type: 'bar', data: { labels: dates, datasets: [{ label, data, backgroundColor: color + '33', borderColor: color, borderWidth: 1, borderRadius: 3 }] }, options: opts });
+      // % axis opts (for ROE/ROA)
+      const pctOpts = JSON.parse(JSON.stringify(opts));
+      pctOpts.scales.y.ticks = { font: { size: 9 }, color: chartText, callback: v => v.toFixed(1) + '%' };
+      pctOpts.plugins = { ...opts.plugins, tooltip: { callbacks: { label: ctx => ctx.dataset.label + ': ' + (ctx.parsed.y != null ? ctx.parsed.y.toFixed(2) + '%' : '') } } };
+      pctOpts.elements = opts.elements;
+
+      function areaLine(id, label, data, color) {
+        charts[id] = new Chart($(id), { type: 'line', data: { labels: dates, datasets: [{
+          label, data, borderColor: color, backgroundColor: color + '18', fill: true, borderWidth: 2, pointRadius: 2, tension: 0.4,
+        }] }, options: opts });
       }
-      function line(id, datasets) {
-        charts[id] = new Chart($(id), { type: 'line', data: { labels: dates, datasets }, options: { ...opts, elements: { point: { radius: 2 }, line: { tension: 0.4, borderWidth: 2 } } } });
+      function multiLine(id, datasets, useOpts) {
+        charts[id] = new Chart($(id), { type: 'line', data: { labels: dates, datasets }, options: useOpts || opts });
       }
 
-      bar('chartRevenue', t('Revenue'), tsR.revenue, '#d5001c');
-      bar('chartNetIncome', t('Net Income'), tsR.net_income, '#22c55e');
-      bar('chartFCF', 'FCF', tsR.fcf, '#8b5cf6');
-      bar('chartEPS', 'EPS', tsR.eps, '#f59e0b');
+      areaLine('chartRevenue', t('Revenue'), tsR.revenue, '#d5001c');
+      areaLine('chartNetIncome', t('Net Income'), tsR.net_income, '#22c55e');
+      areaLine('chartFCF', 'FCF', tsR.fcf, '#8b5cf6');
+      areaLine('chartEPS', 'EPS', tsR.eps, '#f59e0b');
 
-      line('chartROE', [
-        { label: 'ROE (%)', data: tsR.roe, borderColor: '#d5001c', backgroundColor: 'rgba(213,0,28,0.05)', fill: true },
-        { label: 'ROA (%)', data: tsR.roa, borderColor: '#3b82f6', backgroundColor: 'rgba(59,130,246,0.05)', fill: true },
+      multiLine('chartROE', [
+        { label: 'ROE (%)', data: tsR.roe, borderColor: '#d5001c', backgroundColor: 'rgba(213,0,28,0.05)', fill: true, borderWidth: 2, pointRadius: 2, tension: 0.4 },
+        { label: 'ROA (%)', data: tsR.roa, borderColor: '#3b82f6', backgroundColor: 'rgba(59,130,246,0.05)', fill: true, borderWidth: 2, pointRadius: 2, tension: 0.4 },
+      ], pctOpts);
+
+      multiLine('chartBS', [
+        { label: t('Total Assets'), data: tsR.total_assets, borderColor: '#3b82f6', backgroundColor: 'rgba(59,130,246,0.08)', fill: true, borderWidth: 2, pointRadius: 2, tension: 0.4 },
+        { label: t('Equity'), data: tsR.total_equity, borderColor: '#22c55e', backgroundColor: 'rgba(34,197,94,0.08)', fill: true, borderWidth: 2, pointRadius: 2, tension: 0.4 },
+        { label: t('Debt'), data: tsR.total_debt, borderColor: '#ef4444', backgroundColor: 'rgba(239,68,68,0.08)', fill: true, borderWidth: 2, pointRadius: 2, tension: 0.4 },
       ]);
-
-      charts['chartBS'] = new Chart($('chartBS'), { type: 'bar', data: { labels: dates, datasets: [
-        { label: t('Total Assets'), data: tsR.total_assets, backgroundColor: 'rgba(59,130,246,0.15)', borderColor: '#3b82f6', borderWidth: 1 },
-        { label: t('Equity'), data: tsR.total_equity, backgroundColor: 'rgba(34,197,94,0.15)', borderColor: '#22c55e', borderWidth: 1 },
-        { label: t('Debt'), data: tsR.total_debt, backgroundColor: 'rgba(239,68,68,0.15)', borderColor: '#ef4444', borderWidth: 1 },
-      ]}, options: opts });
     }
 
     // ── Competitor Analysis ──
@@ -1628,12 +1969,44 @@
     // Store raw data for re-rendering on toggle
     let compRawData = null;
 
-    // File input handlers
+    // Comp slot mode toggle + file/ticker handlers
     document.querySelectorAll('.comp-slot').forEach(slot => {
       const idx = parseInt(slot.dataset.slot);
       const fileInput = slot.querySelector('.comp-file');
+      const fileLabel = slot.querySelector('.comp-file-label');
+      const tickerInput = slot.querySelector('.comp-ticker');
       const nameSpan = slot.querySelector('.comp-file-name');
       const removeBtn = slot.querySelector('.comp-remove');
+      const modeBtn = slot.querySelector('.comp-mode-toggle');
+
+      function applyMode() {
+        const mode = slot.dataset.mode;
+        if (mode === 'ticker') {
+          tickerInput.classList.remove('hidden');
+          fileLabel.classList.add('hidden');
+          nameSpan.textContent = '';
+          modeBtn.textContent = 'TKR';
+          modeBtn.style.color = '#d5001c';
+        } else {
+          tickerInput.classList.add('hidden');
+          tickerInput.value = '';
+          fileLabel.classList.remove('hidden');
+          modeBtn.textContent = 'FILE';
+          modeBtn.style.color = '';
+        }
+        updateCompareBtn();
+      }
+
+      modeBtn.addEventListener('click', () => {
+        slot.dataset.mode = slot.dataset.mode === 'ticker' ? 'file' : 'ticker';
+        competitorFiles[idx] = null;
+        fileInput.value = '';
+        nameSpan.textContent = '';
+        removeBtn.classList.add('hidden');
+        applyMode();
+      });
+
+      tickerInput.addEventListener('input', () => updateCompareBtn());
 
       fileInput.addEventListener('change', e => {
         const file = e.target.files[0];
@@ -1648,14 +2021,24 @@
       removeBtn.addEventListener('click', () => {
         competitorFiles[idx] = null;
         fileInput.value = '';
+        tickerInput.value = '';
         nameSpan.textContent = '';
         removeBtn.classList.add('hidden');
         updateCompareBtn();
       });
+
+      applyMode();
     });
 
     function updateCompareBtn() {
-      const count = competitorFiles.filter(f => f !== null).length;
+      let count = 0;
+      document.querySelectorAll('.comp-slot').forEach((slot, i) => {
+        if (slot.dataset.mode === 'ticker') {
+          if (slot.querySelector('.comp-ticker').value.trim()) count++;
+        } else {
+          if (competitorFiles[i]) count++;
+        }
+      });
       $('btnCompetitorAnalyze').disabled = count < 2;
     }
 
@@ -1666,9 +2049,19 @@
       const slots = document.querySelectorAll('.comp-slot');
       let count = 0;
       slots.forEach((slot, i) => {
-        const file = competitorFiles[i];
-        if (file) {
-          const name = slot.querySelector('.comp-name').value.trim();
+        const mode = slot.dataset.mode;
+        const name = slot.querySelector('.comp-name').value.trim();
+        if (mode === 'ticker') {
+          const ticker = slot.querySelector('.comp-ticker').value.trim();
+          if (!ticker) return;
+          fd.append('types[]', 'ticker');
+          fd.append('tickers[]', ticker);
+          fd.append('names[]', name || ticker);
+          count++;
+        } else {
+          const file = competitorFiles[i];
+          if (!file) return;
+          fd.append('types[]', 'file');
           fd.append('files[]', file);
           fd.append('names[]', name || file.name.replace(/\.[^.]+$/, ''));
           count++;
@@ -1676,7 +2069,6 @@
       });
       if (count < 2) return;
 
-      // Pass selected Damodaran industry
       const indSel = $('inputIndustry');
       if (indSel) fd.append('damodaran_industry', indSel.value || '');
 
@@ -1706,7 +2098,7 @@
       summaryDiv.classList.remove('hidden');
 
       const summaryMetrics = [
-        { key: 'revenue', label: () => t('Revenue'), fmt: v => v != null ? (Math.abs(v) >= 1e3 ? (v/1e3).toFixed(1) + 'B' : v.toFixed(0) + 'M') : '—' },
+        { key: 'revenue', label: () => t('Revenue'), fmt: v => v != null ? smartFormat(v) : '—' },
         { key: 'roe', label: 'ROE', fmt: v => v != null ? v.toFixed(1) + '%' : '—' },
         { key: 'roa', label: 'ROA', fmt: v => v != null ? v.toFixed(1) + '%' : '—' },
         { key: 'op_margin', label: () => t('Operating Margin'), fmt: v => v != null ? v.toFixed(1) + '%' : '—' },
@@ -1830,6 +2222,7 @@
           };
         });
 
+        const cFmt = metricFmt(metric.key);
         const baseOpts = {
           responsive: true, maintainAspectRatio: true,
           plugins: {
@@ -1840,7 +2233,7 @@
                   const v = ctx.parsed.y;
                   if (v == null) return '';
                   if (isIndexed) return `${ctx.dataset.label}: ${v.toFixed(1)} (${t('comp-base')}=100)`;
-                  return `${ctx.dataset.label}: ${v.toLocaleString()}`;
+                  return `${ctx.dataset.label}: ${cFmt(v)}`;
                 }
               }
             }
@@ -1851,7 +2244,7 @@
               grid: { color: chartGridY },
               ticks: {
                 font: { size: 9 }, color: chartText,
-                callback: function(v) { return isIndexed ? v.toFixed(0) : v.toLocaleString(); }
+                callback: function(v) { return isIndexed ? v.toFixed(0) : cFmt(v); }
               },
               title: isIndexed ? { display: true, text: t('comp-base') + ' = 100', font: { size: 9 }, color: chartText } : { display: false },
             }
@@ -1988,29 +2381,53 @@
       const chartText = cs.getPropertyValue('--chart-text').trim();
       const chartGridY = cs.getPropertyValue('--chart-grid-y').trim();
       const color = chartColors[key] || '#d5001c';
+      const mFmt = metricFmt(key);
 
       modalChart = new Chart($('chartModalCanvas'), {
         type: 'bar',
         data: {
           labels: cd.labels,
-          datasets: [{
-            label: label,
-            data: cd.data,
-            backgroundColor: color + '44',
-            borderColor: color,
-            borderWidth: 1.5,
-            borderRadius: 4,
-          }]
+          datasets: [
+            {
+              type: 'bar',
+              label: label,
+              data: cd.data,
+              backgroundColor: color + '44',
+              borderColor: color,
+              borderWidth: 1.5,
+              borderRadius: 4,
+              order: 2,
+            },
+            {
+              type: 'line',
+              label: label + ' (Trend)',
+              data: cd.data,
+              borderColor: color,
+              backgroundColor: 'transparent',
+              borderWidth: 2.5,
+              pointRadius: 5,
+              pointBackgroundColor: color,
+              pointBorderColor: '#fff',
+              pointBorderWidth: 2,
+              tension: 0.3,
+              order: 1,
+            }
+          ]
         },
         options: {
           responsive: true,
           maintainAspectRatio: true,
           plugins: {
             legend: { display: false },
+            tooltip: {
+              mode: 'index',
+              intersect: false,
+              callbacks: { label: ctx => ctx.dataset.type === 'bar' ? label + ': ' + mFmt(ctx.parsed.y) : '' }
+            },
           },
           scales: {
             x: { grid: { display: false }, ticks: { font: { size: 11 }, color: chartText } },
-            y: { grid: { color: chartGridY }, ticks: { font: { size: 10 }, color: chartText } },
+            y: { grid: { color: chartGridY }, ticks: { font: { size: 10 }, color: chartText, callback: mFmt } },
           },
         }
       });
@@ -2194,7 +2611,7 @@
                 plugins: { legend: { display: false } },
                 scales: {
                   x: { grid: { display: false }, ticks: { font: { size: 10 }, color: chartText } },
-                  y: { grid: { color: chartGridY }, ticks: { font: { size: 9 }, color: chartText } },
+                  y: { grid: { color: chartGridY }, ticks: { font: { size: 9 }, color: chartText, callback: v => smartFormat(v) } },
                 },
               },
             });

@@ -2,8 +2,13 @@
 Excelファイルからstock_data.json形式のデータを抽出するパーサー
 シートが不足していても利用可能なデータだけで分析を行う
 .xls（旧形式）および日本語ラベルの縦型レイアウトにも対応
+ファジーマッチングによる柔軟なラベル検出機能搭載
 """
 import os
+import re
+import unicodedata
+from difflib import SequenceMatcher
+
 import openpyxl
 try:
     import xlrd
@@ -63,56 +68,701 @@ def _load_workbook(filepath):
         return openpyxl.load_workbook(filepath, data_only=True)
 
 
+# ---------- 統一シノニム辞書 ----------
+
+METRIC_SYNONYMS = {
+    # --- Income Statement ---
+    'revenue': {
+        'exact': ['Revenue', 'Total Revenue', 'Net Revenue', 'Sales',
+                  '売上高', '収益'],
+        'keywords': ['revenue', 'sales', 'net sales', '売上', '収益'],
+        'anti_keywords': ['cost of revenue', 'cost of sales'],
+        'value_type': 'large_number',
+    },
+    'cogs': {
+        'exact': ['Cost of Revenue', 'Cost of Goods Sold', 'COGS',
+                  '売上原価'],
+        'keywords': ['cost of revenue', 'cost of goods', 'cogs', '売上原価'],
+        'anti_keywords': [],
+        'value_type': 'large_number',
+    },
+    'op_income': {
+        'exact': ['Operating Income', 'Operating Profit', 'EBIT',
+                  '営業利益'],
+        'keywords': ['operating income', 'operating profit', 'ebit', '営業利益'],
+        'anti_keywords': ['non-operating', 'non operating'],
+        'value_type': 'large_number',
+    },
+    'net_income': {
+        'exact': ['Net Income', 'Net Profit', 'Net Earnings',
+                  '純利益', '当期純利益'],
+        'keywords': ['net income', 'net profit', 'net earnings', '純利益', '当期純利益'],
+        'anti_keywords': [],
+        'value_type': 'large_number',
+    },
+    'eps': {
+        'exact': ['EPS (Basic)', 'EPS', 'Earnings Per Share',
+                  'EPS', '一株益', '1株益'],
+        'keywords': ['eps', 'earnings per share', '一株益', '1株益'],
+        'anti_keywords': ['diluted'],
+        'value_type': 'per_share',
+    },
+    'op_margin': {
+        'exact': ['Operating Margin', '営業利益率'],
+        'keywords': ['operating margin', '営業利益率'],
+        'anti_keywords': [],
+        'value_type': 'percentage',
+    },
+    'ebitda_margin': {
+        'exact': ['EBITDA Margin', 'EBITDAマージン'],
+        'keywords': ['ebitda margin', 'ebitdaマージン'],
+        'anti_keywords': [],
+        'value_type': 'percentage',
+    },
+    'ebitda': {
+        'exact': ['EBITDA'],
+        'keywords': ['ebitda'],
+        'anti_keywords': ['margin', 'ebitda margin'],
+        'value_type': 'large_number',
+    },
+    'sga': {
+        'exact': ['Selling, General & Admin', 'SG&A', 'SGA', '販管費'],
+        'keywords': ['selling general', 'sg&a', 'sga', '販管費'],
+        'anti_keywords': [],
+        'value_type': 'large_number',
+    },
+    'da': {
+        'exact': ['Depreciation & Amortization', 'D&A', 'Depreciation',
+                  '減価償却費'],
+        'keywords': ['depreciation', 'amortization', 'd&a', '減価償却'],
+        'anti_keywords': [],
+        'value_type': 'large_number',
+    },
+    'interest_exp': {
+        'exact': ['Interest Expense / Income', 'Interest Expense',
+                  'Net Interest Income', '支払利息'],
+        'keywords': ['interest expense', 'interest income', 'net interest', '支払利息'],
+        'anti_keywords': [],
+        'value_type': 'large_number',
+    },
+    'other_exp': {
+        'exact': ['Other Expense / Income', 'Other Income/Expense',
+                  'Non-Operating Income', '営業外損益'],
+        'keywords': ['other expense', 'other income', 'non-operating', '営業外'],
+        'anti_keywords': [],
+        'value_type': 'large_number',
+    },
+    'pretax_income': {
+        'exact': ['Pretax Income', 'Pre-Tax Income', 'Income Before Tax',
+                  '経常利益', '税引前利益'],
+        'keywords': ['pretax', 'pre-tax', 'before tax', '経常利益', '税引前'],
+        'anti_keywords': [],
+        'value_type': 'large_number',
+    },
+    'ordinary_income': {
+        'exact': ['経常利益'],
+        'keywords': ['経常利益'],
+        'anti_keywords': [],
+        'value_type': 'large_number',
+    },
+    'income_tax': {
+        'exact': ['Income Tax', 'Tax Provision', 'Provision for Income Taxes',
+                  '法人税'],
+        'keywords': ['income tax', 'tax provision', '法人税'],
+        'anti_keywords': ['effective tax rate', 'before tax'],
+        'value_type': 'large_number',
+    },
+    'eff_tax_rate': {
+        'exact': ['Effective Tax Rate', '実効税率'],
+        'keywords': ['effective tax rate', '実効税率'],
+        'anti_keywords': [],
+        'value_type': 'percentage',
+    },
+    'dates': {
+        'exact': ['Date', 'Year Ending', 'Fiscal Year', 'Period',
+                  '年度', '決算期', '決算年度'],
+        'keywords': ['date', 'year', 'fiscal', 'period', '年度', '決算'],
+        'anti_keywords': [],
+        'value_type': None,
+    },
+
+    # --- Cash Flow ---
+    'fcf': {
+        'exact': ['Free Cash Flow', 'FCF', 'フリーCF'],
+        'keywords': ['free cash flow', 'fcf', 'フリーcf'],
+        'anti_keywords': ['debt/fcf'],
+        'value_type': 'large_number',
+    },
+    'ocf': {
+        'exact': ['Operating Cash Flow', 'Cash from Operations', '営業CF'],
+        'keywords': ['operating cash flow', 'cash from operations', '営業cf'],
+        'anti_keywords': ['margin'],
+        'value_type': 'large_number',
+    },
+    'capex': {
+        'exact': ['Capital Expenditures', 'Capex', 'CapEx', '設備投資'],
+        'keywords': ['capital expenditure', 'capex', '設備投資'],
+        'anti_keywords': [],
+        'value_type': 'large_number',
+    },
+    'investing_cf': {
+        'exact': ['Investing Cash Flow', 'Cash from Investing', '投資CF'],
+        'keywords': ['investing cash flow', 'cash from investing', '投資cf'],
+        'anti_keywords': [],
+        'value_type': 'large_number',
+    },
+    'financing_cf': {
+        'exact': ['Financing Cash Flow', 'Cash from Financing', '財務CF'],
+        'keywords': ['financing cash flow', 'cash from financing', '財務cf'],
+        'anti_keywords': [],
+        'value_type': 'large_number',
+    },
+
+    # --- Balance Sheet ---
+    'total_assets': {
+        'exact': ['Total Assets', '総資産'],
+        'keywords': ['total assets', '総資産'],
+        'anti_keywords': ['current assets', 'long-term assets'],
+        'value_type': 'large_number',
+    },
+    'total_equity': {
+        'exact': ['Shareholders Equity', "Shareholders' Equity",
+                  'Total Equity', 'Stockholders Equity',
+                  '株主資本', '自己資本', '純資産'],
+        'keywords': ['shareholders equity', 'stockholders equity', 'total equity',
+                     '株主資本', '自己資本', '純資産'],
+        'anti_keywords': ['debt/equity', 'return on equity'],
+        'value_type': 'large_number',
+    },
+    'total_debt': {
+        'exact': ['Total Debt', 'Long-Term Debt', '有利子負債'],
+        'keywords': ['total debt', 'long-term debt', '有利子負債'],
+        'anti_keywords': ['net debt', 'debt/'],
+        'value_type': 'large_number',
+    },
+    'receivables': {
+        'exact': ['Receivables', 'Accounts Receivable', 'Trade Receivables',
+                  '売上債権'],
+        'keywords': ['receivables', 'accounts receivable', '売上債権'],
+        'anti_keywords': [],
+        'value_type': 'large_number',
+    },
+    'inventory': {
+        'exact': ['Inventory', 'Inventories', '棚卸資産'],
+        'keywords': ['inventory', 'inventories', '棚卸資産'],
+        'anti_keywords': [],
+        'value_type': 'large_number',
+    },
+    'payables': {
+        'exact': ['Accounts Payable', 'Trade Payables', '買掛金'],
+        'keywords': ['accounts payable', 'trade payable', '買掛金'],
+        'anti_keywords': [],
+        'value_type': 'large_number',
+    },
+    'current_assets': {
+        'exact': ['Total Current Assets', 'Current Assets', '流動資産'],
+        'keywords': ['current assets', '流動資産'],
+        'anti_keywords': ['non-current', 'long-term'],
+        'value_type': 'large_number',
+    },
+    'current_liab': {
+        'exact': ['Total Current Liabilities', 'Current Liabilities', '流動負債'],
+        'keywords': ['current liabilities', '流動負債'],
+        'anti_keywords': ['non-current'],
+        'value_type': 'large_number',
+    },
+    'cash': {
+        'exact': ['Cash & Cash Equivalents', 'Cash and Equivalents', 'Cash',
+                  '現金同等物', '現金及び現金同等物'],
+        'keywords': ['cash', 'cash equivalents', '現金'],
+        'anti_keywords': ['net cash', 'free cash'],
+        'value_type': 'large_number',
+    },
+    'fixed_assets': {
+        'exact': ['Property, Plant & Equipment', 'PP&E', 'Fixed Assets',
+                  '有形固定資産'],
+        'keywords': ['property plant', 'pp&e', 'fixed assets', '有形固定資産'],
+        'anti_keywords': ['intangible'],
+        'value_type': 'large_number',
+    },
+    'intangibles': {
+        'exact': ['Goodwill and Intangibles', 'Intangible Assets', 'Goodwill',
+                  'のれん', '無形固定資産'],
+        'keywords': ['goodwill', 'intangible', 'のれん', '無形固定資産'],
+        'anti_keywords': [],
+        'value_type': 'large_number',
+    },
+    'net_debt': {
+        'exact': ['Net Cash (Debt)', 'Net Debt', 'ネットキャッシュ'],
+        'keywords': ['net cash', 'net debt', 'ネットキャッシュ'],
+        'anti_keywords': ['net debt/ebitda'],
+        'value_type': 'large_number',
+    },
+    'long_term_assets': {
+        'exact': ['Total Long-Term Assets', 'Non-Current Assets', '固定資産'],
+        'keywords': ['long-term assets', 'non-current assets', '固定資産'],
+        'anti_keywords': [],
+        'value_type': 'large_number',
+    },
+    'retained_earnings': {
+        'exact': ['Retained Earnings', '利益剰余金'],
+        'keywords': ['retained earnings', '利益剰余金'],
+        'anti_keywords': [],
+        'value_type': 'large_number',
+    },
+    'short_term_debt': {
+        'exact': ['Short-Term Debt', '短期借入金'],
+        'keywords': ['short-term debt', 'short term debt', '短期借入金'],
+        'anti_keywords': [],
+        'value_type': 'large_number',
+    },
+    'long_term_debt': {
+        'exact': ['Long-Term Debt', '長期借入金'],
+        'keywords': ['long-term debt', 'long term debt', '長期借入金'],
+        'anti_keywords': [],
+        'value_type': 'large_number',
+    },
+    'net_assets': {
+        'exact': ['Net Assets', '純資産'],
+        'keywords': ['net assets', '純資産'],
+        'anti_keywords': [],
+        'value_type': 'large_number',
+    },
+
+    # --- Ratios ---
+    'pe_ratio': {
+        'exact': ['PE Ratio', 'P/E Ratio', 'Price/Earnings', 'PER'],
+        'keywords': ['pe ratio', 'p/e', 'price/earnings', 'per'],
+        'anti_keywords': [],
+        'value_type': 'ratio',
+    },
+    'pb_ratio': {
+        'exact': ['PB Ratio', 'P/B Ratio', 'Price/Book', 'PBR'],
+        'keywords': ['pb ratio', 'p/b', 'price/book', 'pbr'],
+        'anti_keywords': [],
+        'value_type': 'ratio',
+    },
+    'ev': {
+        'exact': ['Enterprise Value', 'EV'],
+        'keywords': ['enterprise value', 'ev'],
+        'anti_keywords': ['ev/ebitda'],
+        'value_type': 'large_number',
+    },
+    'roe': {
+        'exact': ['Return on Equity (ROE)', 'ROE', 'Return on Equity'],
+        'keywords': ['return on equity', 'roe'],
+        'anti_keywords': [],
+        'value_type': 'percentage',
+    },
+    'roa': {
+        'exact': ['Return on Assets (ROA)', 'ROA', 'Return on Assets'],
+        'keywords': ['return on assets', 'roa'],
+        'anti_keywords': [],
+        'value_type': 'percentage',
+    },
+    'roic': {
+        'exact': ['Return on Invested Capital (ROIC)', 'ROIC'],
+        'keywords': ['return on invested capital', 'roic'],
+        'anti_keywords': [],
+        'value_type': 'percentage',
+    },
+    'current_ratio': {
+        'exact': ['Current Ratio', '流動比率'],
+        'keywords': ['current ratio', '流動比率'],
+        'anti_keywords': [],
+        'value_type': 'ratio',
+    },
+    'quick_ratio': {
+        'exact': ['Quick Ratio', '当座比率'],
+        'keywords': ['quick ratio', '当座比率'],
+        'anti_keywords': [],
+        'value_type': 'ratio',
+    },
+    'debt_fcf': {
+        'exact': ['Debt/FCF'],
+        'keywords': ['debt/fcf', 'debt fcf'],
+        'anti_keywords': [],
+        'value_type': 'ratio',
+    },
+    'debt_ebitda': {
+        'exact': ['Debt/EBITDA'],
+        'keywords': ['debt/ebitda', 'debt ebitda'],
+        'anti_keywords': ['net debt/ebitda'],
+        'value_type': 'ratio',
+    },
+    'nd_ebitda': {
+        'exact': ['Net Debt/EBITDA'],
+        'keywords': ['net debt/ebitda', 'net debt ebitda'],
+        'anti_keywords': [],
+        'value_type': 'ratio',
+    },
+    'debt_equity': {
+        'exact': ['Debt/Equity', 'D/E Ratio'],
+        'keywords': ['debt/equity', 'debt equity', 'd/e ratio'],
+        'anti_keywords': [],
+        'value_type': 'ratio',
+    },
+    'dividend_yield': {
+        'exact': ['Dividend Yield', '配当利回り'],
+        'keywords': ['dividend yield', '配当利回り'],
+        'anti_keywords': [],
+        'value_type': 'percentage',
+    },
+    'payout_ratio': {
+        'exact': ['Payout Ratio', '配当性向'],
+        'keywords': ['payout ratio', '配当性向'],
+        'anti_keywords': ['total return'],
+        'value_type': 'percentage',
+    },
+
+    # --- JP-specific ---
+    'ocf_margin_pct': {
+        'exact': ['営業CFマージン'],
+        'keywords': ['営業cfマージン', '営業cf margin'],
+        'anti_keywords': [],
+        'value_type': 'percentage',
+    },
+    'bps': {
+        'exact': ['BPS', '一株純資産', '1株純資産'],
+        'keywords': ['bps', 'book value per share', '一株純資産', '1株純資産'],
+        'anti_keywords': [],
+        'value_type': 'per_share',
+    },
+    'equity_ratio_pct': {
+        'exact': ['Equity Ratio', '自己資本比率'],
+        'keywords': ['equity ratio', '自己資本比率'],
+        'anti_keywords': [],
+        'value_type': 'percentage',
+    },
+    'dividend_per_share': {
+        'exact': ['Dividend Per Share', '一株配当', '1株配当'],
+        'keywords': ['dividend per share', '一株配当', '1株配当'],
+        'anti_keywords': [],
+        'value_type': 'per_share',
+    },
+    'payout_ratio_pct': {
+        'exact': ['Payout Ratio', '配当性向'],
+        'keywords': ['payout ratio', '配当性向'],
+        'anti_keywords': [],
+        'value_type': 'percentage',
+    },
+    'total_return_ratio': {
+        'exact': ['Total Shareholder Return', '総還元性向'],
+        'keywords': ['total return ratio', '総還元性向'],
+        'anti_keywords': [],
+        'value_type': 'percentage',
+    },
+    'dividend_total': {
+        'exact': ['剰余金の配当'],
+        'keywords': ['剰余金の配当'],
+        'anti_keywords': [],
+        'value_type': 'large_number',
+    },
+    'buyback': {
+        'exact': ['Share Buyback', '自社株買い'],
+        'keywords': ['share buyback', 'stock buyback', '自社株買い'],
+        'anti_keywords': [],
+        'value_type': 'large_number',
+    },
+    'doe': {
+        'exact': ['DOE', '純資産配当率'],
+        'keywords': ['doe', '純資産配当率'],
+        'anti_keywords': [],
+        'value_type': 'percentage',
+    },
+}
+
+# ファジーマッチ閾値
+_MATCH_THRESHOLD = 0.65
+
+
+# ---------- ラベル正規化 ----------
+
+def _normalize_label(text):
+    """ラベルを正規化: Unicode正規化、小文字化、空白正規化、記号除去"""
+    if text is None:
+        return ''
+    s = str(text).strip()
+    # Unicode正規化（全角→半角）
+    s = unicodedata.normalize('NFKC', s)
+    s = s.lower()
+    # 括弧とその中身は残すが、記号類を正規化
+    s = re.sub(r'[（）\(\)\[\]【】{}]', ' ', s)
+    s = re.sub(r'[—―\-–/／\\＆]', ' ', s)
+    # 連続空白を1つに
+    s = re.sub(r'\s+', ' ', s).strip()
+    return s
+
+
+def _tokenize(text):
+    """正規化済みテキストをトークン集合に分割"""
+    return set(text.split())
+
+
+# ---------- スコアリング関数 ----------
+
+def _fuzzy_match_label(cell_text, metric_key):
+    """セルテキストと指標キーのマッチスコアを返す (0.0〜1.0)"""
+    syn = METRIC_SYNONYMS.get(metric_key)
+    if syn is None:
+        return 0.0
+
+    raw = str(cell_text).strip() if cell_text is not None else ''
+    if not raw:
+        return 0.0
+
+    normalized = _normalize_label(raw)
+    if not normalized:
+        return 0.0
+
+    # 1. anti_keyword拒否
+    for anti in syn.get('anti_keywords', []):
+        if anti and _normalize_label(anti) in normalized:
+            return 0.0
+
+    # 2. 完全一致（raw or normalized vs exact candidates）
+    for exact in syn.get('exact', []):
+        if raw == exact:
+            return 1.0
+        if normalized == _normalize_label(exact):
+            return 1.0
+
+    # 3. 部分文字列一致（keyword in normalized or normalized in keyword）
+    best_partial = 0.0
+    for kw in syn.get('keywords', []):
+        nkw = _normalize_label(kw)
+        if not nkw:
+            continue
+        if nkw in normalized:
+            # キーワードがラベルに含まれている：カバレッジで重み付け
+            coverage = len(nkw) / len(normalized)
+            score = 0.7 + 0.2 * coverage  # 0.7〜0.9
+            best_partial = max(best_partial, score)
+        elif normalized in nkw:
+            coverage = len(normalized) / len(nkw)
+            score = 0.7 + 0.2 * coverage
+            best_partial = max(best_partial, score)
+
+    if best_partial >= 0.7:
+        return best_partial
+
+    # 4. トークン重複（Jaccard類似度）
+    norm_tokens = _tokenize(normalized)
+    best_jaccard = 0.0
+    for kw in syn.get('keywords', []):
+        kw_tokens = _tokenize(_normalize_label(kw))
+        if not kw_tokens:
+            continue
+        intersection = norm_tokens & kw_tokens
+        union = norm_tokens | kw_tokens
+        if union:
+            jaccard = len(intersection) / len(union)
+            # 0.5〜0.7にスケーリング
+            score = 0.5 + 0.2 * jaccard
+            best_jaccard = max(best_jaccard, score)
+
+    if best_jaccard >= _MATCH_THRESHOLD:
+        return best_jaccard
+
+    # 5. SequenceMatcher（最終手段）
+    best_seq = 0.0
+    for kw in syn.get('keywords', []):
+        nkw = _normalize_label(kw)
+        if not nkw:
+            continue
+        ratio = SequenceMatcher(None, normalized, nkw).ratio()
+        # 0.4〜0.7にスケーリング
+        score = 0.4 + 0.3 * ratio
+        best_seq = max(best_seq, score)
+
+    return best_seq if best_seq >= _MATCH_THRESHOLD else 0.0
+
+
+# ---------- データ妥当性検証 ----------
+
+def _validate_match(values, value_type):
+    """ファジーマッチ後にデータの値域を検証"""
+    if value_type is None:
+        return True
+    nums = [v for v in values if isinstance(v, (int, float))]
+    if not nums:
+        return True  # データなしは通す（後段で処理）
+
+    if value_type == 'percentage':
+        return all(-200 <= v <= 500 for v in nums)
+    elif value_type == 'large_number':
+        return any(abs(v) >= 1 for v in nums)
+    elif value_type == 'ratio':
+        return all(-100 <= v <= 100 for v in nums)
+    elif value_type == 'per_share':
+        return all(-10000 <= v <= 100000 for v in nums)
+    return True
+
+
+# ---------- ファジー行データ取得 ----------
+
+def _get_row_data(ws, row_label):
+    """指定ラベルの行データを取得（新しい順）— 完全一致版（scan_available_metrics用に残す）"""
+    if ws is None:
+        return []
+    for r in range(1, ws.max_row + 1):
+        if ws.cell(row=r, column=1).value == row_label:
+            vals = []
+            for c in range(2, ws.max_column + 1):
+                v = ws.cell(row=r, column=c).value
+                if v is not None:
+                    vals.append(v)
+            return list(reversed(vals))  # 新しい順
+    return []
+
+
+def _fuzzy_get_row_data(ws, metric_key):
+    """ファジーマッチで指標の行データを取得。
+    Returns: (data_list, matched_label, score) — data_listは新しい順"""
+    if ws is None:
+        return [], None, 0.0
+
+    best_row = None
+    best_score = 0.0
+    best_label = None
+
+    for r in range(1, ws.max_row + 1):
+        cell_val = ws.cell(row=r, column=1).value
+        if cell_val is None:
+            continue
+        score = _fuzzy_match_label(cell_val, metric_key)
+        if score > best_score:
+            best_score = score
+            best_row = r
+            best_label = str(cell_val).strip()
+
+    if best_score < _MATCH_THRESHOLD:
+        return [], None, 0.0
+
+    # 行データ取得
+    vals = []
+    for c in range(2, ws.max_column + 1):
+        v = ws.cell(row=best_row, column=c).value
+        if v is not None:
+            vals.append(v)
+    data = list(reversed(vals))  # 新しい順
+
+    # 妥当性検証
+    syn = METRIC_SYNONYMS.get(metric_key, {})
+    vtype = syn.get('value_type')
+    if best_score < 1.0 and not _validate_match(data, vtype):
+        return [], None, 0.0
+
+    return data, best_label, best_score
+
+
+def _fuzzy_find_all_metrics(ws, metric_keys):
+    """複数指標を一括検索（高速化：ラベルを1回だけスキャン）。
+    Returns: dict of metric_key -> (data_list, matched_label, score)"""
+    results = {k: ([], None, 0.0) for k in metric_keys}
+    if ws is None:
+        return results
+
+    # 全行のラベルを1回スキャン
+    row_labels = {}  # row_num -> cell_value
+    for r in range(1, ws.max_row + 1):
+        v = ws.cell(row=r, column=1).value
+        if v is not None:
+            row_labels[r] = v
+
+    # 各指標に対してベストマッチを探す
+    for metric_key in metric_keys:
+        best_row = None
+        best_score = 0.0
+        best_label = None
+
+        for r, cell_val in row_labels.items():
+            score = _fuzzy_match_label(cell_val, metric_key)
+            if score > best_score:
+                best_score = score
+                best_row = r
+                best_label = str(cell_val).strip()
+
+        if best_score < _MATCH_THRESHOLD:
+            continue
+
+        vals = []
+        for c in range(2, ws.max_column + 1):
+            v = ws.cell(row=best_row, column=c).value
+            if v is not None:
+                vals.append(v)
+        data = list(reversed(vals))
+
+        syn = METRIC_SYNONYMS.get(metric_key, {})
+        vtype = syn.get('value_type')
+        if best_score < 1.0 and not _validate_match(data, vtype):
+            continue
+
+        results[metric_key] = (data, best_label, best_score)
+
+    return results
+
+
+# ---------- 日本語ラベル ファジーマッチ ----------
+
+def _fuzzy_match_jp_label(label):
+    """日本語ラベルをMETRIC_SYNONYMSの全キーに対してマッチし、最良一致のキーを返す"""
+    if label is None:
+        return None
+    best_key = None
+    best_score = 0.0
+    for metric_key in METRIC_SYNONYMS:
+        score = _fuzzy_match_label(label, metric_key)
+        if score > best_score:
+            best_score = score
+            best_key = metric_key
+    if best_score >= _MATCH_THRESHOLD:
+        return best_key
+    return None
+
+
+# ---------- 既存のヘルパー関数 ----------
+
+def _safe_get(lst, idx, default=None):
+    return lst[idx] if idx < len(lst) else default
+
+
+def _find_sheet(wb, candidates):
+    """候補名リストからシートを探す。正規化してファジーに見つからなければNone"""
+    # 完全一致
+    for name in candidates:
+        if name in wb.sheetnames:
+            return wb[name]
+    # 正規化比較
+    norm_sheets = {_normalize_label(s): s for s in wb.sheetnames}
+    for name in candidates:
+        norm_name = _normalize_label(name)
+        # 完全一致（正規化後）
+        if norm_name in norm_sheets:
+            return wb[norm_sheets[norm_name]]
+        # 部分一致
+        for norm_key, real_name in norm_sheets.items():
+            if norm_name in norm_key or norm_key in norm_name:
+                return wb[real_name]
+    return None
+
+
 # ---------- 日本語縦型レイアウト検出・パーサー ----------
 
 # セクションヘッダー
 _JP_SECTION_HEADERS = {'業績', '財務', 'CF', 'キャッシュフロー', '配当', '株価指標'}
+_JP_SECTION_HEADERS_NORMALIZED = {_normalize_label(h) for h in _JP_SECTION_HEADERS}
 
-# 日本語ラベル → 内部キーのマッピング
-_JP_LABEL_MAP = {
-    # 業績セクション
-    '売上高': 'revenue',
-    '営業利益': 'op_income',
-    '経常利益': 'ordinary_income',
-    '純利益': 'net_income',
-    '当期純利益': 'net_income',
-    'EPS': 'eps',
-    '一株益': 'eps',
-    '1株益': 'eps',
-    'ROE': 'roe',
-    'ROA': 'roa',
-    '営業利益率': 'op_margin_pct',
-    '営業CFマージン': 'ocf_margin_pct',
-    # 財務セクション
-    '総資産': 'total_assets',
-    '純資産': 'net_assets',
-    '株主資本': 'total_equity',
-    '自己資本': 'total_equity',
-    '利益剰余金': 'retained_earnings',
-    '短期借入金': 'short_term_debt',
-    '長期借入金': 'long_term_debt',
-    '有利子負債': 'total_debt',
-    'BPS': 'bps',
-    '一株純資産': 'bps',
-    '1株純資産': 'bps',
-    '自己資本比率': 'equity_ratio_pct',
-    # CFセクション
-    '営業CF': 'ocf',
-    '投資CF': 'investing_cf',
-    '財務CF': 'financing_cf',
-    '設備投資': 'capex',
-    '現金同等物': 'cash',
-    '現金及び現金同等物': 'cash',
-    'フリーCF': 'fcf',
-    # 配当セクション
-    '一株配当': 'dividend_per_share',
-    '1株配当': 'dividend_per_share',
-    '配当性向': 'payout_ratio_pct',
-    '総還元性向': 'total_return_ratio',
-    '剰余金の配当': 'dividend_total',
-    '自社株買い': 'buyback',
-    '純資産配当率': 'doe',
-}
+
+def _is_jp_section_header(text):
+    """セクションヘッダーかどうかをファジーに判定"""
+    if text is None:
+        return False
+    raw = str(text).strip()
+    if raw in _JP_SECTION_HEADERS:
+        return True
+    norm = _normalize_label(raw)
+    return norm in _JP_SECTION_HEADERS_NORMALIZED
 
 
 def _is_japanese_vertical_layout(wb):
@@ -123,8 +773,8 @@ def _is_japanese_vertical_layout(wb):
     found_sections = set()
     for r in range(1, min(ws.max_row + 1, 50)):
         val = ws.cell(row=r, column=1).value
-        if val is not None and str(val).strip() in _JP_SECTION_HEADERS:
-            found_sections.add(str(val).strip())
+        if _is_jp_section_header(val):
+            found_sections.add(_normalize_label(str(val).strip()))
     return len(found_sections) >= 2
 
 
@@ -143,7 +793,7 @@ def _parse_numeric(v):
         return None
 
 
-def _parse_japanese_vertical(wb):
+def _parse_japanese_vertical(wb, currency='JPY'):
     """日本語縦型レイアウトのExcelをパースしてanalyzer用のdictとts_dataを返す"""
     ws = wb[wb.sheetnames[0]]
 
@@ -159,25 +809,24 @@ def _parse_japanese_vertical(wb):
     company_name = str(rows[0][0]).strip() if rows and rows[0][0] else ''
 
     # セクションごとにデータを読み取る
-    # 各セクションはヘッダー行の次にラベル行（年度, 売上高, ...）、その後にデータ行が続く
     raw_data = {}  # key -> [値のリスト（古い→新しい順）]
     dates_by_section = {}
     current_section = None
     header_row = None
-    skip_forecast = False
 
     for i, row in enumerate(rows):
         first_cell = str(row[0]).strip() if row[0] is not None else ''
 
-        # セクションヘッダーを検出
-        if first_cell in _JP_SECTION_HEADERS:
+        # セクションヘッダーを検出（ファジー）
+        if _is_jp_section_header(first_cell):
             current_section = first_cell
             header_row = None
             continue
 
-        # セクション内のラベル行を検出（年度, 売上高, ...のような行）
+        # セクション内のラベル行を検出
         if current_section and header_row is None:
-            if first_cell in ('年度', '決算期', '決算年度'):
+            norm_first = _normalize_label(first_cell)
+            if norm_first in ('年度', '決算期', '決算年度'):
                 header_row = row
                 continue
             continue
@@ -201,12 +850,12 @@ def _parse_japanese_vertical(wb):
                 dates_by_section[current_section] = []
             dates_by_section[current_section].append(date_val)
 
-            # 各列のデータを対応するキーに格納
+            # 各列のデータを対応するキーに格納（ファジーマッチ）
             for col_idx in range(1, len(header_row)):
                 label = str(header_row[col_idx]).strip() if header_row[col_idx] else ''
                 if not label or label == '':
                     continue
-                key = _JP_LABEL_MAP.get(label)
+                key = _fuzzy_match_jp_label(label)
                 if key is None:
                     continue
                 val = _parse_numeric(row[col_idx] if col_idx < len(row) else None)
@@ -232,7 +881,6 @@ def _parse_japanese_vertical(wb):
         return raw_data.get(key, [])
 
     # ROE/ROAは%値として直接入っている場合がある（10.86 = 10.86%）
-    # 既に%単位なのでto_pctは不要
     roe_list = g_list('roe')
     roa_list = g_list('roa')
     roe_now = g('roe', 0)
@@ -246,7 +894,6 @@ def _parse_japanese_vertical(wb):
     # 自己資本比率（%値で直接入っている）
     equity_ratio = g('equity_ratio_pct', 0)
     equity_ratio_5y = g('equity_ratio_pct', 4)
-    # equity_ratio_pctがなければ、株主資本/総資産から計算
     if equity_ratio is None and g('total_equity', 0) and g('total_assets', 0):
         equity_ratio = (g('total_equity', 0) / g('total_assets', 0)) * 100
     if equity_ratio_5y is None and g('total_equity', 4) and g('total_assets', 4):
@@ -257,7 +904,9 @@ def _parse_japanese_vertical(wb):
     op_income = g_list('op_income')
     net_income = g_list('net_income')
     op_margin_vals = []
-    if g_list('op_margin_pct'):
+    if g_list('op_margin'):
+        op_margin_vals = g_list('op_margin')[:5]
+    elif g_list('op_margin_pct'):
         op_margin_vals = g_list('op_margin_pct')[:5]
     elif op_income and revenue:
         for i in range(min(5, len(op_income))):
@@ -284,7 +933,11 @@ def _parse_japanese_vertical(wb):
 
     # 配当性向（%値）
     payout_pct = g('payout_ratio_pct', 0)
+    if payout_pct is None:
+        payout_pct = g('payout_ratio', 0)
     payout_pct_5y = g('payout_ratio_pct', 4)
+    if payout_pct_5y is None:
+        payout_pct_5y = g('payout_ratio', 4)
 
     # NOPAT
     nopat = g('op_income', 0) * 0.75 if g('op_income', 0) else None
@@ -378,9 +1031,6 @@ def _parse_japanese_vertical(wb):
     }
 
     # 時系列データ（チャート用）
-    def to_pct(v):
-        return v * 100 if v is not None else None
-
     date_strs = [str(d)[:4] if d else "" for d in dates_raw]
     investing_cf_list = g_list('investing_cf')
     financing_cf_list = g_list('financing_cf')
@@ -462,63 +1112,25 @@ def _parse_japanese_vertical(wb):
     ts_data["nonop_burden"] = []
     ts_data["tax_burden"] = []
 
+    # Metadata for frontend scaling
+    ts_data["_source"] = "excel"
+    ts_data["_unit_scale"] = "millions"  # Data is already in millions
+    ts_data["_is_jpy"] = False  # Prevent double-scaling in smartFormat
+    ts_data["_currency"] = currency
+
     return data, ts_data
-
-
-# ---------- 既存のヘルパー関数 ----------
-
-def _get_row_data(ws, row_label):
-    """指定ラベルの行データを取得（新しい順）"""
-    if ws is None:
-        return []
-    for r in range(1, ws.max_row + 1):
-        if ws.cell(row=r, column=1).value == row_label:
-            vals = []
-            for c in range(2, ws.max_column + 1):
-                v = ws.cell(row=r, column=c).value
-                if v is not None:
-                    vals.append(v)
-            return list(reversed(vals))  # 新しい順
-    return []
-
-
-def _safe_get(lst, idx, default=None):
-    return lst[idx] if idx < len(lst) else default
-
-
-def _find_sheet(wb, candidates):
-    """候補名リストからシートを探す。見つからなければNone"""
-    for name in candidates:
-        if name in wb.sheetnames:
-            return wb[name]
-    # 部分一致でも探す
-    lower_sheets = {s.lower(): s for s in wb.sheetnames}
-    for name in candidates:
-        for key, real_name in lower_sheets.items():
-            if name.lower() in key:
-                return wb[real_name]
-    return None
-
-
-def _try_labels(ws, labels):
-    """複数のラベル候補から最初にヒットしたデータを返す"""
-    for label in labels:
-        data = _get_row_data(ws, label)
-        if data:
-            return data
-    return []
 
 
 # ---------- メインパース関数 ----------
 
-def parse_excel(filepath):
+def parse_excel(filepath, currency='JPY'):
     """Excelファイルをパースしてanalyzer用のdictを返す。
     .xls/.xlsx両対応。日本語縦型レイアウトも自動検出する。"""
     wb = _load_workbook(filepath)
 
     # 日本語縦型レイアウトの検出
     if _is_japanese_vertical_layout(wb):
-        return _parse_japanese_vertical(wb)
+        return _parse_japanese_vertical(wb, currency=currency)
 
     # --- 以下、従来の英語マルチシート形式 ---
 
@@ -533,63 +1145,87 @@ def parse_excel(filepath):
         if wb.sheetnames:
             inc = wb[wb.sheetnames[0]]
 
-    # 日付（新しい順）- 複数のラベルに対応
-    dates_raw = _try_labels(inc, ['Date', 'Year Ending', 'Fiscal Year', 'Period'])
+    # 一括ファジー検索 — 各シートのラベルを1回だけスキャン
+    inc_metrics = _fuzzy_find_all_metrics(inc, [
+        'dates', 'revenue', 'cogs', 'op_income', 'net_income', 'eps',
+        'op_margin', 'ebitda_margin', 'ebitda', 'sga', 'da',
+        'interest_exp', 'other_exp', 'pretax_income', 'income_tax', 'eff_tax_rate',
+    ])
+    cf_metrics = _fuzzy_find_all_metrics(cf, [
+        'fcf', 'ocf', 'capex', 'investing_cf', 'financing_cf',
+    ])
+    bs_metrics = _fuzzy_find_all_metrics(bs, [
+        'total_assets', 'total_equity', 'total_debt', 'receivables',
+        'inventory', 'payables', 'current_assets', 'current_liab',
+        'cash', 'fixed_assets', 'intangibles', 'net_debt', 'long_term_assets',
+    ])
+    rat_metrics = _fuzzy_find_all_metrics(rat, [
+        'pe_ratio', 'pb_ratio', 'ev', 'roe', 'roa', 'roic',
+        'current_ratio', 'quick_ratio', 'debt_fcf', 'debt_ebitda',
+        'nd_ebitda', 'debt_equity', 'dividend_yield', 'payout_ratio',
+    ])
+
+    # ヘルパー: メトリクスデータ取得
+    def fm(metrics_dict, key):
+        return metrics_dict[key][0] if key in metrics_dict else []
+
+    # 日付（新しい順）
+    dates_raw = fm(inc_metrics, 'dates')
 
     # 収益データ
-    revenue = _try_labels(inc, ['Revenue', 'Total Revenue', 'Net Revenue', 'Sales'])
-    cogs_list = _try_labels(inc, ['Cost of Revenue', 'Cost of Goods Sold', 'COGS'])
-    op_income = _try_labels(inc, ['Operating Income', 'Operating Profit', 'EBIT'])
-    net_income = _try_labels(inc, ['Net Income', 'Net Profit', 'Net Earnings'])
-    eps_list = _try_labels(inc, ['EPS (Basic)', 'EPS', 'Earnings Per Share'])
-    op_margin_list = _try_labels(inc, ['Operating Margin'])
-    ebitda_margin_list = _try_labels(inc, ['EBITDA Margin'])
-    ebitda_list = _try_labels(inc, ['EBITDA'])
-    sga_list = _try_labels(inc, ['Selling, General & Admin', 'SG&A', 'SGA'])
-    da_list = _try_labels(inc, ['Depreciation & Amortization', 'D&A', 'Depreciation'])
-    interest_exp_list = _try_labels(inc, ['Interest Expense / Income', 'Interest Expense', 'Net Interest Income'])
-    other_exp_list = _try_labels(inc, ['Other Expense / Income', 'Other Income/Expense', 'Non-Operating Income'])
-    pretax_income_list = _try_labels(inc, ['Pretax Income', 'Pre-Tax Income', 'Income Before Tax'])
-    income_tax_list = _try_labels(inc, ['Income Tax', 'Tax Provision', 'Provision for Income Taxes'])
-    eff_tax_rate_list = _try_labels(inc, ['Effective Tax Rate'])
+    revenue = fm(inc_metrics, 'revenue')
+    cogs_list = fm(inc_metrics, 'cogs')
+    op_income = fm(inc_metrics, 'op_income')
+    net_income = fm(inc_metrics, 'net_income')
+    eps_list = fm(inc_metrics, 'eps')
+    op_margin_list = fm(inc_metrics, 'op_margin')
+    ebitda_margin_list = fm(inc_metrics, 'ebitda_margin')
+    ebitda_list = fm(inc_metrics, 'ebitda')
+    sga_list = fm(inc_metrics, 'sga')
+    da_list = fm(inc_metrics, 'da')
+    interest_exp_list = fm(inc_metrics, 'interest_exp')
+    other_exp_list = fm(inc_metrics, 'other_exp')
+    pretax_income_list = fm(inc_metrics, 'pretax_income')
+    income_tax_list = fm(inc_metrics, 'income_tax')
+    eff_tax_rate_list = fm(inc_metrics, 'eff_tax_rate')
 
     # キャッシュフロー
-    fcf_list = _try_labels(cf, ['Free Cash Flow', 'FCF'])
-    ocf_list = _try_labels(cf, ['Operating Cash Flow', 'Cash from Operations'])
-    capex_list = _try_labels(cf, ['Capital Expenditures', 'Capex', 'CapEx'])
-    investing_cf_list = _try_labels(cf, ['Investing Cash Flow', 'Cash from Investing'])
-    financing_cf_list = _try_labels(cf, ['Financing Cash Flow', 'Cash from Financing'])
+    fcf_list = fm(cf_metrics, 'fcf')
+    ocf_list = fm(cf_metrics, 'ocf')
+    capex_list = fm(cf_metrics, 'capex')
+    investing_cf_list = fm(cf_metrics, 'investing_cf')
+    financing_cf_list = fm(cf_metrics, 'financing_cf')
 
     # バランスシート
-    total_assets_list = _try_labels(bs, ['Total Assets'])
-    total_equity_list = _try_labels(bs, ['Shareholders Equity', "Shareholders' Equity", 'Total Equity', 'Stockholders Equity'])
-    total_debt_list = _try_labels(bs, ['Total Debt', 'Long-Term Debt'])
-    receivables_list = _try_labels(bs, ['Receivables', 'Accounts Receivable', 'Trade Receivables'])
-    inventory_list = _try_labels(bs, ['Inventory', 'Inventories'])
-    payables_list = _try_labels(bs, ['Accounts Payable', 'Trade Payables'])
-    current_assets_list = _try_labels(bs, ['Total Current Assets', 'Current Assets'])
-    current_liab_list = _try_labels(bs, ['Total Current Liabilities', 'Current Liabilities'])
-    cash_list = _try_labels(bs, ['Cash & Cash Equivalents', 'Cash and Equivalents', 'Cash'])
-    fixed_assets_list = _try_labels(bs, ['Property, Plant & Equipment', 'PP&E', 'Fixed Assets'])
-    intangibles_list = _try_labels(bs, ['Goodwill and Intangibles', 'Intangible Assets', 'Goodwill'])
-    net_debt_list = _try_labels(bs, ['Net Cash (Debt)', 'Net Debt'])
-    long_term_assets_list = _try_labels(bs, ['Total Long-Term Assets', 'Non-Current Assets'])
+    total_assets_list = fm(bs_metrics, 'total_assets')
+    total_equity_list = fm(bs_metrics, 'total_equity')
+    total_debt_list = fm(bs_metrics, 'total_debt')
+    receivables_list = fm(bs_metrics, 'receivables')
+    inventory_list = fm(bs_metrics, 'inventory')
+    payables_list = fm(bs_metrics, 'payables')
+    current_assets_list = fm(bs_metrics, 'current_assets')
+    current_liab_list = fm(bs_metrics, 'current_liab')
+    cash_list = fm(bs_metrics, 'cash')
+    fixed_assets_list = fm(bs_metrics, 'fixed_assets')
+    intangibles_list = fm(bs_metrics, 'intangibles')
+    net_debt_list = fm(bs_metrics, 'net_debt')
+    long_term_assets_list = fm(bs_metrics, 'long_term_assets')
 
     # 比率
-    pe_list = _try_labels(rat, ['PE Ratio', 'P/E Ratio', 'Price/Earnings'])
-    pb_list = _try_labels(rat, ['PB Ratio', 'P/B Ratio', 'Price/Book'])
-    ev_list = _try_labels(rat, ['Enterprise Value', 'EV'])
-    roe_list = _try_labels(rat, ['Return on Equity (ROE)', 'ROE', 'Return on Equity'])
-    roa_list = _try_labels(rat, ['Return on Assets (ROA)', 'ROA', 'Return on Assets'])
-    current_ratio_list = _try_labels(rat, ['Current Ratio'])
-    quick_ratio_list = _try_labels(rat, ['Quick Ratio'])
-    debt_fcf_list = _try_labels(rat, ['Debt/FCF'])
-    debt_ebitda_list = _try_labels(rat, ['Debt/EBITDA'])
-    nd_ebitda_list = _try_labels(rat, ['Net Debt/EBITDA'])
-    roic_list = _try_labels(rat, ['Return on Invested Capital (ROIC)', 'ROIC'])
-    debt_equity_list = _try_labels(rat, ['Debt/Equity', 'D/E Ratio'])
-    dividend_yield_list = _try_labels(rat, ['Dividend Yield'])
-    payout_ratio_list = _try_labels(rat, ['Payout Ratio'])
+    pe_list = fm(rat_metrics, 'pe_ratio')
+    pb_list = fm(rat_metrics, 'pb_ratio')
+    ev_list = fm(rat_metrics, 'ev')
+    roe_list = fm(rat_metrics, 'roe')
+    roa_list = fm(rat_metrics, 'roa')
+    current_ratio_list = fm(rat_metrics, 'current_ratio')
+    quick_ratio_list = fm(rat_metrics, 'quick_ratio')
+    debt_fcf_list = fm(rat_metrics, 'debt_fcf')
+    debt_ebitda_list = fm(rat_metrics, 'debt_ebitda')
+    nd_ebitda_list = fm(rat_metrics, 'nd_ebitda')
+    roic_list = fm(rat_metrics, 'roic')
+    debt_equity_list = fm(rat_metrics, 'debt_equity')
+    dividend_yield_list = fm(rat_metrics, 'dividend_yield')
+    payout_ratio_list = fm(rat_metrics, 'payout_ratio')
 
     # ROE/ROAがRatiosシートにないがIncome+BSから計算可能な場合
     if not roe_list and net_income and total_equity_list:
@@ -622,7 +1258,7 @@ def parse_excel(filepath):
     def to_pct(v):
         return v * 100 if v is not None else None
 
-    # 自己資本比率の計算 D/Eベース: 1/(1+D/E)*100  (業種を問わず比較可能)
+    # 自己資本比率の計算
     equity_ratio = None
     equity_ratio_5y = None
     de0 = g(debt_equity_list, 0)
@@ -636,17 +1272,16 @@ def parse_excel(filepath):
     elif g(total_equity_list, 4) and g(total_assets_list, 4):
         equity_ratio_5y = (g(total_equity_list, 4) / g(total_assets_list, 4)) * 100
 
-    # 当座比率 (現在値 + 5年前)
+    # 当座比率
     quick_r = to_pct(g(quick_ratio_list, 0))
     quick_r_5y = to_pct(g(quick_ratio_list, 4))
 
-    # 流動比率 (現在値 + 5年前)
+    # 流動比率
     current_r = to_pct(g(current_ratio_list, 0))
     current_r_5y = to_pct(g(current_ratio_list, 4))
 
-    # 営業利益率 （%単位に変換）— 5年分
+    # 営業利益率（%単位に変換）— 5年分
     op_margin_vals = [to_pct(g(op_margin_list, i)) for i in range(min(5, len(op_margin_list)))]
-    # 営業利益率がRatiosにない場合、計算で補完
     if not op_margin_vals and op_income and revenue:
         op_margin_vals = []
         for i in range(min(5, len(op_income))):
@@ -657,10 +1292,8 @@ def parse_excel(filepath):
             else:
                 op_margin_vals.append(None)
 
-    # EBITDAマージン (5年前)
-    ebitda_margin_5y = to_pct(g(ebitda_margin_list, 4))
-
     # EBITDAマージン
+    ebitda_margin_5y = to_pct(g(ebitda_margin_list, 4))
     ebitda_margin_val = to_pct(g(ebitda_margin_list, 0))
 
     # ROE, ROA（%単位に変換）
@@ -674,11 +1307,11 @@ def parse_excel(filepath):
     # ROE成長率
     roe_growth = roe_now - roe_5y if (roe_now is not None and roe_5y is not None) else None
 
-    # NOPAT = Operating Income * (1 - Tax Rate)
+    # NOPAT
     nopat = g(op_income, 0) * 0.75 if g(op_income, 0) else None
     nopat_5y = g(op_income, 4) * 0.75 if g(op_income, 4) else None
 
-    # 投下資本 = Total Equity + Total Debt - Cash
+    # 投下資本
     def calc_ic(eq, debt, cash):
         if eq is not None and debt is not None and cash is not None:
             return eq + debt - cash
@@ -837,7 +1470,7 @@ def parse_excel(filepath):
             else:
                 ts_data["op_margin"].append(None)
 
-    # DuPont分解の時系列を計算: ROE = 純利益率 × 総資産回転率 × 財務レバレッジ
+    # DuPont分解
     max_len = len(revenue) if revenue else 0
     net_margin_ts = []
     asset_turnover_ts = []
@@ -847,17 +1480,14 @@ def parse_excel(filepath):
         rev = g(revenue, i)
         ta = g(total_assets_list, i)
         eq = g(total_equity_list, i)
-        # 純利益率 (%) = Net Income / Revenue * 100
         if ni is not None and rev and rev != 0:
             net_margin_ts.append(round(ni / rev * 100, 2))
         else:
             net_margin_ts.append(None)
-        # 総資産回転率 (x) = Revenue / Total Assets
         if rev is not None and ta and ta != 0:
             asset_turnover_ts.append(round(rev / ta, 3))
         else:
             asset_turnover_ts.append(None)
-        # 財務レバレッジ (x) = Total Assets / Equity
         if ta is not None and eq and eq != 0:
             fin_leverage_ts.append(round(ta / eq, 3))
         else:
@@ -867,7 +1497,7 @@ def parse_excel(filepath):
     ts_data["asset_turnover"] = asset_turnover_ts
     ts_data["financial_leverage"] = fin_leverage_ts
 
-    # 純利益率の分解時系列: 金利負担率・営業外損益率・税引後利益率
+    # 純利益率の分解時系列
     interest_burden_ts = []
     tax_burden_ts = []
     nonop_burden_ts = []
@@ -876,12 +1506,9 @@ def parse_excel(filepath):
         pt = g(pretax_income_list, i)
         ni = g(net_income, i)
         ie = g(interest_exp_list, i)
-        oe = g(other_exp_list, i)
 
         if oi is not None and oi != 0 and ie is not None:
             interest_burden_ts.append(round((oi + ie) / oi * 100, 2))
-        elif oi is not None and oi != 0 and pt is not None:
-            interest_burden_ts.append(None)
         else:
             interest_burden_ts.append(None)
 
@@ -898,6 +1525,12 @@ def parse_excel(filepath):
     ts_data["interest_burden"] = interest_burden_ts
     ts_data["nonop_burden"] = nonop_burden_ts
     ts_data["tax_burden"] = tax_burden_ts
+
+    # Metadata for frontend scaling
+    ts_data["_source"] = "excel"
+    ts_data["_unit_scale"] = "millions"  # Data is already in millions
+    ts_data["_is_jpy"] = False  # Prevent double-scaling in smartFormat
+    ts_data["_currency"] = currency
 
     return data, ts_data
 
@@ -969,7 +1602,8 @@ def scan_available_metrics(filepath):
         ws = sheet_map.get(m['sheet'])
         if ws is None:
             continue
-        data = _get_row_data(ws, m['label'])
+        # ファジーマッチで検索
+        data, _, score = _fuzzy_get_row_data(ws, m['key'])
         if data:
             numeric = [v for v in data if isinstance(v, (int, float))]
             if numeric:
@@ -988,13 +1622,6 @@ def scan_available_metrics(filepath):
 def _scan_japanese_metrics(wb):
     """日本語縦型レイアウトからメトリクス一覧を返す"""
     data, _ = _parse_japanese_vertical(wb)
-    # dataの各キーからMETRIC_CATALOGに対応するものを抽出
-    jp_key_to_catalog = {
-        'revenue': 'revenue', 'op_income': 'op_income', 'net_income': 'net_income',
-        'eps': 'eps', 'ocf': 'ocf', 'investing_cf': 'investing_cf',
-        'financing_cf': 'financing_cf', 'total_assets': 'total_assets',
-        'total_equity': 'total_equity',
-    }
     catalog_map = {m['key']: m for m in METRIC_CATALOG}
     available = []
 
@@ -1052,9 +1679,9 @@ def extract_custom_timeseries(filepath, selected_keys):
         'rat': _find_sheet(wb, ['Ratios-Annual', 'Ratios', 'Financial Ratios', 'ratios']),
     }
 
-    # 日付はincシートから取得
+    # 日付はincシートから取得（ファジー）
     inc_ws = sheet_map.get('inc')
-    dates = _try_labels(inc_ws, ['Date', 'Year Ending', 'Fiscal Year', 'Period']) if inc_ws else []
+    dates, _, _ = _fuzzy_get_row_data(inc_ws, 'dates') if inc_ws else ([], None, 0.0)
     date_strs = [str(d)[:4] if d else "" for d in dates]
 
     result = {"dates": date_strs}
@@ -1067,7 +1694,7 @@ def extract_custom_timeseries(filepath, selected_keys):
         ws = sheet_map.get(m['sheet'])
         if ws is None:
             continue
-        data = _get_row_data(ws, m['label'])
+        data, _, _ = _fuzzy_get_row_data(ws, key)
         is_pct = m['unit'] == '%'
         if is_pct:
             data = [v * 100 if isinstance(v, (int, float)) else None for v in data]

@@ -13,6 +13,7 @@ sys.path.insert(0, BASE_DIR)
 from flask import Flask, render_template, request, jsonify, session
 from analyzer import run_full_analysis, INDUSTRY_LIST
 from excel_parser import parse_excel, scan_available_metrics, extract_custom_timeseries
+from yfinance_parser import parse_yfinance
 
 app = Flask(
     __name__,
@@ -74,20 +75,34 @@ def analyze():
             if f.filename:
                 ext = os.path.splitext(f.filename)[1].lower()
                 if ext in ('.xlsx', '.xls'):
+                    currency = request.form.get('currency', 'JPY')
                     with tempfile.NamedTemporaryFile(suffix=ext, delete=False) as tmp:
                         f.save(tmp.name)
                         try:
-                            data, ts_data = parse_excel(tmp.name)
+                            data, ts_data = parse_excel(tmp.name, currency=currency)
                         finally:
                             os.unlink(tmp.name)
                     # フォームから追加情報を取得
-                    company = request.form.get('company', '')
-                    ticker = request.form.get('ticker', '')
+                    company = request.form.get('company', '').strip()
+                    ticker = request.form.get('ticker', '').strip()
                     industry = request.form.get('industry', '製造・サービス')
+
+                    # Set company/ticker from form, or fallback to filename
                     if company:
                         data['company'] = company
+                    elif not data.get('company'):
+                        # Fallback: use filename without extension
+                        data['company'] = os.path.splitext(f.filename)[0]
+
                     if ticker:
                         data['ticker'] = ticker
+                    elif not data.get('ticker'):
+                        # Try to extract ticker from filename (e.g., "6269-financials.xlsx")
+                        import re
+                        match = re.search(r'^(\d{4,5})|[-_](\d{4,5})[-_]', f.filename)
+                        if match:
+                            data['ticker'] = match.group(1) or match.group(2)
+
                     data['industry'] = industry
                     # 定性評価
                     data['d1_mgmt_change'] = request.form.get('d1', '○')
@@ -127,6 +142,44 @@ def analyze():
         return jsonify({'error': f'分析中にエラーが発生しました: {err_msg}'}), 500
 
 
+@app.route('/api/fetch_ticker', methods=['POST'])
+def fetch_ticker():
+    """ティッカーシンボルからyfinanceでデータを取得して分析"""
+    try:
+        body = request.get_json() or {}
+        symbol = body.get('ticker', '').strip()
+        if not symbol:
+            return jsonify({'error': 'ティッカーシンボルを入力してください'}), 400
+
+        data, ts_data = parse_yfinance(symbol)
+
+        # フォームメタデータを上書き
+        industry = body.get('industry', '')
+        if industry:
+            data['industry'] = industry
+        data['d1_mgmt_change'] = body.get('d1', '○')
+        data['d2_ownership'] = body.get('d2', '○')
+        data['d3_esg'] = body.get('d3', '○')
+
+        # Damodaranベンチマーク
+        damodaran_industry = body.get('damodaran_industry', '')
+        benchmark = _damodaran_data.get(damodaran_industry)
+
+        result = run_full_analysis(data, benchmark=benchmark)
+        if ts_data:
+            result['timeseries'] = ts_data
+        if benchmark:
+            from analyzer import generate_dynamic_thresholds
+            result['dynamic_thresholds'] = generate_dynamic_thresholds(benchmark)
+        return jsonify(result)
+    except ValueError as e:
+        return jsonify({'error': str(e)}), 400
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': f'データ取得中にエラーが発生しました: {str(e)}'}), 500
+
+
 @app.route('/api/sample')
 def sample():
     data = load_sample_data()
@@ -146,31 +199,50 @@ def sample():
 
 @app.route('/api/competitor_analyze', methods=['POST'])
 def competitor_analyze():
-    """最大5社のExcelファイルを受け取り、比較分析データを返す"""
+    """最大5社のExcel/ティッカーを受け取り、比較分析データを返す"""
     try:
-        files = request.files.getlist('files[]')
+        slot_types = request.form.getlist('types[]')
         names = request.form.getlist('names[]')
+        tickers = request.form.getlist('tickers[]')
+        files = request.files.getlist('files[]')
         industry = request.form.get('damodaran_industry', '')
         benchmark = _damodaran_data.get(industry)
 
-        if not files or len(files) > 5:
-            return jsonify({'error': '1〜5社のファイルをアップロードしてください'}), 400
-
         companies = []
-        for i, f in enumerate(files):
-            if not f.filename:
-                continue
-            ext = os.path.splitext(f.filename)[1].lower()
-            if ext not in ('.xlsx', '.xls'):
-                continue
-            with tempfile.NamedTemporaryFile(suffix=ext, delete=False) as tmp:
-                f.save(tmp.name)
-                try:
-                    data, ts_data = parse_excel(tmp.name)
-                finally:
-                    os.unlink(tmp.name)
+        file_idx = 0
+        ticker_idx = 0
 
-            name = names[i] if i < len(names) and names[i].strip() else os.path.splitext(f.filename)[0]
+        for i, slot_type in enumerate(slot_types):
+            name = names[i] if i < len(names) and names[i].strip() else ''
+
+            if slot_type == 'ticker':
+                symbol = tickers[ticker_idx] if ticker_idx < len(tickers) else ''
+                ticker_idx += 1
+                if not symbol.strip():
+                    continue
+                data, ts_data = parse_yfinance(symbol.strip())
+                if not name:
+                    name = data.get('company', symbol)
+            else:
+                if file_idx >= len(files):
+                    continue
+                f = files[file_idx]
+                file_idx += 1
+                if not f.filename:
+                    continue
+                ext = os.path.splitext(f.filename)[1].lower()
+                if ext not in ('.xlsx', '.xls'):
+                    continue
+                comp_currency = request.form.get('currency', 'JPY')
+                with tempfile.NamedTemporaryFile(suffix=ext, delete=False) as tmp:
+                    f.save(tmp.name)
+                    try:
+                        data, ts_data = parse_excel(tmp.name, currency=comp_currency)
+                    finally:
+                        os.unlink(tmp.name)
+                if not name:
+                    name = os.path.splitext(f.filename)[0]
+
             data['industry'] = industry or ''
             result = run_full_analysis(data, benchmark=benchmark)
 
@@ -189,6 +261,8 @@ def competitor_analyze():
             from analyzer import generate_dynamic_thresholds
             resp['dynamic_thresholds'] = generate_dynamic_thresholds(benchmark)
         return jsonify(resp)
+    except ValueError as e:
+        return jsonify({'error': str(e)}), 400
     except Exception as e:
         import traceback
         traceback.print_exc()
