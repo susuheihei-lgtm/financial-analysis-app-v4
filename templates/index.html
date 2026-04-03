@@ -4,6 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>STOCK ANALYZER</title>
+  <meta name="theme-color" content="#0e0e12" media="(prefers-color-scheme: dark)">
+  <meta name="theme-color" content="#f2f2f4" media="(prefers-color-scheme: light)">
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
@@ -22,11 +24,16 @@
   </script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://cdn.jsdelivr.net">
+  <link rel="preconnect" href="https://cdnjs.cloudflare.com">
   <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700&family=Inter:wght@400;500;600&family=Noto+Sans+JP:wght@400;500;700&display=swap">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700&family=Inter:wght@400;500;600&family=Noto+Sans+JP:wght@400;500;700&display=swap">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js" defer></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.2/html2pdf.bundle.min.js" defer></script>
   <style>
+
+    html { color-scheme: dark; }
+    [data-theme="light"] { color-scheme: light; }
 
     :root {
       /* Porsche dark palette */
@@ -63,6 +70,7 @@
 
     * { letter-spacing: 0.02em; }
     body { background: var(--bg-0); color: var(--text); font-feature-settings: "kern","liga","ss01"; }
+    button, a, [role="button"], label[for], input[type="file"] + label { touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
 
     /* Porsche scrollbar */
     ::-webkit-scrollbar { width: 4px; }
@@ -97,7 +105,7 @@
     .card-hover:hover { transform: scale3d(1.015,1.015,1); background: var(--card-hover-bg); box-shadow: 0 24px 64px var(--card-hover-shadow); }
 
     /* Upload zone — Porsche architectural style */
-    .upload-zone { border: 1px solid var(--upload-border); transition: all 0.5s var(--ease-base); }
+    .upload-zone { border: 1px solid var(--upload-border); transition: border-color 0.5s var(--ease-base), background 0.5s var(--ease-base), box-shadow 0.5s var(--ease-base); touch-action: manipulation; }
     .upload-zone:hover  { border-color: #d5001c; background: var(--upload-hover-bg); box-shadow: 0 0 0 1px rgba(213,0,28,.15), 0 8px 40px rgba(213,0,28,.06); }
     .upload-zone.dragover { border-color: #d5001c; background: rgba(213,0,28,.05); box-shadow: 0 0 0 2px rgba(213,0,28,.3); }
 
@@ -132,20 +140,21 @@
     header { border-bottom-color: var(--border) !important; }
 
     /* Theme toggle */
-    .theme-toggle { position:relative; width:44px; height:24px; border-radius:0; background:var(--bg-3); border:1px solid var(--border-s); cursor:pointer; transition:all 0.3s var(--ease-base); }
-    .theme-toggle::after { content:''; position:absolute; top:3px; left:3px; width:16px; height:16px; border-radius:0; background:var(--text); transition:all 0.3s var(--ease-base); }
+    .theme-toggle { position:relative; width:44px; height:24px; border-radius:0; background:var(--bg-3); border:1px solid var(--border-s); cursor:pointer; transition:background 0.3s var(--ease-base), border-color 0.3s var(--ease-base); touch-action: manipulation; }
+    .theme-toggle::after { content:''; position:absolute; top:3px; left:3px; width:16px; height:16px; border-radius:0; background:var(--text); transition:left 0.3s var(--ease-base), background 0.3s var(--ease-base); }
     [data-theme="light"] .theme-toggle::after { left:23px; }
     .theme-toggle-icon { position:absolute; top:50%; transform:translateY(-50%); font-size:11px; line-height:1; }
     .theme-toggle-icon.moon { left:5px; }
     .theme-toggle-icon.sun  { right:4px; }
 
     /* Porsche typography — Barlow Condensed for headings */
-    h1, h2, .font-display { font-family: 'Barlow Condensed', 'Arial Narrow', Arial, sans-serif; letter-spacing: 0.04em; }
+    h1, h2, h3, h4, .font-display { font-family: 'Barlow Condensed', 'Arial Narrow', Arial, sans-serif; letter-spacing: 0.04em; }
+    h1, h2 { text-wrap: balance; }
 
     /* Chart Modal — Porsche sharp corners */
     .chart-modal-overlay { position:fixed; inset:0; z-index:100; background:rgba(14,14,18,0.82); backdrop-filter:blur(8px); display:flex; align-items:center; justify-content:center; opacity:0 !important; pointer-events:none !important; transition:opacity 0.35s var(--ease-base); }
     .chart-modal-overlay.active { opacity:1 !important; pointer-events:auto !important; }
-    .chart-modal { background:var(--bg-1); border:1px solid var(--border-s); border-radius:0; padding:2.5rem; width:90%; max-width:720px; max-height:80vh; transform:scale(0.96) translateY(8px); transition:transform 0.4s var(--ease-luxury); }
+    .chart-modal { background:var(--bg-1); border:1px solid var(--border-s); border-radius:0; padding:2.5rem; width:90%; max-width:720px; max-height:80vh; overflow-y:auto; overscroll-behavior:contain; transform:scale(0.96) translateY(8px); transition:transform 0.4s var(--ease-luxury); }
     .chart-modal-overlay.active .chart-modal { transform:scale(1) translateY(0); }
     .clickable-card { cursor:pointer; }
     .clickable-card:hover { border-color:var(--border-m) !important; }
@@ -165,7 +174,8 @@
       text-transform: uppercase;
       font-weight: 600;
       border-radius: 0;
-      transition: all 0.3s var(--ease-base);
+      transition: background-color 0.3s var(--ease-base), border-color 0.3s var(--ease-base), color 0.3s var(--ease-base), box-shadow 0.3s var(--ease-base);
+      touch-action: manipulation;
     }
 
     /* Focus rings — Porsche red accent */
@@ -248,7 +258,7 @@
   </style>
 </head>
 <body class="min-h-screen antialiased">
-  <a href="#dashboard" class="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-[999] focus:bg-brand focus:text-white focus:px-4 focus:py-2 focus:text-sm">Skip to main content</a>
+  <a href="#mainContent" class="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-[999] focus:bg-brand focus:text-white focus:px-4 focus:py-2 focus:text-sm">Skip to main content</a>
 
   <!-- Chart Modal -->
   <div id="chartModal" class="chart-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="chartModalTitle">
@@ -266,11 +276,14 @@
     <div class="chart-modal" style="max-width:500px" onclick="event.stopPropagation()">
       <div class="flex items-center justify-between mb-4">
         <h3 id="criteriaTitle" class="text-sm font-bold th-text-s"></h3>
-        <button class="th-text-m hover:th-text text-lg leading-none" onclick="document.getElementById('criteriaModal').classList.remove('active')">&times;</button>
+        <button class="th-text-m hover:th-text text-lg leading-none" aria-label="Close evaluation criteria" onclick="document.getElementById('criteriaModal').classList.remove('active')">&times;</button>
       </div>
       <div id="criteriaContent" class="text-sm th-text-s"></div>
     </div>
   </div>
+
+  <!-- Async status announcer for screen readers -->
+  <div id="srAnnouncer" role="status" aria-live="polite" aria-atomic="true" class="sr-only"></div>
 
   <!-- Header — Porsche style -->
   <header class="fixed top-0 w-full z-50 th-header backdrop-blur-xl border-b" style="border-color:var(--border)">
@@ -278,7 +291,7 @@
       <div class="flex items-center gap-4">
         <!-- Porsche-style wordmark -->
         <div class="w-7 h-7 bg-brand flex items-center justify-center flex-shrink-0" style="clip-path:polygon(0 0,100% 0,100% 75%,50% 100%,0 75%)">
-          <svg class="w-3.5 h-3.5 text-white" fill="currentColor" viewBox="0 0 24 24">
+          <svg class="w-3.5 h-3.5 text-white" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
             <path d="M3 3h7v7H3zm11 0h7v7h-7zM3 14h7v7H3zm11 3h2v-2h2v2h2v2h-2v2h-2v-2h-2v-2z"/>
           </svg>
         </div>
@@ -289,10 +302,10 @@
       </div>
       <div class="flex items-center gap-3">
         <button id="langToggle" class="text-[10px] font-semibold tracking-[0.14em] uppercase px-3 py-1.5 border hover:border-brand hover:text-brand transition-all duration-300" style="border-color:var(--border-s);border-radius:0" title="Toggle language" aria-label="Toggle language between English and Japanese">EN / JA</button>
-        <div id="themeToggle" class="theme-toggle" title="Toggle theme" role="button" tabindex="0" aria-label="Toggle dark and light theme">
+        <button id="themeToggle" class="theme-toggle" title="Toggle theme" aria-label="Toggle dark and light theme" aria-pressed="false">
           <span class="theme-toggle-icon moon" aria-hidden="true">🌙</span>
           <span class="theme-toggle-icon sun" aria-hidden="true">☀️</span>
-        </div>
+        </button>
         <button id="btnExport" class="hidden text-[10px] font-semibold tracking-[0.14em] uppercase px-5 py-2 border hover:border-brand hover:text-brand transition-all duration-300" style="border-color:var(--border-s);border-radius:0">
           <span data-i18n="Export">Export</span>
         </button>
@@ -303,6 +316,7 @@
     </div>
   </header>
 
+  <main id="mainContent">
   <!-- Upload Section — Porsche style with hero background -->
   <section id="uploadSection" class="hero-bg pt-[72px] min-h-screen flex items-center justify-center px-4 sm:px-8">
     <div class="max-w-lg w-full fade-up">
@@ -316,20 +330,21 @@
 
       <!-- Ticker Quick Search -->
       <div class="mb-6">
+        <label for="tickerInput" class="sr-only">Ticker symbol</label>
         <div class="flex gap-2 items-stretch">
           <div class="relative flex-1">
-            <input type="text" id="tickerInput" placeholder="7203.T / AAPL" class="w-full px-4 py-3.5 th-input text-sm tracking-wider focus:border-brand focus:outline-none transition pr-8" style="border-radius:0;font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif">
-            <span class="absolute right-3 top-1/2 -translate-y-1/2 th-text-m text-[10px] tracking-wider pointer-events-none">TICKER</span>
+            <input type="text" id="tickerInput" placeholder="7203.T / AAPL…" autocomplete="off" spellcheck="false" aria-label="Ticker symbol (e.g. 7203.T or AAPL)" class="w-full px-4 py-3.5 th-input text-sm tracking-wider focus:border-brand focus:outline-none transition pr-8" style="border-radius:0;font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif">
+            <span class="absolute right-3 top-1/2 -translate-y-1/2 th-text-m text-[10px] tracking-wider pointer-events-none" aria-hidden="true">TICKER</span>
           </div>
           <button id="btnTickerFetch" class="px-6 bg-brand hover:bg-brand-light text-white font-semibold text-xs uppercase tracking-[0.18em] transition-all duration-300" style="border-radius:0;font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif">
             <span id="btnTickerText" data-i18n="Fetch & Analyze">Fetch &amp; Analyze</span>
-            <svg id="btnTickerSpinner" class="hidden animate-spin inline w-4 h-4 ml-1" fill="none" viewBox="0 0 24 24">
+            <svg id="btnTickerSpinner" class="hidden animate-spin inline w-4 h-4 ml-1" fill="none" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
               <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
               <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
             </svg>
           </button>
         </div>
-        <p id="tickerError" class="hidden mt-2 text-xs text-red-500 tracking-wider"></p>
+        <p id="tickerError" class="hidden mt-2 text-xs text-red-500 tracking-wider" role="alert" aria-live="assertive"></p>
       </div>
 
       <div class="flex items-center gap-4 mb-6">
@@ -338,9 +353,9 @@
         <div class="flex-1 h-px" style="background:var(--border-m)"></div>
       </div>
 
-      <div id="dropZone" class="upload-zone p-6 sm:p-14 text-center cursor-pointer mb-8" style="border-radius:0">
+      <div id="dropZone" class="upload-zone p-6 sm:p-14 text-center cursor-pointer mb-8" style="border-radius:0" role="button" tabindex="0" aria-label="Drop file here or click to browse for Excel or JSON file">
         <div class="w-14 h-14 mx-auto mb-5 border flex items-center justify-center" style="border-color:var(--border-s);border-radius:0">
-          <svg class="w-6 h-6 th-text-m" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+          <svg class="w-6 h-6 th-text-m" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" aria-hidden="true">
             <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"/>
           </svg>
         </div>
@@ -353,15 +368,15 @@
       <div id="metaForm" class="hidden space-y-4 mb-8">
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <div>
-            <label class="block text-[10px] font-medium th-text-m uppercase tracking-wider mb-1.5" data-i18n="Company">Company</label>
-            <input type="text" id="inputCompany" placeholder="MODEC Inc." class="w-full px-3 py-2.5 th-input rounded-lg text-sm focus:border-brand focus:outline-none transition">
+            <label for="inputCompany" class="block text-[10px] font-medium th-text-m uppercase tracking-wider mb-1.5" data-i18n="Company">Company</label>
+            <input type="text" id="inputCompany" placeholder="MODEC Inc.…" autocomplete="organization" class="w-full px-3 py-2.5 th-input rounded-lg text-sm focus:border-brand focus:outline-none transition">
           </div>
           <div>
-            <label class="block text-[10px] font-medium th-text-m uppercase tracking-wider mb-1.5" data-i18n="Ticker">Ticker</label>
-            <input type="text" id="inputTicker" placeholder="6269" class="w-full px-3 py-2.5 th-input rounded-lg text-sm focus:border-brand focus:outline-none transition">
+            <label for="inputTicker" class="block text-[10px] font-medium th-text-m uppercase tracking-wider mb-1.5" data-i18n="Ticker">Ticker</label>
+            <input type="text" id="inputTicker" placeholder="6269…" autocomplete="off" spellcheck="false" class="w-full px-3 py-2.5 th-input rounded-lg text-sm focus:border-brand focus:outline-none transition">
           </div>
           <div>
-            <label class="block text-[10px] font-medium th-text-m uppercase tracking-wider mb-1.5" data-i18n="Industry">Industry</label>
+            <label for="inputIndustry" class="block text-[10px] font-medium th-text-m uppercase tracking-wider mb-1.5" data-i18n="Industry">Industry</label>
             <div class="flex gap-2">
               <select id="inputIndustry" class="flex-1 px-3 py-2.5 th-input rounded-lg text-sm focus:border-brand focus:outline-none transition">
                 <option value="">Loading...</option>
@@ -372,7 +387,7 @@
         </div>
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <div>
-            <label class="block text-[10px] font-medium th-text-m uppercase tracking-wider mb-1.5" data-i18n="Currency">Currency</label>
+            <label for="inputCurrency" class="block text-[10px] font-medium th-text-m uppercase tracking-wider mb-1.5" data-i18n="Currency">Currency</label>
             <select id="inputCurrency" class="w-full px-3 py-2.5 th-input rounded-lg text-sm focus:border-brand focus:outline-none transition">
               <option value="JPY">¥ JPY — 日本円</option>
               <option value="USD">$ USD — 米ドル</option>
@@ -392,19 +407,19 @@
         </div>
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <div>
-            <label class="block text-[10px] font-medium th-text-m uppercase tracking-wider mb-1.5" data-i18n="Management">Management</label>
+            <label for="inputD1" class="block text-[10px] font-medium th-text-m uppercase tracking-wider mb-1.5" data-i18n="Management">Management</label>
             <select id="inputD1" class="w-full px-3 py-2.5 th-input rounded-lg text-sm focus:border-brand focus:outline-none transition">
               <option value="○" data-i18n="No Issues">No Issues</option><option value="▲" data-i18n="Monitor">Monitor</option><option value="×" data-i18n="Risk">Risk</option>
             </select>
           </div>
           <div>
-            <label class="block text-[10px] font-medium th-text-m uppercase tracking-wider mb-1.5" data-i18n="Ownership">Ownership</label>
+            <label for="inputD2" class="block text-[10px] font-medium th-text-m uppercase tracking-wider mb-1.5" data-i18n="Ownership">Ownership</label>
             <select id="inputD2" class="w-full px-3 py-2.5 th-input rounded-lg text-sm focus:border-brand focus:outline-none transition">
               <option value="○" data-i18n="No Issues">No Issues</option><option value="▲" data-i18n="Monitor">Monitor</option><option value="×" data-i18n="Risk">Risk</option>
             </select>
           </div>
           <div>
-            <label class="block text-[10px] font-medium th-text-m uppercase tracking-wider mb-1.5" data-i18n="ESG Risk">ESG Risk</label>
+            <label for="inputD3" class="block text-[10px] font-medium th-text-m uppercase tracking-wider mb-1.5" data-i18n="ESG Risk">ESG Risk</label>
             <select id="inputD3" class="w-full px-3 py-2.5 th-input rounded-lg text-sm focus:border-brand focus:outline-none transition">
               <option value="○" data-i18n="No Issues">No Issues</option><option value="▲" data-i18n="Monitor">Monitor</option><option value="×" data-i18n="Risk">Risk</option>
             </select>
@@ -412,10 +427,11 @@
         </div>
       </div>
 
+      <p id="analyzeError" class="hidden mb-2 text-xs text-red-500 tracking-wider" role="alert" aria-live="assertive"></p>
       <div class="flex gap-3">
         <button id="btnAnalyze" class="flex-1 bg-brand hover:bg-brand-light text-white font-semibold text-xs uppercase tracking-[0.18em] py-4 transition-all duration-300 disabled:opacity-20 disabled:cursor-not-allowed" style="border-radius:0;font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif;letter-spacing:0.18em" disabled>
           <span id="btnText" data-i18n="Analyze">Analyze</span>
-          <svg id="btnSpinner" class="hidden animate-spin inline w-4 h-4 ml-2" fill="none" viewBox="0 0 24 24">
+          <svg id="btnSpinner" class="hidden animate-spin inline w-4 h-4 ml-2" fill="none" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
           </svg>
@@ -466,7 +482,7 @@
       <div class="section-img-strip">
         <img src="https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800&q=75"
              srcset="https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=400&q=75 400w, https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800&q=75 800w, https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=1400&q=80 1400w"
-             sizes="100vw" alt="Financial data visualization" loading="lazy">
+             sizes="100vw" width="1400" height="120" alt="Financial data visualization" loading="lazy">
       </div>
 
       <!-- Tabs — Porsche thin underline style -->
@@ -486,7 +502,7 @@
         <div class="section-img-strip" style="height:80px;margin-top:0;margin-bottom:1.5rem">
           <img src="https://images.unsplash.com/photo-1642790106117-e829e14a795f?w=800&q=75"
                srcset="https://images.unsplash.com/photo-1642790106117-e829e14a795f?w=400&q=75 400w, https://images.unsplash.com/photo-1642790106117-e829e14a795f?w=800&q=75 800w, https://images.unsplash.com/photo-1642790106117-e829e14a795f?w=1400&q=80 1400w"
-               sizes="100vw" alt="Financial analysis header" loading="lazy">
+               sizes="100vw" width="1400" height="80" alt="Financial analysis header" loading="lazy">
         </div>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
           <div><h3 class="text-[10px] font-bold uppercase tracking-[0.2em] th-text-m mb-5" data-i18n="Performance">Performance</h3><div id="perfItems" class="space-y-2"></div></div>
@@ -531,10 +547,10 @@
       </div>
 
       <!-- Metric Checklist Modal -->
-      <div id="checklistModal" class="chart-modal-overlay" role="dialog" aria-modal="true" aria-label="Select metrics">
+      <div id="checklistModal" class="chart-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="checklistTitle">
         <div class="chart-modal" style="max-height:85vh;overflow-y:auto">
           <div class="flex items-center justify-between mb-6">
-            <h3 class="text-sm font-bold th-text-s" data-i18n="Select Metrics">Select Metrics</h3>
+            <h3 id="checklistTitle" class="text-sm font-bold th-text-s" data-i18n="Select Metrics">Select Metrics</h3>
             <button id="checklistClose" class="th-text-m hover:th-text text-lg leading-none" aria-label="Close metric selection">&times;</button>
           </div>
           <div id="checklistBody" class="space-y-6"></div>
@@ -565,11 +581,11 @@
           <div id="competitorSlots" class="space-y-2">
             <div class="comp-slot flex flex-wrap sm:flex-nowrap items-center gap-3 p-4 th-bg-1 border th-border" style="border-radius:0" data-slot="0" data-mode="ticker">
               <span class="text-xs font-bold tracking-[0.2em] w-6 text-center" style="color:#d5001c;font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif">01</span>
-              <input type="text" placeholder="Company A" class="comp-name px-3 py-2 th-input text-xs border focus:border-brand outline-none" style="border-radius:0;width:120px;min-width:90px">
-              <button class="comp-mode-toggle px-2 py-2 border text-[10px] font-semibold tracking-wider hover:border-brand transition-all" style="border-color:var(--border-s);border-radius:0;font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif" title="Toggle File/Ticker">TKR</button>
-              <input type="text" placeholder="7203.T" class="comp-ticker flex-1 px-3 py-2 th-input text-xs border focus:border-brand outline-none" style="border-radius:0">
+              <input type="text" placeholder="Company A…" aria-label="Company name" autocomplete="off" class="comp-name px-3 py-2 th-input text-xs border focus:border-brand outline-none" style="border-radius:0;width:120px;min-width:90px">
+              <button class="comp-mode-toggle px-2 py-2 border text-[10px] font-semibold tracking-wider hover:border-brand transition-all" style="border-color:var(--border-s);border-radius:0;font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif" title="Toggle between ticker and file input" aria-label="Switch input mode between Ticker and File">TKR</button>
+              <input type="text" placeholder="7203.T" aria-label="Ticker symbol" autocomplete="off" spellcheck="false" class="comp-ticker flex-1 px-3 py-2 th-input text-xs border focus:border-brand outline-none" style="border-radius:0">
               <label class="comp-file-label cursor-pointer px-4 py-2 border text-[10px] font-semibold tracking-[0.14em] uppercase hover:border-brand transition-all flex items-center gap-2 hidden" style="border-color:var(--border-s);border-radius:0;font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif">
-                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5-5m0 0l5 5m-5-5v12"/></svg>
+                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5-5m0 0l5 5m-5-5v12"/></svg>
                 <span data-i18n="Select File">Select File</span>
                 <input type="file" accept=".xlsx,.xls" class="comp-file hidden">
               </label>
@@ -578,11 +594,11 @@
             </div>
             <div class="comp-slot flex flex-wrap sm:flex-nowrap items-center gap-3 p-4 th-bg-1 border th-border" style="border-radius:0" data-slot="1" data-mode="ticker">
               <span class="text-xs font-bold tracking-[0.2em] w-6 text-center" style="color:#3b82f6;font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif">02</span>
-              <input type="text" placeholder="Company B" class="comp-name px-3 py-2 th-input text-xs border focus:border-brand outline-none" style="border-radius:0;width:120px;min-width:90px">
-              <button class="comp-mode-toggle px-2 py-2 border text-[10px] font-semibold tracking-wider hover:border-brand transition-all" style="border-color:var(--border-s);border-radius:0;font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif" title="Toggle File/Ticker">TKR</button>
-              <input type="text" placeholder="AAPL" class="comp-ticker flex-1 px-3 py-2 th-input text-xs border focus:border-brand outline-none" style="border-radius:0">
+              <input type="text" placeholder="Company B…" aria-label="Company name" autocomplete="off" class="comp-name px-3 py-2 th-input text-xs border focus:border-brand outline-none" style="border-radius:0;width:120px;min-width:90px">
+              <button class="comp-mode-toggle px-2 py-2 border text-[10px] font-semibold tracking-wider hover:border-brand transition-all" style="border-color:var(--border-s);border-radius:0;font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif" title="Toggle between ticker and file input" aria-label="Switch input mode between Ticker and File">TKR</button>
+              <input type="text" placeholder="AAPL" aria-label="Ticker symbol" autocomplete="off" spellcheck="false" class="comp-ticker flex-1 px-3 py-2 th-input text-xs border focus:border-brand outline-none" style="border-radius:0">
               <label class="comp-file-label cursor-pointer px-4 py-2 border text-[10px] font-semibold tracking-[0.14em] uppercase hover:border-brand transition-all flex items-center gap-2 hidden" style="border-color:var(--border-s);border-radius:0;font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif">
-                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5-5m0 0l5 5m-5-5v12"/></svg>
+                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5-5m0 0l5 5m-5-5v12"/></svg>
                 <span data-i18n="Select File">Select File</span>
                 <input type="file" accept=".xlsx,.xls" class="comp-file hidden">
               </label>
@@ -591,11 +607,11 @@
             </div>
             <div class="comp-slot flex flex-wrap sm:flex-nowrap items-center gap-3 p-4 th-bg-1 border th-border" style="border-radius:0" data-slot="2" data-mode="ticker">
               <span class="text-xs font-bold tracking-[0.2em] w-6 text-center" style="color:#22c55e;font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif">03</span>
-              <input type="text" placeholder="Company C" class="comp-name px-3 py-2 th-input text-xs border focus:border-brand outline-none" style="border-radius:0;width:120px;min-width:90px">
-              <button class="comp-mode-toggle px-2 py-2 border text-[10px] font-semibold tracking-wider hover:border-brand transition-all" style="border-color:var(--border-s);border-radius:0;font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif" title="Toggle File/Ticker">TKR</button>
-              <input type="text" placeholder="9984.T" class="comp-ticker flex-1 px-3 py-2 th-input text-xs border focus:border-brand outline-none" style="border-radius:0">
+              <input type="text" placeholder="Company C…" aria-label="Company name" autocomplete="off" class="comp-name px-3 py-2 th-input text-xs border focus:border-brand outline-none" style="border-radius:0;width:120px;min-width:90px">
+              <button class="comp-mode-toggle px-2 py-2 border text-[10px] font-semibold tracking-wider hover:border-brand transition-all" style="border-color:var(--border-s);border-radius:0;font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif" title="Toggle between ticker and file input" aria-label="Switch input mode between Ticker and File">TKR</button>
+              <input type="text" placeholder="9984.T" aria-label="Ticker symbol" autocomplete="off" spellcheck="false" class="comp-ticker flex-1 px-3 py-2 th-input text-xs border focus:border-brand outline-none" style="border-radius:0">
               <label class="comp-file-label cursor-pointer px-4 py-2 border text-[10px] font-semibold tracking-[0.14em] uppercase hover:border-brand transition-all flex items-center gap-2 hidden" style="border-color:var(--border-s);border-radius:0;font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif">
-                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5-5m0 0l5 5m-5-5v12"/></svg>
+                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5-5m0 0l5 5m-5-5v12"/></svg>
                 <span data-i18n="Select File">Select File</span>
                 <input type="file" accept=".xlsx,.xls" class="comp-file hidden">
               </label>
@@ -604,11 +620,11 @@
             </div>
             <div class="comp-slot flex flex-wrap sm:flex-nowrap items-center gap-3 p-4 th-bg-1 border th-border" style="border-radius:0" data-slot="3" data-mode="ticker">
               <span class="text-xs font-bold tracking-[0.2em] w-6 text-center" style="color:#f59e0b;font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif">04</span>
-              <input type="text" placeholder="Company D" class="comp-name px-3 py-2 th-input text-xs border focus:border-brand outline-none" style="border-radius:0;width:120px;min-width:90px">
-              <button class="comp-mode-toggle px-2 py-2 border text-[10px] font-semibold tracking-wider hover:border-brand transition-all" style="border-color:var(--border-s);border-radius:0;font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif" title="Toggle File/Ticker">TKR</button>
-              <input type="text" placeholder="6758.T" class="comp-ticker flex-1 px-3 py-2 th-input text-xs border focus:border-brand outline-none" style="border-radius:0">
+              <input type="text" placeholder="Company D…" aria-label="Company name" autocomplete="off" class="comp-name px-3 py-2 th-input text-xs border focus:border-brand outline-none" style="border-radius:0;width:120px;min-width:90px">
+              <button class="comp-mode-toggle px-2 py-2 border text-[10px] font-semibold tracking-wider hover:border-brand transition-all" style="border-color:var(--border-s);border-radius:0;font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif" title="Toggle between ticker and file input" aria-label="Switch input mode between Ticker and File">TKR</button>
+              <input type="text" placeholder="6758.T" aria-label="Ticker symbol" autocomplete="off" spellcheck="false" class="comp-ticker flex-1 px-3 py-2 th-input text-xs border focus:border-brand outline-none" style="border-radius:0">
               <label class="comp-file-label cursor-pointer px-4 py-2 border text-[10px] font-semibold tracking-[0.14em] uppercase hover:border-brand transition-all flex items-center gap-2 hidden" style="border-color:var(--border-s);border-radius:0;font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif">
-                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5-5m0 0l5 5m-5-5v12"/></svg>
+                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5-5m0 0l5 5m-5-5v12"/></svg>
                 <span data-i18n="Select File">Select File</span>
                 <input type="file" accept=".xlsx,.xls" class="comp-file hidden">
               </label>
@@ -617,11 +633,11 @@
             </div>
             <div class="comp-slot flex flex-wrap sm:flex-nowrap items-center gap-3 p-4 th-bg-1 border th-border" style="border-radius:0" data-slot="4" data-mode="ticker">
               <span class="text-xs font-bold tracking-[0.2em] w-6 text-center" style="color:#8b5cf6;font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif">05</span>
-              <input type="text" placeholder="Company E" class="comp-name px-3 py-2 th-input text-xs border focus:border-brand outline-none" style="border-radius:0;width:120px;min-width:90px">
-              <button class="comp-mode-toggle px-2 py-2 border text-[10px] font-semibold tracking-wider hover:border-brand transition-all" style="border-color:var(--border-s);border-radius:0;font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif" title="Toggle File/Ticker">TKR</button>
-              <input type="text" placeholder="MSFT" class="comp-ticker flex-1 px-3 py-2 th-input text-xs border focus:border-brand outline-none" style="border-radius:0">
+              <input type="text" placeholder="Company E…" aria-label="Company name" autocomplete="off" class="comp-name px-3 py-2 th-input text-xs border focus:border-brand outline-none" style="border-radius:0;width:120px;min-width:90px">
+              <button class="comp-mode-toggle px-2 py-2 border text-[10px] font-semibold tracking-wider hover:border-brand transition-all" style="border-color:var(--border-s);border-radius:0;font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif" title="Toggle between ticker and file input" aria-label="Switch input mode between Ticker and File">TKR</button>
+              <input type="text" placeholder="MSFT" aria-label="Ticker symbol" autocomplete="off" spellcheck="false" class="comp-ticker flex-1 px-3 py-2 th-input text-xs border focus:border-brand outline-none" style="border-radius:0">
               <label class="comp-file-label cursor-pointer px-4 py-2 border text-[10px] font-semibold tracking-[0.14em] uppercase hover:border-brand transition-all flex items-center gap-2 hidden" style="border-color:var(--border-s);border-radius:0;font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif">
-                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5-5m0 0l5 5m-5-5v12"/></svg>
+                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5-5m0 0l5 5m-5-5v12"/></svg>
                 <span data-i18n="Select File">Select File</span>
                 <input type="file" accept=".xlsx,.xls" class="comp-file hidden">
               </label>
@@ -633,7 +649,7 @@
             <button id="btnCompetitorAnalyze" class="bg-brand hover:bg-red-700 text-white font-semibold text-[10px] uppercase tracking-[0.18em] py-3 px-8 transition-all duration-300 disabled:opacity-30" style="border-radius:0;font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif" disabled>
               <span data-i18n="Compare">Compare</span>
             </button>
-            <span id="compLoading" class="hidden text-[10px] th-text-m animate-pulse tracking-wider" data-i18n="Analyzing...">Analyzing...</span>
+            <span id="compLoading" class="hidden text-[10px] th-text-m animate-pulse tracking-wider" data-i18n="Analyzing…" role="status" aria-live="polite">Analyzing…</span>
           </div>
         </div>
         <!-- Summary Table -->
@@ -644,6 +660,7 @@
 
     </div>
   </section>
+  </main>
 
   <script>
     const $ = id => document.getElementById(id);
@@ -766,7 +783,7 @@
       'Drop file here or click to browse': { ja: 'ファイルをドロップまたはクリックして選択' },
       'Excel (.xlsx) or JSON supported':   { ja: 'Excel (.xlsx) または JSON に対応' },
       'Analyze':        { ja: '分析開始' },
-      'Analyzing...':   { ja: '分析中...' },
+      'Analyzing…':   { ja: '分析中…' },
       'Demo':           { ja: 'デモ' },
       // Meta form
       'Company':    { ja: '企業名' },
@@ -793,7 +810,7 @@
       'comp-upload-msg': { ja: '最大5社のExcelファイルをアップロードして比較', en: 'Upload Excel files for up to 5 companies to compare' },
       'Compare': { ja: '比較する' },
       'Select File': { ja: 'ファイル選択' },
-      'Analyzing...': { ja: '分析中...' },
+      'Analyzing…': { ja: '分析中…' },
       'comp-summary-title': { ja: '競合比較サマリー', en: 'Competitor Comparison Summary' },
       'Equity Ratio': { ja: '自己資本比率' },
       'Metrics': { ja: '指標' },
@@ -958,6 +975,7 @@
 
     // Upload
     dropZone.addEventListener('click', () => fileInput.click());
+    dropZone.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fileInput.click(); } });
     dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
     dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
     dropZone.addEventListener('drop', e => { e.preventDefault(); dropZone.classList.remove('dragover'); if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]); });
@@ -1012,7 +1030,14 @@
         fd.append('currency', $('inputCurrency').value);
         const res = await fetch('/api/analyze', { method: 'POST', body: fd });
         const data = await res.json();
-        if (data.error) { alert(data.error); return; }
+        const analyzeError = $('analyzeError');
+        if (data.error) {
+          analyzeError.textContent = data.error;
+          analyzeError.classList.remove('hidden');
+          $('srAnnouncer').textContent = data.error;
+          return;
+        }
+        analyzeError.classList.add('hidden');
         // Fetch industry benchmark
         if (selIndustry) {
           try {
@@ -1022,7 +1047,12 @@
           } catch(e) { lastBenchmark = null; }
         }
         renderDashboard(data);
-      } catch (e) { alert(e.message); } finally { setLoading(false); }
+      } catch (e) {
+        const analyzeError = $('analyzeError');
+        analyzeError.textContent = e.message;
+        analyzeError.classList.remove('hidden');
+        $('srAnnouncer').textContent = e.message;
+      } finally { setLoading(false); }
     });
 
     btnSample.addEventListener('click', async () => {
@@ -1039,7 +1069,12 @@
         } catch(e) { lastBenchmark = null; }
         renderDashboard(data);
       }
-      catch (e) { alert(e.message); }
+      catch (e) {
+        const analyzeError = $('analyzeError');
+        analyzeError.textContent = e.message;
+        analyzeError.classList.remove('hidden');
+        $('srAnnouncer').textContent = e.message;
+      }
       finally { setLoading(false); btnSample.disabled = false; }
     });
 
@@ -1049,7 +1084,8 @@
     const tickerError = $('tickerError');
 
     function setTickerLoading(on) {
-      $('btnTickerText').textContent = on ? t('Fetching...') : t('Fetch & Analyze');
+      $('btnTickerText').textContent = on ? t('Fetching…') : t('Fetch & Analyze');
+      if (on) $('srAnnouncer').textContent = t('Fetching…');
       $('btnTickerSpinner').classList.toggle('hidden', !on);
       btnTickerFetch.disabled = on;
       tickerInput.disabled = on;
@@ -1064,7 +1100,12 @@
         const body = { ticker: symbol, d1: '○', d2: '○', d3: '○' };
         const res = await fetch('/api/fetch_ticker', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body) });
         const data = await res.json();
-        if (data.error) { tickerError.textContent = data.error; tickerError.classList.remove('hidden'); return; }
+        if (data.error) {
+          tickerError.textContent = data.error + ' — Check the ticker symbol and try again.';
+          tickerError.classList.remove('hidden');
+          return;
+        }
+        tickerError.classList.add('hidden');
         renderDashboard(data);
       } catch (e) { tickerError.textContent = e.message; tickerError.classList.remove('hidden'); }
       finally { setTickerLoading(false); }
@@ -1113,13 +1154,20 @@
       html2pdf().set(opt).from(el).save();
     });
 
-    function setLoading(on) { $('btnText').textContent = on ? t('Analyzing...') : t('Analyze'); $('btnSpinner').classList.toggle('hidden', !on); btnAnalyze.disabled = on; }
+    function setLoading(on) {
+      const txt = on ? t('Analyzing…') : t('Analyze');
+      $('btnText').textContent = txt;
+      $('btnSpinner').classList.toggle('hidden', !on);
+      btnAnalyze.disabled = on;
+      if (on) $('srAnnouncer').textContent = t('Analyzing…');
+    }
 
     // Theme toggle
     const themeToggle = $('themeToggle');
     function setTheme(theme) {
       document.documentElement.setAttribute('data-theme', theme);
       localStorage.setItem('theme', theme);
+      themeToggle.setAttribute('aria-pressed', theme === 'light' ? 'true' : 'false');
       // Re-render charts if they exist
       if (Object.keys(charts).length > 0 && lastTimeseries) {
         renderCharts(lastTimeseries);
@@ -1130,18 +1178,28 @@
       setTheme(current === 'dark' ? 'light' : 'dark');
     }
     themeToggle.addEventListener('click', toggleTheme);
-    themeToggle.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleTheme(); } });
     // Init theme from localStorage
     const savedTheme = localStorage.getItem('theme') || 'dark';
     document.documentElement.setAttribute('data-theme', savedTheme);
+    themeToggle.setAttribute('aria-pressed', savedTheme === 'light' ? 'true' : 'false');
 
-    // Tabs
-    document.querySelectorAll('.tab-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        document.querySelectorAll('.tab-btn').forEach(b => { b.classList.remove('tab-active'); b.classList.add('border-transparent'); b.setAttribute('aria-selected', 'false'); });
-        btn.classList.add('tab-active'); btn.classList.remove('border-transparent'); btn.setAttribute('aria-selected', 'true');
-        document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
-        $('tab-' + btn.dataset.tab).classList.remove('hidden');
+    // Tabs — click + ArrowLeft/ArrowRight keyboard navigation
+    function activateTab(btn) {
+      document.querySelectorAll('.tab-btn').forEach(b => { b.classList.remove('tab-active'); b.classList.add('border-transparent'); b.setAttribute('aria-selected', 'false'); b.setAttribute('tabindex', '-1'); });
+      btn.classList.add('tab-active'); btn.classList.remove('border-transparent'); btn.setAttribute('aria-selected', 'true'); btn.setAttribute('tabindex', '0');
+      document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
+      $('tab-' + btn.dataset.tab).classList.remove('hidden');
+    }
+    document.querySelectorAll('.tab-btn').forEach((btn, idx, all) => {
+      btn.setAttribute('tabindex', idx === 0 ? '0' : '-1');
+      btn.addEventListener('click', () => { activateTab(btn); });
+      btn.addEventListener('keydown', e => {
+        const tabs = [...all];
+        const cur = tabs.indexOf(btn);
+        if (e.key === 'ArrowRight') { e.preventDefault(); const next = tabs[(cur + 1) % tabs.length]; activateTab(next); next.focus(); }
+        if (e.key === 'ArrowLeft')  { e.preventDefault(); const prev = tabs[(cur - 1 + tabs.length) % tabs.length]; activateTab(prev); prev.focus(); }
+        if (e.key === 'Home') { e.preventDefault(); activateTab(tabs[0]); tabs[0].focus(); }
+        if (e.key === 'End')  { e.preventDefault(); activateTab(tabs[tabs.length-1]); tabs[tabs.length-1].focus(); }
       });
     });
 
@@ -2078,10 +2136,17 @@
       try {
         const res = await fetch('/api/competitor_analyze', { method: 'POST', body: fd });
         const data = await res.json();
-        if (data.error) { alert(data.error); return; }
+        if (data.error) {
+          $('srAnnouncer').textContent = data.error;
+          $('compLoading').textContent = data.error;
+          $('compLoading').classList.remove('hidden');
+          return;
+        }
         renderCompetitorResults(data);
       } catch (e) {
-        alert('Error: ' + e.message);
+        $('srAnnouncer').textContent = 'Error: ' + e.message;
+        $('compLoading').textContent = 'Error: ' + e.message;
+        $('compLoading').classList.remove('hidden');
       } finally {
         $('btnCompetitorAnalyze').disabled = false;
         $('compLoading').classList.add('hidden');
