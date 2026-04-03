@@ -15,75 +15,232 @@ DEFAULT_THRESHOLDS = {
     "eps_growth_x": 0, "eps_growth_tri": 10,
 }
 
+# ── 投資家プロファイル定義 ──────────────────────────────────────────────────────
+# 各プロファイルは以下を持つ:
+#   thresholds   : ベンチマークなし時の絶対閾値
+#   dyn_mults    : Damodaran業界平均に掛けるプロファイル固有の倍率
+#                  (eq_ratio, ebitda, op_margin) → (×倍率, ▲倍率)
+#                  (nd_ebitda)                  → (▲倍率, ×倍率) ← 低い方が良い
+#                  (per, pbr)                   → (下限倍率, 上限倍率)
+#                  (growth)                     → (×倍率, ▲倍率)
+#   weights      : セクション加重 {A, B, C, D}
+#   verdict      : BUY/SELL判定スコア境界 {buy, sell}
+#   immediate_sell_xs : SectionA の × が何個でSELLになるか
+INVESTOR_PROFILES = {
+    "balanced": {
+        "name_ja": "バランス型（GARP）",
+        "name_en": "Balanced / GARP",
+        "description_ja": "成長・割安・品質を均等に評価する標準的アプローチ。最も一般的な機関投資家の基本形。",
+        "priorities_ja": ["財務健全性", "安定成長", "適正バリュエーション"],
+        "ref": "典型例: ウェリントン・マネジメント、Capital Group",
+        "thresholds": {
+            "equity_ratio_x": 20, "equity_ratio_tri": 35,
+            "ebitda_margin_x": 5, "ebitda_margin_tri": 10,
+            "op_margin_x": 3, "op_margin_tri": 5,
+            "nd_ebitda_x": 5, "nd_ebitda_tri": 3,
+            "per_hi": 40, "per_lo": 5,
+            "pbr_hi": 5, "pbr_lo": 0.5,
+            "current_ratio_x": 100, "current_ratio_tri": 120,
+            "revenue_cagr_x": 0, "revenue_cagr_tri": 5,
+            "eps_growth_x": 0, "eps_growth_tri": 10,
+        },
+        "dyn_mults": {
+            "eq_ratio": (0.30, 0.60), "ebitda": (0.30, 0.60), "op_margin": (0.30, 0.60),
+            "nd_ebitda": (1.5, 2.5), "per": (0.20, 2.5), "pbr": (0.15, 2.5),
+            "growth": (-0.5, 0.5),
+        },
+        "weights": {"A": 5, "B": 4, "C": 3, "D": 2},
+        "verdict": {"buy": 5, "sell": 15},
+        "immediate_sell_xs": 1,
+    },
+    "value": {
+        "name_ja": "バリュー投資",
+        "name_en": "Value Investing",
+        "description_ja": "割安性と安全余白を最重視。低PER・低PBR・強固なバランスシートを優先する。",
+        "priorities_ja": ["低PER/PBR", "強固な財務", "キャッシュフロー"],
+        "ref": "典型例: バフェット（バークシャー）、グレアム流、Dodge & Cox",
+        "thresholds": {
+            "equity_ratio_x": 25, "equity_ratio_tri": 40,
+            "ebitda_margin_x": 8, "ebitda_margin_tri": 14,
+            "op_margin_x": 5, "op_margin_tri": 8,
+            "nd_ebitda_x": 3, "nd_ebitda_tri": 2,
+            "per_hi": 18, "per_lo": 5,
+            "pbr_hi": 2, "pbr_lo": 0.3,
+            "current_ratio_x": 120, "current_ratio_tri": 150,
+            "revenue_cagr_x": -3, "revenue_cagr_tri": 3,
+            "eps_growth_x": -3, "eps_growth_tri": 5,
+        },
+        "dyn_mults": {
+            "eq_ratio": (0.40, 0.70), "ebitda": (0.40, 0.70), "op_margin": (0.40, 0.70),
+            "nd_ebitda": (1.0, 1.8), "per": (0.15, 1.5), "pbr": (0.10, 1.5),
+            "growth": (-1.0, 0.3),
+        },
+        "weights": {"A": 6, "B": 3, "C": 6, "D": 2},
+        "verdict": {"buy": 4, "sell": 14},
+        "immediate_sell_xs": 1,
+    },
+    "growth": {
+        "name_ja": "グロース投資",
+        "name_en": "Growth Investing",
+        "description_ja": "高い売上・EPS成長率を最重視。現在の割高は将来成長で正当化できると判断する。",
+        "priorities_ja": ["売上成長率", "EPS成長率", "市場拡大余地"],
+        "ref": "典型例: リンチ（マゼラン）、フィッシャー流、ARK Invest",
+        "thresholds": {
+            "equity_ratio_x": 15, "equity_ratio_tri": 25,
+            "ebitda_margin_x": 3, "ebitda_margin_tri": 7,
+            "op_margin_x": 1, "op_margin_tri": 3,
+            "nd_ebitda_x": 8, "nd_ebitda_tri": 5,
+            "per_hi": 80, "per_lo": 5,
+            "pbr_hi": 15, "pbr_lo": 0.5,
+            "current_ratio_x": 80, "current_ratio_tri": 100,
+            "revenue_cagr_x": 3, "revenue_cagr_tri": 12,
+            "eps_growth_x": 0, "eps_growth_tri": 15,
+        },
+        "dyn_mults": {
+            "eq_ratio": (0.15, 0.40), "ebitda": (0.15, 0.40), "op_margin": (0.15, 0.40),
+            "nd_ebitda": (2.5, 4.0), "per": (0.20, 4.0), "pbr": (0.10, 5.0),
+            "growth": (0.3, 1.5),
+        },
+        "weights": {"A": 3, "B": 7, "C": 2, "D": 2},
+        "verdict": {"buy": 6, "sell": 17},
+        "immediate_sell_xs": 2,
+    },
+    "quality": {
+        "name_ja": "クオリティ投資",
+        "name_en": "Quality Investing",
+        "description_ja": "高ROE・高マージン・経済的な堀（競争優位）を重視。適正価格での優良企業保有。",
+        "priorities_ja": ["高ROE/ROIC", "安定マージン", "競争優位性"],
+        "ref": "典型例: テリー・スミス（Fundsmith）、マンガー流、Artisan Partners",
+        "thresholds": {
+            "equity_ratio_x": 30, "equity_ratio_tri": 45,
+            "ebitda_margin_x": 12, "ebitda_margin_tri": 18,
+            "op_margin_x": 8, "op_margin_tri": 13,
+            "nd_ebitda_x": 3, "nd_ebitda_tri": 1.5,
+            "per_hi": 40, "per_lo": 10,
+            "pbr_hi": 8, "pbr_lo": 1.0,
+            "current_ratio_x": 120, "current_ratio_tri": 150,
+            "revenue_cagr_x": 2, "revenue_cagr_tri": 6,
+            "eps_growth_x": 5, "eps_growth_tri": 12,
+        },
+        "dyn_mults": {
+            "eq_ratio": (0.50, 0.80), "ebitda": (0.50, 0.80), "op_margin": (0.50, 0.80),
+            "nd_ebitda": (1.0, 1.8), "per": (0.30, 2.0), "pbr": (0.20, 3.0),
+            "growth": (-0.2, 0.7),
+        },
+        "weights": {"A": 6, "B": 5, "C": 2, "D": 2},
+        "verdict": {"buy": 4, "sell": 13},
+        "immediate_sell_xs": 1,
+    },
+    "income": {
+        "name_ja": "インカム投資",
+        "name_en": "Income / Dividend",
+        "description_ja": "安定配当・低リスク・成熟企業を重視。低ボラティリティの長期保有を前提とする。",
+        "priorities_ja": ["安定配当", "低債務水準", "FCF安定性"],
+        "ref": "典型例: 年金基金（GPIF等）、バンガード・インカムファンド",
+        "thresholds": {
+            "equity_ratio_x": 30, "equity_ratio_tri": 45,
+            "ebitda_margin_x": 10, "ebitda_margin_tri": 15,
+            "op_margin_x": 6, "op_margin_tri": 10,
+            "nd_ebitda_x": 3, "nd_ebitda_tri": 2,
+            "per_hi": 22, "per_lo": 8,
+            "pbr_hi": 3, "pbr_lo": 0.5,
+            "current_ratio_x": 130, "current_ratio_tri": 160,
+            "revenue_cagr_x": -3, "revenue_cagr_tri": 3,
+            "eps_growth_x": -3, "eps_growth_tri": 5,
+        },
+        "dyn_mults": {
+            "eq_ratio": (0.45, 0.75), "ebitda": (0.45, 0.75), "op_margin": (0.45, 0.75),
+            "nd_ebitda": (1.0, 1.8), "per": (0.20, 1.8), "pbr": (0.15, 2.0),
+            "growth": (-1.0, 0.3),
+        },
+        "weights": {"A": 6, "B": 3, "C": 5, "D": 2},
+        "verdict": {"buy": 4, "sell": 12},
+        "immediate_sell_xs": 1,
+    },
+}
+
 INDUSTRY_LIST = ["製造・サービス"]
 
 
-def generate_dynamic_thresholds(benchmark):
+def generate_dynamic_thresholds(benchmark, profile=None):
     """Damodaranの業界平均データから動的に閾値を生成する。
 
     考え方:
-    - 「業界平均の30%未満 → ×」「業界平均の60%未満 → ▲」（高い方が良い指標）
-    - 「業界平均の2.5倍超 → ×」「業界平均の1.5倍超 → ▲」（低い方が良い指標）
+    - 「業界平均の×%未満 → ×」「業界平均の▲%未満 → ▲」（高い方が良い指標）
+    - 「業界平均の▲倍超 → ▲」「業界平均の×倍超 → ×」（低い方が良い指標）
     - PER/PBR はレンジ判定: 業界平均を中心に上下に幅を持たせる
+    - プロファイルが指定された場合はプロファイル固有の倍率を使用する。
     """
-    if not benchmark:
-        return DEFAULT_THRESHOLDS.copy()
+    # プロファイルの解決
+    prof = INVESTOR_PROFILES.get(profile or 'balanced', INVESTOR_PROFILES['balanced'])
 
-    th = DEFAULT_THRESHOLDS.copy()
+    if not benchmark:
+        # ベンチマークなし → プロファイルの固定閾値を使用
+        return prof['thresholds'].copy()
+
+    th = prof['thresholds'].copy()
+    dm = prof['dyn_mults']
+
+    eq_x_mult, eq_tri_mult = dm.get('eq_ratio', (0.30, 0.60))
+    em_x_mult, em_tri_mult = dm.get('ebitda', (0.30, 0.60))
+    op_x_mult, op_tri_mult = dm.get('op_margin', (0.30, 0.60))
+    nd_tri_mult, nd_x_mult = dm.get('nd_ebitda', (1.5, 2.5))
+    per_lo_mult, per_hi_mult = dm.get('per', (0.20, 2.5))
+    pbr_lo_mult, pbr_hi_mult = dm.get('pbr', (0.15, 2.5))
+    gr_x_mult, gr_tri_mult = dm.get('growth', (-0.5, 0.5))
 
     # 自己資本比率: Damodaranの debt_to_capital_book から算出
     dtc = benchmark.get('debt_to_capital_book')
     if dtc is not None and dtc < 1:
         avg_eq = (1 - dtc) * 100  # 業界平均の自己資本比率(%)
-        th["equity_ratio_x"] = round(avg_eq * 0.3, 1)
-        th["equity_ratio_tri"] = round(avg_eq * 0.6, 1)
+        th["equity_ratio_x"] = round(avg_eq * eq_x_mult, 1)
+        th["equity_ratio_tri"] = round(avg_eq * eq_tri_mult, 1)
 
     # EBITDAマージン（業界平均が1%未満の場合はデフォルトのまま）
     em = benchmark.get('ebitda_margin')
     if em is not None and em > 0.01:
         avg_em = em * 100
-        th["ebitda_margin_x"] = round(avg_em * 0.3, 1)
-        th["ebitda_margin_tri"] = round(avg_em * 0.6, 1)
+        th["ebitda_margin_x"] = round(avg_em * em_x_mult, 1)
+        th["ebitda_margin_tri"] = round(avg_em * em_tri_mult, 1)
 
-    # Net Debt / EBITDA: 低い方が良い → 業界平均の1.5倍で▲、2.5倍で×
+    # Net Debt / EBITDA: 低い方が良い → 業界平均の▲倍で▲、×倍で×
     # 銀行等EBITDAが極小の業種ではDebt/EBITDAが異常値(>100)になるためスキップ
     nd = benchmark.get('debt_to_ebitda')
     if nd is not None and 0 < nd < 100:
-        th["nd_ebitda_tri"] = round(nd * 1.5, 1)
-        th["nd_ebitda_x"] = round(nd * 2.5, 1)
+        th["nd_ebitda_tri"] = round(nd * nd_tri_mult, 1)
+        th["nd_ebitda_x"] = round(nd * nd_x_mult, 1)
 
     # PER: 業界平均(Aggregate)を中心にレンジ
     pe = benchmark.get('pe_aggregate_all')
     if pe is not None and pe > 0:
-        th["per_lo"] = round(pe * 0.2, 1)
-        th["per_hi"] = round(pe * 2.5, 1)
+        th["per_lo"] = round(pe * per_lo_mult, 1)
+        th["per_hi"] = round(pe * per_hi_mult, 1)
 
     # PBR: 業界平均を中心にレンジ
     pbr = benchmark.get('pbr')
     if pbr is not None and pbr > 0:
-        th["pbr_lo"] = round(pbr * 0.15, 2)
-        th["pbr_hi"] = round(pbr * 2.5, 2)
+        th["pbr_lo"] = round(pbr * pbr_lo_mult, 2)
+        th["pbr_hi"] = round(pbr * pbr_hi_mult, 2)
 
-    # 営業利益率: 業界平均の30%未満→×、60%未満→▲（平均<1%時はデフォルト）
+    # 営業利益率: 業界平均の×%未満→×、▲%未満→▲（平均<1%時はデフォルト）
     op = benchmark.get('operating_margin')
     if op is not None and op > 0.01:
         avg_op = op * 100
-        th["op_margin_x"] = round(avg_op * 0.3, 1)
-        th["op_margin_tri"] = round(avg_op * 0.6, 1)
+        th["op_margin_x"] = round(avg_op * op_x_mult, 1)
+        th["op_margin_tri"] = round(avg_op * op_tri_mult, 1)
 
     # 売上高CAGR: 業界の期待成長率を基準に
     eg = benchmark.get('expected_growth_5y')
     if eg is not None:
         avg_growth = eg * 100  # %に変換
-        # ×: 業界期待成長率の-50%未満（衰退）、▲: 業界平均の50%未満
-        th["revenue_cagr_x"] = round(min(avg_growth * -0.5, 0), 1)
-        th["revenue_cagr_tri"] = round(max(avg_growth * 0.5, 0), 1)
+        th["revenue_cagr_x"] = round(min(avg_growth * gr_x_mult, 0), 1) if gr_x_mult < 0 else round(avg_growth * gr_x_mult, 1)
+        th["revenue_cagr_tri"] = round(max(avg_growth * gr_tri_mult, 0), 1)
 
     # EPS成長率: 売上高CAGRと同じ基準を流用
     if eg is not None:
         avg_growth = eg * 100
-        th["eps_growth_x"] = round(min(avg_growth * -0.5, 0), 1)
-        th["eps_growth_tri"] = round(max(avg_growth * 0.5, 0), 1)
+        th["eps_growth_x"] = round(min(avg_growth * gr_x_mult, 0), 1) if gr_x_mult < 0 else round(avg_growth * gr_x_mult, 1)
+        th["eps_growth_tri"] = round(max(avg_growth * gr_tri_mult, 0), 1)
 
     # 流動比率: Damodaranにデータなし → デフォルトのまま
     # ただし金融業界は構造的に低いため、debt_to_capitalが高い業界は緩和
@@ -531,8 +688,12 @@ def analyze_quantitative(d, benchmark=None):
     return results
 
 
-def analyze_screening(d, q_results, benchmark=None):
-    th = generate_dynamic_thresholds(benchmark)
+def analyze_screening(d, q_results, benchmark=None, investor_profile='balanced'):
+    th = generate_dynamic_thresholds(benchmark, profile=investor_profile)
+    prof = INVESTOR_PROFILES.get(investor_profile, INVESTOR_PROFILES['balanced'])
+    weights = prof['weights']
+    verdict_cfg = prof['verdict']
+    immediate_sell_xs = prof['immediate_sell_xs']
     # 業界平均ROE（日本 or Global）
     avg_roe = None
     if benchmark:
@@ -601,7 +762,7 @@ def analyze_screening(d, q_results, benchmark=None):
     a_keys = ["A-1_自己資本比率", "A-2_営業CF", "A-3_ROE_ROA"]
     a_xs = sum(1 for k in a_keys if results[k]["判定"] == "×")
     a_tris = sum(1 for k in a_keys if results[k]["判定"] == "▲")
-    if a_xs >= 1:
+    if a_xs >= immediate_sell_xs:
         a_eval = "×NG（即時回避）"
     elif a_tris >= 2:
         a_eval = "▲要注意"
@@ -609,7 +770,7 @@ def analyze_screening(d, q_results, benchmark=None):
         a_eval = "▲要確認"
     else:
         a_eval = "◎全項通過"
-    a_score = (a_xs * 1 + a_tris * 0.5) * 5
+    a_score = (a_xs * 1 + a_tris * 0.5) * weights['A']
     results["SectionA評価"] = a_eval
     results["SectionAスコア"] = a_score
 
@@ -665,7 +826,7 @@ def analyze_screening(d, q_results, benchmark=None):
     b_xs = sum(1 for k in b_keys if results[k]["判定"] == "×")
     b_tris = sum(1 for k in b_keys if results[k]["判定"] == "▲")
     b_eval = "×投資魅力低下" if b_xs >= 2 else ("▲要追加調査" if b_xs >= 1 else ("▲要注意" if b_tris >= 2 else "◎全項通過"))
-    b_score = (b_xs * 1 + b_tris * 0.5) * 4
+    b_score = (b_xs * 1 + b_tris * 0.5) * weights['B']
     results["SectionB評価"] = b_eval
     results["SectionBスコア"] = b_score
 
@@ -695,7 +856,7 @@ def analyze_screening(d, q_results, benchmark=None):
     c_xs = sum(1 for k in c_keys if results[k]["判定"] == "×")
     c_tris = sum(1 for k in c_keys if results[k]["判定"] == "▲")
     c_eval = "×タイミング要見直し" if c_xs >= 3 else ("▲要コスト評価" if c_xs >= 1 else ("▲要注意" if c_tris >= 2 else "◎全項通過"))
-    c_score = (c_xs * 1 + c_tris * 0.5) * 3
+    c_score = (c_xs * 1 + c_tris * 0.5) * weights['C']
     results["SectionC評価"] = c_eval
     results["SectionCスコア"] = c_score
 
@@ -713,20 +874,21 @@ def analyze_screening(d, q_results, benchmark=None):
     d_xs = sum(1 for v in [d1, d2, d3] if v == "×")
     d_tris = sum(1 for v in [d1, d2, d3] if v == "▲")
     d_eval = "×重要リスク確認" if d_xs >= 2 else ("▲リスク注意" if d_xs >= 1 else ("▲要確認" if d_tris >= 1 else "◎リスクなし"))
-    d_score = (d_xs * 1 + d_tris * 0.5) * 2
+    d_score = (d_xs * 1 + d_tris * 0.5) * weights['D']
     results["SectionD評価"] = d_eval
     results["SectionDスコア"] = d_score
 
-    # 最終投資判定
+    # 最終投資判定（プロファイル固有の閾値を使用）
     total_score = a_score + b_score + c_score + d_score
-    if a_xs >= 1 or total_score >= 15:
+    if a_xs >= immediate_sell_xs or total_score >= verdict_cfg['sell']:
         final = "SELL"
-    elif total_score <= 5:
+    elif total_score <= verdict_cfg['buy']:
         final = "BUY"
     else:
         final = "HOLD"
     results["総合スコア"] = total_score
     results["最終投資判定"] = final
+    results["適用プロファイル"] = investor_profile
 
     return results
 
@@ -1147,17 +1309,28 @@ def compute_pbr_contribution(roe_tree, screening, data, benchmark=None):
     }
 
 
-def run_full_analysis(data, benchmark=None):
+def run_full_analysis(data, benchmark=None, investor_profile='balanced'):
     q_results = analyze_quantitative(data, benchmark=benchmark)
-    s_results = analyze_screening(data, q_results, benchmark=benchmark)
+    s_results = analyze_screening(data, q_results, benchmark=benchmark, investor_profile=investor_profile)
     r_results = analyze_roa_tree(data)
     roe_results = analyze_roe_tree(data)
     pbr_contrib = compute_pbr_contribution(roe_results, s_results, data, benchmark=benchmark)
     evaluation_criteria = generate_evaluation_criteria(benchmark)
+    prof = INVESTOR_PROFILES.get(investor_profile, INVESTOR_PROFILES['balanced'])
     return {
         "company": data.get("company", "Unknown"),
         "ticker": data.get("ticker", ""),
         "industry": data.get("industry", "製造・サービス"),
+        "investor_profile": {
+            "id": investor_profile,
+            "name_ja": prof["name_ja"],
+            "name_en": prof["name_en"],
+            "description_ja": prof["description_ja"],
+            "priorities_ja": prof["priorities_ja"],
+            "ref": prof["ref"],
+            "weights": prof["weights"],
+            "verdict": prof["verdict"],
+        },
         "quantitative": q_results,
         "screening": s_results,
         "roa_tree": r_results,

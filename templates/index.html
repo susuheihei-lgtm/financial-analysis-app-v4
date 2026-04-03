@@ -187,6 +187,21 @@
     .score-card-accent::before { content:''; position:absolute; top:0; left:0; right:0; height:2px; background:#d5001c; transform:scaleX(0); transform-origin:left; transition:transform 0.4s var(--ease-luxury); }
     .score-card-accent:hover::before { transform:scaleX(1); }
 
+    /* Investor Profile Cards */
+    .profile-card {
+      display: flex; flex-direction: column; align-items: center; gap: 2px;
+      padding: 0.75rem 0.5rem; border: 1px solid var(--border-s);
+      background: var(--card-bg); cursor: pointer;
+      transition: border-color 0.2s, background 0.2s;
+      font-family: 'Barlow Condensed','Arial Narrow',Arial,sans-serif;
+      border-radius: 0;
+    }
+    .profile-card:hover { border-color: var(--border-m); background: var(--card-hover-bg); }
+    .profile-card.selected { border-color: #d5001c; background: rgba(213,0,28,0.06); }
+    .profile-card .profile-icon { font-size: 1.2rem; line-height: 1; }
+    .profile-card .profile-name { font-size: 0.65rem; font-weight: 700; letter-spacing: 0.15em; text-transform: uppercase; color: var(--text-primary); }
+    .profile-card .profile-sub { font-size: 0.55rem; letter-spacing: 0.08em; color: var(--text-muted, #888); }
+
     /* Hero background image — upload page only, semi-transparent */
     .hero-bg {
       position: relative;
@@ -427,6 +442,39 @@
         </div>
       </div>
 
+      <!-- Investor Profile Selector -->
+      <div class="mb-6">
+        <p class="text-[10px] font-bold uppercase tracking-[0.2em] th-text-m mb-3" data-i18n="Investor Profile">Investor Profile</p>
+        <div class="grid grid-cols-1 sm:grid-cols-5 gap-2" id="profileCards" role="radiogroup" aria-label="Investor Profile">
+          <button type="button" class="profile-card selected" data-profile="balanced" onclick="selectProfile('balanced')" aria-pressed="true">
+            <span class="profile-icon">⚖️</span>
+            <span class="profile-name">Balanced</span>
+            <span class="profile-sub">GARP</span>
+          </button>
+          <button type="button" class="profile-card" data-profile="value" onclick="selectProfile('value')" aria-pressed="false">
+            <span class="profile-icon">💎</span>
+            <span class="profile-name">Value</span>
+            <span class="profile-sub">Buffett / Graham</span>
+          </button>
+          <button type="button" class="profile-card" data-profile="growth" onclick="selectProfile('growth')" aria-pressed="false">
+            <span class="profile-icon">🚀</span>
+            <span class="profile-name">Growth</span>
+            <span class="profile-sub">Lynch / Fisher</span>
+          </button>
+          <button type="button" class="profile-card" data-profile="quality" onclick="selectProfile('quality')" aria-pressed="false">
+            <span class="profile-icon">🏆</span>
+            <span class="profile-name">Quality</span>
+            <span class="profile-sub">Fundsmith / Munger</span>
+          </button>
+          <button type="button" class="profile-card" data-profile="income" onclick="selectProfile('income')" aria-pressed="false">
+            <span class="profile-icon">💰</span>
+            <span class="profile-name">Income</span>
+            <span class="profile-sub">Dividend / GPIF</span>
+          </button>
+        </div>
+        <p id="profileDesc" class="text-[10px] th-text-m mt-2 leading-relaxed"></p>
+      </div>
+
       <p id="analyzeError" class="hidden mb-2 text-xs text-red-500 tracking-wider" role="alert" aria-live="assertive"></p>
       <div class="flex gap-3">
         <button id="btnAnalyze" class="flex-1 bg-brand hover:bg-brand-light text-white font-semibold text-xs uppercase tracking-[0.18em] py-4 transition-all duration-300 disabled:opacity-20 disabled:cursor-not-allowed" style="border-radius:0;font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif;letter-spacing:0.18em" disabled>
@@ -456,6 +504,7 @@
             <div class="flex items-center gap-4 mb-3 flex-wrap">
               <span id="tickerBadge" class="text-[10px] font-bold tracking-[0.22em] uppercase px-3 py-1 text-brand" style="background:rgba(213,0,28,0.08);border:1px solid rgba(213,0,28,0.2);font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif"></span>
               <span id="currencyBadge" class="text-[10px] font-bold tracking-[0.18em] uppercase px-3 py-1 hidden" style="background:rgba(59,130,246,0.08);border:1px solid rgba(59,130,246,0.2);color:#3b82f6;font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif"></span>
+              <span id="profileBadge" class="text-[10px] font-bold tracking-[0.18em] uppercase px-3 py-1 hidden" style="background:rgba(120,53,15,0.08);border:1px solid rgba(120,53,15,0.25);color:#92400e;font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif"></span>
               <span class="w-px h-3" style="background:var(--border-m)"></span>
               <span id="industryBadge" class="text-[10px] tracking-[0.14em] uppercase th-text-m" style="font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif"></span>
             </div>
@@ -669,6 +718,29 @@
     const btnAnalyze = $('btnAnalyze'), btnSample = $('btnSample'), btnReset = $('btnReset');
     const metaForm = $('metaForm'), fileName = $('fileName');
     let selectedFile = null, charts = {}, lastTimeseries = null, lastData = null, lastBenchmark = null;
+    let selectedInvestorProfile = 'balanced';
+
+    const PROFILE_DESC = {
+      balanced: '成長・割安・品質を均等に評価する標準的アプローチ。最も一般的な機関投資家の基本形。(例: ウェリントン・マネジメント、Capital Group)',
+      value:    '割安性と安全余白を最重視。低PER・低PBR・強固なバランスシートを優先する。(例: バフェット、グレアム流、Dodge & Cox)',
+      growth:   '高い売上・EPS成長率を最重視。現在の割高は将来成長で正当化できると判断する。(例: リンチ、フィッシャー流、ARK Invest)',
+      quality:  '高ROE・高マージン・経済的な堀を重視。適正価格での優良企業保有。(例: テリー・スミス、マンガー流、Artisan Partners)',
+      income:   '安定配当・低リスク・成熟企業を重視。低ボラティリティの長期保有を前提とする。(例: 年金基金(GPIF等)、バンガード・インカムファンド)',
+    };
+
+    function selectProfile(profile) {
+      selectedInvestorProfile = profile;
+      document.querySelectorAll('.profile-card').forEach(btn => {
+        const sel = btn.dataset.profile === profile;
+        btn.classList.toggle('selected', sel);
+        btn.setAttribute('aria-pressed', sel ? 'true' : 'false');
+      });
+      const desc = $('profileDesc');
+      if (desc) desc.textContent = PROFILE_DESC[profile] || '';
+    }
+
+    // Initialize profile desc
+    selectProfile('balanced');
 
     // Region toggle: 'global' or 'japan'
     let benchmarkRegion = localStorage.getItem('benchRegion') || 'global';
@@ -1028,6 +1100,7 @@
         fd.append('d2', $('inputD2').value);
         fd.append('d3', $('inputD3').value);
         fd.append('currency', $('inputCurrency').value);
+        fd.append('investor_profile', selectedInvestorProfile);
         const res = await fetch('/api/analyze', { method: 'POST', body: fd });
         const data = await res.json();
         const analyzeError = $('analyzeError');
@@ -1059,7 +1132,7 @@
       setLoading(true); btnSample.disabled = true;
       try {
         const demoIndustry = 'Oilfield Svcs/Equip.';
-        const res = await fetch('/api/sample?damodaran_industry=' + encodeURIComponent(demoIndustry));
+        const res = await fetch('/api/sample?damodaran_industry=' + encodeURIComponent(demoIndustry) + '&investor_profile=' + encodeURIComponent(selectedInvestorProfile));
         const data = await res.json();
         // Fetch industry benchmark for demo
         try {
@@ -1097,7 +1170,7 @@
       tickerError.classList.add('hidden');
       setTickerLoading(true);
       try {
-        const body = { ticker: symbol, d1: '○', d2: '○', d3: '○' };
+        const body = { ticker: symbol, d1: '○', d2: '○', d3: '○', investor_profile: selectedInvestorProfile };
         const res = await fetch('/api/fetch_ticker', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body) });
         const data = await res.json();
         if (data.error) {
@@ -1365,6 +1438,14 @@
       $('companyName').textContent = data.company || 'Untitled';
       $('tickerBadge').textContent = data.ticker || '—';
       $('industryBadge').textContent = data.industry || '';
+
+      // Profile badge
+      const profBadge = $('profileBadge');
+      if (profBadge && data.investor_profile) {
+        profBadge.textContent = data.investor_profile.name_en;
+        profBadge.title = data.investor_profile.description_ja;
+        profBadge.classList.remove('hidden');
+      }
 
       const verdict = s['最終投資判定'];
       const vc = $('verdictCard');
@@ -2129,6 +2210,7 @@
 
       const indSel = $('inputIndustry');
       if (indSel) fd.append('damodaran_industry', indSel.value || '');
+      fd.append('investor_profile', selectedInvestorProfile);
 
       $('btnCompetitorAnalyze').disabled = true;
       $('compLoading').classList.remove('hidden');

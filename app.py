@@ -122,14 +122,15 @@ def analyze():
         # Damodaranベンチマークを取得（フロントから業種名が送られてくる場合）
         selected_industry = request.form.get('damodaran_industry', '')
         benchmark = _damodaran_data.get(selected_industry)
+        investor_profile = request.form.get('investor_profile', 'balanced')
 
-        result = run_full_analysis(data, benchmark=benchmark)
+        result = run_full_analysis(data, benchmark=benchmark, investor_profile=investor_profile)
         if ts_data:
             result['timeseries'] = ts_data
         # 動的閾値もレスポンスに含める（フロント側で表示用）
         if benchmark:
             from analyzer import generate_dynamic_thresholds
-            result['dynamic_thresholds'] = generate_dynamic_thresholds(benchmark)
+            result['dynamic_thresholds'] = generate_dynamic_thresholds(benchmark, profile=investor_profile)
         return jsonify(result)
     except ImportError as e:
         return jsonify({'error': f'必要なライブラリが不足しています: {str(e)}'}), 500
@@ -164,13 +165,14 @@ def fetch_ticker():
         # Damodaranベンチマーク
         damodaran_industry = body.get('damodaran_industry', '')
         benchmark = _damodaran_data.get(damodaran_industry)
+        investor_profile = body.get('investor_profile', 'balanced')
 
-        result = run_full_analysis(data, benchmark=benchmark)
+        result = run_full_analysis(data, benchmark=benchmark, investor_profile=investor_profile)
         if ts_data:
             result['timeseries'] = ts_data
         if benchmark:
             from analyzer import generate_dynamic_thresholds
-            result['dynamic_thresholds'] = generate_dynamic_thresholds(benchmark)
+            result['dynamic_thresholds'] = generate_dynamic_thresholds(benchmark, profile=investor_profile)
         return jsonify(result)
     except ValueError as e:
         return jsonify({'error': str(e)}), 400
@@ -191,7 +193,8 @@ def sample():
     # デモではデフォルトの業界を使用
     selected_industry = request.args.get('damodaran_industry', '')
     benchmark = _damodaran_data.get(selected_industry)
-    result = run_full_analysis(data, benchmark=benchmark)
+    investor_profile = request.args.get('investor_profile', 'balanced')
+    result = run_full_analysis(data, benchmark=benchmark, investor_profile=investor_profile)
     if ts_data:
         result['timeseries'] = ts_data
     return jsonify(result)
@@ -207,6 +210,7 @@ def competitor_analyze():
         files = request.files.getlist('files[]')
         industry = request.form.get('damodaran_industry', '')
         benchmark = _damodaran_data.get(industry)
+        investor_profile = request.form.get('investor_profile', 'balanced')
 
         companies = []
         file_idx = 0
@@ -244,7 +248,7 @@ def competitor_analyze():
                     name = os.path.splitext(f.filename)[0]
 
             data['industry'] = industry or ''
-            result = run_full_analysis(data, benchmark=benchmark)
+            result = run_full_analysis(data, benchmark=benchmark, investor_profile=investor_profile)
 
             companies.append({
                 'name': name,
@@ -259,7 +263,7 @@ def competitor_analyze():
         resp = {'companies': companies}
         if benchmark:
             from analyzer import generate_dynamic_thresholds
-            resp['dynamic_thresholds'] = generate_dynamic_thresholds(benchmark)
+            resp['dynamic_thresholds'] = generate_dynamic_thresholds(benchmark, profile=investor_profile)
         return jsonify(resp)
     except ValueError as e:
         return jsonify({'error': str(e)}), 400
