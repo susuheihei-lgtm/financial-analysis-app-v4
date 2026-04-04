@@ -11,7 +11,7 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, BASE_DIR)
 
 from flask import Flask, render_template, request, jsonify, session
-from analyzer import run_full_analysis, INDUSTRY_LIST
+from analyzer import run_full_analysis, INDUSTRY_LIST, generate_dynamic_thresholds
 from excel_parser import parse_excel, scan_available_metrics, extract_custom_timeseries
 from yfinance_parser import parse_yfinance
 
@@ -23,9 +23,6 @@ app = Flask(
 )
 app.config['MAX_CONTENT_LENGTH'] = 80 * 1024 * 1024  # 80MB (5 Excel files)
 app.secret_key = os.environ.get('SECRET_KEY', 'fin-analysis-secret-key')
-
-# 一時Excelファイルのパスを保持
-_uploaded_excel_path = None
 
 DATA_DIR = os.path.join(BASE_DIR, 'data')
 
@@ -42,6 +39,18 @@ def load_sample_data():
     path = os.path.join(DATA_DIR, 'stock_data.json')
     with open(path, 'r', encoding='utf-8') as f:
         return json.load(f)
+
+
+def _build_analysis_response(data, ts_data, benchmark, investor_profile):
+    """共通の分析実行・レスポンス構築ヘルパー。
+    全分析エンドポイントで同一ロジックを使うことで、追加・変更の漏れを防ぐ。
+    """
+    result = run_full_analysis(data, benchmark=benchmark, investor_profile=investor_profile)
+    if ts_data:
+        result['timeseries'] = ts_data
+    if benchmark:
+        result['dynamic_thresholds'] = generate_dynamic_thresholds(benchmark, profile=investor_profile)
+    return result
 
 
 @app.route('/')
@@ -91,20 +100,17 @@ def analyze():
                     if company:
                         data['company'] = company
                     elif not data.get('company'):
-                        # Fallback: use filename without extension
                         data['company'] = os.path.splitext(f.filename)[0]
 
                     if ticker:
                         data['ticker'] = ticker
                     elif not data.get('ticker'):
-                        # Try to extract ticker from filename (e.g., "6269-financials.xlsx")
                         import re
                         match = re.search(r'^(\d{4,5})|[-_](\d{4,5})[-_]', f.filename)
                         if match:
                             data['ticker'] = match.group(1) or match.group(2)
 
                     data['industry'] = industry
-                    # 定性評価
                     data['d1_mgmt_change'] = request.form.get('d1', '○')
                     data['d2_ownership'] = request.form.get('d2', '○')
                     data['d3_esg'] = request.form.get('d3', '○')
@@ -119,19 +125,11 @@ def analyze():
         else:
             return jsonify({'error': 'データが提供されていません'}), 400
 
-        # Damodaranベンチマークを取得（フロントから業種名が送られてくる場合）
         selected_industry = request.form.get('damodaran_industry', '')
         benchmark = _damodaran_data.get(selected_industry)
         investor_profile = request.form.get('investor_profile', 'balanced')
 
-        result = run_full_analysis(data, benchmark=benchmark, investor_profile=investor_profile)
-        if ts_data:
-            result['timeseries'] = ts_data
-        # 動的閾値もレスポンスに含める（フロント側で表示用）
-        if benchmark:
-            from analyzer import generate_dynamic_thresholds
-            result['dynamic_thresholds'] = generate_dynamic_thresholds(benchmark, profile=investor_profile)
-        return jsonify(result)
+        return jsonify(_build_analysis_response(data, ts_data, benchmark, investor_profile))
     except ImportError as e:
         return jsonify({'error': f'必要なライブラリが不足しています: {str(e)}'}), 500
     except Exception as e:
@@ -154,7 +152,6 @@ def fetch_ticker():
 
         data, ts_data = parse_yfinance(symbol)
 
-        # フォームメタデータを上書き
         industry = body.get('industry', '')
         if industry:
             data['industry'] = industry
@@ -162,18 +159,11 @@ def fetch_ticker():
         data['d2_ownership'] = body.get('d2', '○')
         data['d3_esg'] = body.get('d3', '○')
 
-        # Damodaranベンチマーク
         damodaran_industry = body.get('damodaran_industry', '')
         benchmark = _damodaran_data.get(damodaran_industry)
         investor_profile = body.get('investor_profile', 'balanced')
 
-        result = run_full_analysis(data, benchmark=benchmark, investor_profile=investor_profile)
-        if ts_data:
-            result['timeseries'] = ts_data
-        if benchmark:
-            from analyzer import generate_dynamic_thresholds
-            result['dynamic_thresholds'] = generate_dynamic_thresholds(benchmark, profile=investor_profile)
-        return jsonify(result)
+        return jsonify(_build_analysis_response(data, ts_data, benchmark, investor_profile))
     except ValueError as e:
         return jsonify({'error': str(e)}), 400
     except Exception as e:
@@ -185,19 +175,14 @@ def fetch_ticker():
 @app.route('/api/sample')
 def sample():
     data = load_sample_data()
-    # サンプルのExcelも解析して時系列データを取得
     excel_path = os.path.join(DATA_DIR, '6269-financials.xlsx')
     ts_data = None
     if os.path.exists(excel_path):
         _, ts_data = parse_excel(excel_path)
-    # デモではデフォルトの業界を使用
     selected_industry = request.args.get('damodaran_industry', '')
     benchmark = _damodaran_data.get(selected_industry)
     investor_profile = request.args.get('investor_profile', 'balanced')
-    result = run_full_analysis(data, benchmark=benchmark, investor_profile=investor_profile)
-    if ts_data:
-        result['timeseries'] = ts_data
-    return jsonify(result)
+    return jsonify(_build_analysis_response(data, ts_data, benchmark, investor_profile))
 
 
 @app.route('/api/competitor_analyze', methods=['POST'])
@@ -262,7 +247,6 @@ def competitor_analyze():
 
         resp = {'companies': companies}
         if benchmark:
-            from analyzer import generate_dynamic_thresholds
             resp['dynamic_thresholds'] = generate_dynamic_thresholds(benchmark, profile=investor_profile)
         return jsonify(resp)
     except ValueError as e:
@@ -276,7 +260,6 @@ def competitor_analyze():
 @app.route('/api/scan_metrics', methods=['POST'])
 def scan_metrics():
     """アップロードされたExcelから可視化可能なメトリクスをスキャン"""
-    global _uploaded_excel_path
     if 'file' not in request.files:
         return jsonify({'error': 'ファイルが提供されていません'}), 400
     f = request.files['file']
@@ -286,7 +269,8 @@ def scan_metrics():
     tmp = tempfile.NamedTemporaryFile(suffix=ext, delete=False)
     f.save(tmp.name)
     tmp.close()
-    _uploaded_excel_path = tmp.name
+    # セッションにパスを保存（グローバル変数によるレースコンディション回避）
+    session['uploaded_excel_path'] = tmp.name
     try:
         metrics = scan_available_metrics(tmp.name)
         return jsonify({'metrics': metrics})
@@ -297,12 +281,12 @@ def scan_metrics():
 @app.route('/api/custom_analysis', methods=['POST'])
 def custom_analysis():
     """選択されたメトリクスのカスタム分析データを返す"""
-    global _uploaded_excel_path
     body = request.get_json()
     selected = body.get('selected', [])
     if not selected:
         return jsonify({'error': '指標が選択されていません'}), 400
-    excel_path = _uploaded_excel_path
+    # セッションからパスを取得（各ユーザーのアップロードを独立して管理）
+    excel_path = session.get('uploaded_excel_path')
     if not excel_path or not os.path.exists(excel_path):
         excel_path = os.path.join(DATA_DIR, '6269-financials.xlsx')
         if not os.path.exists(excel_path):

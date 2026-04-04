@@ -268,6 +268,9 @@ def rate_change(current, base):
 
 
 def consecutive_increase(vals):
+    """データが新しい順（vals[0]=最新）に並んでいることを前提に、
+    時系列が連続して増加しているか（最新 > 前年 > 前々年…）を確認する。
+    """
     clean = [v for v in vals if v is not None]
     if len(clean) < 2:
         return None
@@ -313,21 +316,33 @@ def generate_evaluation_criteria(benchmark=None):
     roe_median = benchmark.get("roe_median") or benchmark.get("roe", 0)
     roa_median = benchmark.get("roa_median") or benchmark.get("roa", 0)
 
-    criteria["ROE"] = {
-        "◎": {"rel_min": 1.5, "growth_min": 5},
-        "○": {"rel_min": 1.0, "growth_min": 3},
-        "▲": {"rel_min": 0.5, "growth_min": 0},
-        "業種中央値": roe_median,
-        "評価軸": f"業種中央値（{roe_median:.1f}%）との相対比較 + 成長トレンド"
-    }
+    # 中央値が0または欠損の場合は相対比較が無意味なためデフォルトにフォールバック
+    if not roe_median:
+        criteria["ROE"] = {
+            "◎": {"roe_min": 15, "growth_min": 5, "improve_3y": True},
+            "○": {"roe_min": 10, "growth_min": 3},
+            "▲": {"roe_min": 0, "growth_min": 0},
+            "評価軸": "ROE水準と5年成長率 + 3年比較（業種中央値なし）"
+        }
+    else:
+        criteria["ROE"] = {
+            "◎": {"rel_min": 1.5, "growth_min": 5},
+            "○": {"rel_min": 1.0, "growth_min": 3},
+            "▲": {"rel_min": 0.5, "growth_min": 0},
+            "業種中央値": roe_median,
+            "評価軸": f"業種中央値（{roe_median:.1f}%）との相対比較 + 成長トレンド"
+        }
 
-    criteria["ROA"] = {
-        "◎": {"rel_min": 1.5},
-        "○": {"rel_min": 1.0},
-        "▲": {"rel_min": 0.5},
-        "業種中央値": roa_median,
-        "評価軸": f"業種中央値（{roa_median:.1f}%）との相対比較"
-    }
+    if not roa_median:
+        criteria["ROA"] = {"評価軸": "ROA水準のみ表示（業種中央値なし）"}
+    else:
+        criteria["ROA"] = {
+            "◎": {"rel_min": 1.5},
+            "○": {"rel_min": 1.0},
+            "▲": {"rel_min": 0.5},
+            "業種中央値": roa_median,
+            "評価軸": f"業種中央値（{roa_median:.1f}%）との相対比較"
+        }
 
     return criteria
 
