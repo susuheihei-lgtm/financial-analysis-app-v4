@@ -1044,6 +1044,21 @@
       'Balance Sheet':    { ja: '貸借対照表' },
       'Industry Avg':     { ja: '業界平均' },
       'vs Industry':      { ja: '対業界' },
+      // Section A eval texts
+      '◎全項通過':         { en: '◎ All Passed' },
+      '▲要確認':           { en: '▲ Review Required' },
+      '▲要注意':           { en: '▲ Warning' },
+      '×NG（即時回避）':    { en: '× AVOID (Immediate)' },
+      // Section B eval texts
+      '×投資魅力低下':     { en: '× Low Investment Appeal' },
+      '▲要追加調査':       { en: '▲ Further Review Needed' },
+      // Section C eval texts
+      '×タイミング要見直し': { en: '× Timing: Reconsider' },
+      '▲要コスト評価':     { en: '▲ Cost Evaluation Required' },
+      // Section D eval texts
+      '◎リスクなし':       { en: '◎ No Risk' },
+      '▲リスク注意':       { en: '▲ Risk Alert' },
+      '×重要リスク確認':   { en: '× Critical Risk Detected' },
     };
 
     function t(key) {
@@ -1408,7 +1423,7 @@
           <span class="text-2xl font-black tabular-nums" style="color:${accent}">${fmtNum(score, 1)}</span>
         </div>
         <div class="metric-bar mb-2"><div class="metric-bar-fill" style="width:${pct}%; background:${accent}"></div></div>
-        <p class="text-[11px] th-text-m mb-2">${eval_text}</p>
+        <p class="text-[11px] th-text-m mb-2">${t(eval_text)}</p>
         ${subHtml ? `<div class="border-t pt-2 mt-1" style="border-color:var(--border)">${subHtml}</div>` : ''}
         <p class="text-[10px] th-text-m mt-1">${t('Weight:')} ${weight}</p>
       </div>`;
@@ -1661,7 +1676,7 @@
           <span class="w-8 h-8 flex items-center justify-center text-xs font-bold ${badgeColor}" style="border-radius:0;font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif">${item['順位']}</span>
           <div class="flex-1 min-w-0">
             <div class="flex items-center gap-2 mb-1">
-              <span class="text-xs font-semibold th-text">${item['指標']}</span>
+              <span class="text-xs font-semibold th-text">${t(item['指標'])}</span>
               <span class="text-[9px] px-1.5 py-0.5 ${catColor} font-bold tracking-wider" style="border-radius:0">${catLabel}</span>
             </div>
             <div class="w-full h-1.5 th-bg-3 overflow-hidden" style="border-radius:0">
@@ -1685,7 +1700,7 @@
         : pbrEval === '適正水準' || pbrEval === t('適正水準') ? '#3b82f6'
         : pbrEval === 'やや割高' || pbrEval === t('やや割高') ? '#f59e0b'
         : pbrEval === 'データなし' || pbrEval === t('データなし') ? '#9ca3af' : '#ef4444';
-      const pbrEvalBadge = `<div class="mt-2"><span class="text-[10px] px-3 py-1 font-bold tracking-wider uppercase" style="background:${pbrEvalColor}20;color:${pbrEvalColor};border-radius:0;font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif">${pbrEval}</span><span class="text-[10px] th-text-m ml-2">${t('適正レンジ')}: ${pbrRange}</span></div>`;
+      const pbrEvalBadge = `<div class="mt-2"><span class="text-[10px] px-3 py-1 font-bold tracking-wider uppercase" style="background:${pbrEvalColor}20;color:${pbrEvalColor};border-radius:0;font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif">${t(pbrEval)}</span><span class="text-[10px] th-text-m ml-2">${t('適正レンジ')}: ${pbrRange}</span></div>`;
 
       // PBR 5Y change summary
       const pbrChgVal = pbr ? pbr.pbr_change : null;
