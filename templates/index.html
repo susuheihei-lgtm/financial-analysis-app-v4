@@ -226,16 +226,17 @@
       content: '';
       position: absolute;
       inset: 0;
+      z-index: 0;
       background: url('https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=1400&q=80') center/cover no-repeat;
     }
-    .dashboard-hero-img > * { position: relative; z-index: 1; }
-    /* Light mode: overlay to ensure text readability on dark hero image */
+    .dashboard-hero-img > * { position: relative; z-index: 2; }
+    /* Light mode: overlay between image and content to ensure text readability */
     [data-theme="light"] .dashboard-hero-img::before {
       content: '';
       position: absolute;
       inset: 0;
-      background: rgba(242,242,244,0.82);
-      z-index: 0;
+      background: rgba(242,242,244,0.88);
+      z-index: 1;
     }
 
     /* Section image strip */
