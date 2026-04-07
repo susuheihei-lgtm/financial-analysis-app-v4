@@ -910,6 +910,7 @@
       // Evaluation criteria
       '評価基準': { ja: '評価基準', en: 'Evaluation Criteria' },
       '基準値:': { ja: '基準値:', en: 'Benchmark:' },
+      '計算式': { ja: '計算式', en: 'Formula' },
       // Valuation judgments
       '適正水準': { ja: '適正水準', en: 'Fair Value' },
       '割安': { ja: '割安', en: 'Undervalued' },
@@ -1314,49 +1315,192 @@
       return '';  // データがない場合は空文字を返す
     }
 
-    // 計算式定義
-    const metricFormulas = {
-      'ROE': 'ROE (%) = 当期純利益 ÷ 自己資本 × 100',
-      'ROA': 'ROA (%) = 当期純利益 ÷ 総資産 × 100',
-      '配当利回り': '配当利回り (%) = 1株当たり配当金 ÷ 株価 × 100',
-      '配当性向': '配当性向 (%) = 配当金総額 ÷ 当期純利益 × 100',
-      '自己資本比率': '自己資本比率 (%) = 自己資本 ÷ 総資産 × 100',
-      '当座比率': '当座比率 (%) = (流動資産 - 棚卸資産) ÷ 流動負債 × 100',
-      '流動比率': '流動比率 (%) = 流動資産 ÷ 流動負債 × 100',
-      '営業CF推移': '営業CF = 営業活動によるキャッシュフロー',
-      'FCF推移': 'FCF (フリーキャッシュフロー) = 営業CF - 投資CF',
-      '投資CF推移': '投資CF = 投資活動によるキャッシュフロー',
-      '財務CF推移': '財務CF = 財務活動によるキャッシュフロー',
-      '売上高推移': '売上高 = 企業の総収益',
-      'EPS推移': 'EPS (1株当たり利益) = 当期純利益 ÷ 発行済株式数',
-      'EBITDA Margin': 'EBITDAマージン (%) = EBITDA ÷ 売上高 × 100<br>EBITDA = 営業利益 + 減価償却費',
-      '営業利益率': '営業利益率 (%) = 営業利益 ÷ 売上高 × 100',
-      'Debt/FCF': 'Debt/FCF (倍) = 有利子負債 ÷ フリーキャッシュフロー',
-      'EV/FCF': 'EV/FCF (倍) = 企業価値 (EV) ÷ フリーキャッシュフロー',
+    // 指標情報マップ（計算式・評価基準を二言語で定義）
+    const metricInfoMap = {
+      'ROE': {
+        formula: { ja: 'ROE (%) = 当期純利益 ÷ 自己資本 × 100', en: 'ROE (%) = Net Income ÷ Shareholders\' Equity × 100' },
+        criteria: { ja: '◎: ROE 15%以上 かつ 5年成長 / ○: 10%以上 / ▲: 0%以上 / ×: 0%未満。業種中央値がある場合は相対比較。', en: '◎: ROE ≥15% with 5Y growth / ○: ≥10% / ▲: ≥0% / ×: <0%. Relative to industry median when available.' }
+      },
+      'ROA': {
+        formula: { ja: 'ROA (%) = 当期純利益 ÷ 総資産 × 100', en: 'ROA (%) = Net Income ÷ Total Assets × 100' },
+        criteria: { ja: '業種中央値との相対比較。◎: 中央値×1.5倍以上 / ○: 1.0倍以上 / ▲: 0.5倍以上 / ×: 0.5倍未満', en: 'Relative to industry median. ◎: ≥1.5× median / ○: ≥1.0× / ▲: ≥0.5× / ×: <0.5×' }
+      },
+      '配当利回り': {
+        formula: { ja: '配当利回り (%) = 1株当たり配当金 ÷ 株価 × 100', en: 'Dividend Yield (%) = DPS ÷ Stock Price × 100' },
+        criteria: { ja: '◎: 4%以上 / ○: 2%以上 / ▲: 1%以上 / ×: 1%未満', en: '◎: ≥4% / ○: ≥2% / ▲: ≥1% / ×: <1%' }
+      },
+      '配当性向': {
+        formula: { ja: '配当性向 (%) = 配当金総額 ÷ 当期純利益 × 100', en: 'Payout Ratio (%) = Total Dividends ÷ Net Income × 100' },
+        criteria: { ja: '◎: 20〜50%（持続可能な水準） / ○: 50〜70% / ▲: 70〜100% / ×: 100%超または0%', en: '◎: 20–50% (sustainable) / ○: 50–70% / ▲: 70–100% / ×: >100% or 0%' }
+      },
+      '自己資本比率': {
+        formula: { ja: '自己資本比率 (%) = 自己資本 ÷ 総資産 × 100', en: 'Equity Ratio (%) = Shareholders\' Equity ÷ Total Assets × 100' },
+        criteria: { ja: '◎: 50%以上 / ○: 35%以上 / ▲: 20%以上 / ×: 20%未満。業種平均がある場合は相対基準に切り替わります。', en: '◎: ≥50% / ○: ≥35% / ▲: ≥20% / ×: <20%. Switches to relative benchmark when industry data available.' }
+      },
+      '当座比率': {
+        formula: { ja: '当座比率 (%) = (流動資産 − 棚卸資産) ÷ 流動負債 × 100', en: 'Quick Ratio (%) = (Current Assets − Inventory) ÷ Current Liabilities × 100' },
+        criteria: { ja: '◎: 150%以上 / ○: 100%以上 / ▲: 75%以上 / ×: 75%未満', en: '◎: ≥150% / ○: ≥100% / ▲: ≥75% / ×: <75%' }
+      },
+      '流動比率': {
+        formula: { ja: '流動比率 (%) = 流動資産 ÷ 流動負債 × 100', en: 'Current Ratio (%) = Current Assets ÷ Current Liabilities × 100' },
+        criteria: { ja: '◎: 200%以上 / ○: 120〜200% / ▲: 100〜120% / ×: 100%未満', en: '◎: ≥200% / ○: 120–200% / ▲: 100–120% / ×: <100%' }
+      },
+      '売上高推移': {
+        formula: { ja: '5年CAGR (%) = (最新売上 ÷ 5年前売上)^(1/5) − 1', en: '5Y CAGR (%) = (Latest Revenue ÷ Revenue 5Y Ago)^(1/5) − 1' },
+        criteria: { ja: '◎: 5年CAGR 10%以上 かつ 5年連続増加 / ○: 5%以上 / ▲: 0%以上 / ×: 0%未満', en: '◎: 5Y CAGR ≥10% with consecutive growth / ○: ≥5% / ▲: ≥0% / ×: <0%' }
+      },
+      'EPS推移': {
+        formula: { ja: 'EPS (円) = 当期純利益 ÷ 発行済株式数', en: 'EPS = Net Income ÷ Shares Outstanding' },
+        criteria: { ja: '◎: 5年成長率 10%以上 かつ 5年連続増加 / ○: 5%以上 / ▲: 0%以上 / ×: 0%未満', en: '◎: 5Y growth ≥10% with consecutive increase / ○: ≥5% / ▲: ≥0% / ×: <0%' }
+      },
+      'EBITDA Margin': {
+        formula: { ja: 'EBITDAマージン (%) = EBITDA ÷ 売上高 × 100<br>EBITDA = 営業利益 + 減価償却費 + 償却費', en: 'EBITDA Margin (%) = EBITDA ÷ Revenue × 100<br>EBITDA = Operating Income + D&A' },
+        criteria: { ja: '◎: 20%以上 / ○: 10%以上 / ▲: 5%以上 / ×: 5%未満。業種平均がある場合は相対基準。', en: '◎: ≥20% / ○: ≥10% / ▲: ≥5% / ×: <5%. Relative to industry when available.' }
+      },
+      '営業利益率': {
+        formula: { ja: '営業利益率 (%) = 営業利益 ÷ 売上高 × 100', en: 'Operating Margin (%) = Operating Income ÷ Revenue × 100' },
+        criteria: { ja: '◎: 15%以上 / ○: 5%以上 / ▲: 3%以上 / ×: 3%未満。業種平均がある場合は相対基準。', en: '◎: ≥15% / ○: ≥5% / ▲: ≥3% / ×: <3%. Relative to industry when available.' }
+      },
+      'Debt/FCF': {
+        formula: { ja: 'Debt/FCF (倍) = 有利子負債 ÷ フリーキャッシュフロー', en: 'Debt/FCF (×) = Total Debt ÷ Free Cash Flow' },
+        criteria: { ja: '◎: 3倍未満 / ○: 5倍未満 / ▲: 10倍未満 / ×: 10倍以上または負値', en: '◎: <3× / ○: <5× / ▲: <10× / ×: ≥10× or negative' }
+      },
+      'EV/FCF': {
+        formula: { ja: 'EV/FCF (倍) = 企業価値 (EV) ÷ フリーキャッシュフロー<br>EV = 時価総額 + 有利子負債 − 現金', en: 'EV/FCF (×) = Enterprise Value ÷ Free Cash Flow<br>EV = Market Cap + Debt − Cash' },
+        criteria: { ja: '◎: 15倍未満 / ○: 25倍未満 / ▲: 40倍未満 / ×: 40倍以上または負値', en: '◎: <15× / ○: <25× / ▲: <40× / ×: ≥40× or negative' }
+      },
+      'P/E Ratio': {
+        formula: { ja: 'PER (倍) = 株価 ÷ 1株当たり利益 (EPS)', en: 'P/E Ratio (×) = Stock Price ÷ Earnings Per Share' },
+        criteria: { ja: '割安: 下限未満 / 適正: 下限〜上限 / 割高: 上限超。閾値は投資家プロファイルと業種平均から動的生成。', en: 'Undervalued: below lower bound / Fair: in range / Overvalued: above upper bound. Thresholds are dynamic.' }
+      },
+      'P/B Ratio': {
+        formula: { ja: 'PBR (倍) = 株価 ÷ 1株当たり純資産 (BPS)', en: 'P/B Ratio (×) = Stock Price ÷ Book Value Per Share' },
+        criteria: { ja: '割安: 下限未満 / 適正: 下限〜上限 / 割高: 上限超。閾値は投資家プロファイルと業種平均から動的生成。', en: 'Undervalued: below lower bound / Fair: in range / Overvalued: above upper bound. Thresholds are dynamic.' }
+      },
+      'Net Debt / EBITDA': {
+        formula: { ja: '純有利子負債/EBITDA (倍) = (有利子負債 − 現金) ÷ EBITDA', en: 'Net Debt / EBITDA (×) = (Total Debt − Cash) ÷ EBITDA' },
+        criteria: { ja: '◎: 1倍未満 / ○: 3倍未満 / ▲: 5倍未満 / ×: 5倍以上。低いほど財務的余裕が高い。', en: '◎: <1× / ○: <3× / ▲: <5× / ×: ≥5×. Lower = more financial flexibility.' }
+      },
+      'ROIC': {
+        formula: { ja: 'ROIC (%) = NOPAT ÷ 投下資本 × 100<br>NOPAT = 営業利益 × (1 − 実効税率)', en: 'ROIC (%) = NOPAT ÷ Invested Capital × 100<br>NOPAT = Operating Income × (1 − Effective Tax Rate)' },
+        criteria: { ja: '◎: 15%以上 / ○: 8%以上 / ▲: WACCを超えている / ×: WACC未満', en: '◎: ≥15% / ○: ≥8% / ▲: Exceeds WACC / ×: Below WACC' }
+      },
+      'WACC': {
+        formula: { ja: 'WACC (%) = E/V × Ke + D/V × Kd × (1 − 実効税率)<br>Ke = リスクフリー + β × 株式リスクプレミアム', en: 'WACC (%) = E/V × Ke + D/V × Kd × (1 − Tax Rate)<br>Ke = Risk-Free Rate + β × Equity Risk Premium' },
+        criteria: { ja: 'WACCは資本コストの基準。ROICがWACCを上回るほど価値創造企業。', en: 'WACC is the cost of capital hurdle rate. Value is created when ROIC exceeds WACC.' }
+      },
+      'ROIC vs WACC': {
+        formula: { ja: 'スプレッド (pt) = ROIC − WACC', en: 'Spread (pt) = ROIC − WACC' },
+        criteria: { ja: '◎: スプレッド 5pt以上 / ○: 0pt以上（価値創造） / ×: 0pt未満（価値毀損）', en: '◎: Spread ≥5pt / ○: ≥0pt (value creating) / ×: <0pt (value destroying)' }
+      },
+      'CCC': {
+        formula: { ja: 'CCC (日) = DSO + DIO − DPO<br>DSO: 売上債権回転日数 / DIO: 棚卸資産回転日数 / DPO: 買掛金回転日数', en: 'CCC (days) = DSO + DIO − DPO<br>DSO: Days Sales Outstanding / DIO: Days Inventory Outstanding / DPO: Days Payable Outstanding' },
+        criteria: { ja: '◎: 30日未満 / ○: 60日未満 / ▲: 90日未満 / ×: 90日以上。低いほど運転資本効率が高い。', en: '◎: <30 days / ○: <60 days / ▲: <90 days / ×: ≥90 days. Lower = better working capital efficiency.' }
+      },
+      'DSO': {
+        formula: { ja: 'DSO (日) = 売上債権 ÷ 売上高 × 365', en: 'DSO (days) = Accounts Receivable ÷ Revenue × 365' },
+        criteria: { ja: '日数が短いほど回収が早く、資金効率が良い。', en: 'Lower days = faster collection, better cash efficiency.' }
+      },
+      'DIO': {
+        formula: { ja: 'DIO (日) = 棚卸資産 ÷ 売上原価 × 365', en: 'DIO (days) = Inventory ÷ COGS × 365' },
+        criteria: { ja: '日数が短いほど在庫回転が速く、資金効率が良い。', en: 'Lower days = faster inventory turnover, better cash efficiency.' }
+      },
+      'DPO': {
+        formula: { ja: 'DPO (日) = 買掛金 ÷ 売上原価 × 365', en: 'DPO (days) = Accounts Payable ÷ COGS × 365' },
+        criteria: { ja: '日数が長いほど支払い猶予が長く、手元資金を長く保持できる。', en: 'Higher days = longer payment terms, more cash on hand.' }
+      },
+      '営業CF推移': {
+        formula: { ja: '営業CF = 本業での資金創出。純利益に非現金項目を調整したもの。', en: 'Operating CF = Cash generated from core operations. Net income adjusted for non-cash items.' },
+        criteria: { ja: '◎: 5年連続プラス かつ 成長 / ○: 直近プラス / ▲: ゼロ近辺 / ×: マイナス継続', en: '◎: Consistently positive & growing / ○: Recently positive / ▲: Near zero / ×: Persistently negative' }
+      },
+      'FCF推移': {
+        formula: { ja: 'FCF = 営業CF − 設備投資(CapEx)<br>株主への還元や成長投資の源泉。', en: 'FCF = Operating CF − Capital Expenditure<br>Source for shareholder returns and growth investments.' },
+        criteria: { ja: '◎: 5年CAGR 10%以上 かつ 連続増加 / ○: 5%以上 / ▲: 0%以上 / ×: 0%未満', en: '◎: 5Y CAGR ≥10% with consecutive growth / ○: ≥5% / ▲: ≥0% / ×: <0%' }
+      },
+      '投資CF推移': {
+        formula: { ja: '投資CF = 設備投資・M&A等による資金流出入。通常はマイナスが健全。', en: 'Investing CF = Cash used for capex, M&A, etc. Typically negative in healthy growing firms.' },
+        criteria: { ja: '健全型: 安定したマイナス（事業投資継続）/ 要注意: 大幅なプラス（資産売却）または急増するマイナス', en: 'Healthy: Stable negative (ongoing investment) / Warning: Large positive (asset sales) or rapidly increasing outflows' }
+      },
+      '財務CF推移': {
+        formula: { ja: '財務CF = 借入・社債・増資・配当・自社株買い等による資金流出入。', en: 'Financing CF = Cash from debt, equity issuances, dividends, buybacks, etc.' },
+        criteria: { ja: '成熟企業ではマイナス（株主還元・借入返済）が多い。急激な変化に注意。', en: 'Mature firms typically show negative CF (shareholder returns, debt repayment). Watch for sudden shifts.' }
+      },
+      '経営陣変更': {
+        formula: { ja: '評価軸: 直近の経営陣交代・ガバナンス上の問題の有無', en: 'Criterion: Recent management turnover or governance issues' },
+        criteria: { ja: '○: 問題なし / ▲: 要監視 / ×: 重大リスク確認', en: '○: No issues / ▲: Monitor / ×: Critical risk identified' }
+      },
+      '株主構造': {
+        formula: { ja: '評価軸: 機関投資家比率・大株主の安定性・ガバナンス透明性', en: 'Criterion: Institutional ownership %, major shareholder stability, governance transparency' },
+        criteria: { ja: '○: 機関投資家50%以上（透明性高） / ▲: 20〜50% / ×: 20%未満', en: '○: Institutional ownership ≥50% (high transparency) / ▲: 20–50% / ×: <20%' }
+      },
+      'ESG / 規制リスク': {
+        formula: { ja: '評価軸: ESGリスクスコア（Sustainalytics基準）', en: 'Criterion: ESG Risk Score (Sustainalytics standard)' },
+        criteria: { ja: '○: スコア20未満（低リスク） / ▲: 20〜30（中リスク） / ×: 30以上（高リスク）', en: '○: Score <20 (Low risk) / ▲: 20–30 (Medium) / ×: ≥30 (High risk)' }
+      },
     };
 
-    function showEvaluationCriteria(metricName) {
-      const criteria = evaluationCriteria[metricName];
-      const formula = metricFormulas[metricName];
-      if (!criteria && !formula) return;
+    // ラベル → 安定キー のマッピング（JA・EN両方から引ける）
+    const LABEL_TO_KEY = {
+      'ROE': 'ROE', 'ROA': 'ROA',
+      '配当利回り': '配当利回り', 'Dividend Yield': '配当利回り',
+      '配当性向': '配当性向', 'Payout Ratio': '配当性向',
+      '自己資本比率': '自己資本比率', 'Equity Ratio': '自己資本比率',
+      '当座比率': '当座比率', 'Quick Ratio': '当座比率',
+      '流動比率': '流動比率', 'Current Ratio': '流動比率',
+      '売上高推移': '売上高推移', 'Revenue Trend': '売上高推移',
+      'EPS推移': 'EPS推移', 'EPS Trend': 'EPS推移',
+      'EBITDA Margin': 'EBITDA Margin', 'EBITDAマージン': 'EBITDA Margin',
+      '営業利益率': '営業利益率', 'Operating Margin': '営業利益率',
+      'Debt/FCF': 'Debt/FCF',
+      'EV/FCF': 'EV/FCF',
+      'P/E Ratio': 'P/E Ratio', 'PER（株価収益率）': 'P/E Ratio',
+      'P/B Ratio': 'P/B Ratio', 'PBR（株価純資産倍率）': 'P/B Ratio',
+      'Net Debt / EBITDA': 'Net Debt / EBITDA', '純有利子負債 / EBITDA': 'Net Debt / EBITDA',
+      'ROIC': 'ROIC',
+      'WACC': 'WACC',
+      'ROIC vs WACC': 'ROIC vs WACC',
+      'CCC': 'CCC', 'DSO': 'DSO', 'DIO': 'DIO', 'DPO': 'DPO',
+      '営業CF推移': '営業CF推移', 'Operating CF Trend': '営業CF推移',
+      'FCF推移': 'FCF推移', 'FCF Trend': 'FCF推移',
+      '投資CF推移': '投資CF推移', 'Investing CF Trend': '投資CF推移',
+      '財務CF推移': '財務CF推移', 'Financing CF Trend': '財務CF推移',
+      '経営陣変更': '経営陣変更', 'Management Changes': '経営陣変更',
+      '株主構造': '株主構造', 'Shareholder Structure': '株主構造',
+      'ESG / 規制リスク': 'ESG / 規制リスク', 'ESG / Regulatory Risk': 'ESG / 規制リスク',
+    };
+
+    function showEvaluationCriteria(metricLabel) {
+      const stableKey = LABEL_TO_KEY[metricLabel] || metricLabel;
+      const info = metricInfoMap[stableKey];
+      const dynCriteria = evaluationCriteria[stableKey];
+      if (!info && !dynCriteria) return;
 
       const modal = document.getElementById('criteriaModal');
       const modalTitle = document.getElementById('criteriaTitle');
       const modalContent = document.getElementById('criteriaContent');
-      modalTitle.textContent = metricName;
+      modalTitle.textContent = metricLabel;
 
+      const lang = currentLang === 'ja' ? 'ja' : 'en';
       let html = '';
-      if (formula) {
+
+      if (info && info.formula) {
         html += `<div class="mb-3 pb-3 border-b" style="border-color:var(--border)">
-          <p class="text-xs font-bold th-text-m uppercase mb-1">計算式</p>
-          <p class="text-sm th-text-s">${formula}</p>
+          <p class="text-xs font-bold th-text-m uppercase mb-1">${t('計算式')}</p>
+          <p class="text-sm th-text-s">${info.formula[lang] || info.formula.ja}</p>
         </div>`;
       }
-      if (criteria && criteria.評価軸) {
+
+      const criteriaText = info && info.criteria ? (info.criteria[lang] || info.criteria.ja) : null;
+      if (criteriaText) {
         html += `<div class="mb-2">
           <p class="text-xs font-bold th-text-m uppercase mb-1">${t('評価基準')}</p>
-          <p class="text-sm th-text-s">${criteria.評価軸}</p>
-          ${criteria.業種中央値 !== undefined ? `<p class="text-xs th-text-m mt-1">${t('基準値:')} ${criteria.業種中央値.toFixed(1)}</p>` : ''}
+          <p class="text-sm th-text-s">${criteriaText}</p>
+        </div>`;
+      }
+
+      if (dynCriteria && dynCriteria.業種中央値 !== undefined) {
+        html += `<div class="mt-2 pt-2 border-t" style="border-color:var(--border)">
+          <p class="text-xs th-text-m">${t('基準値:')} ${dynCriteria.業種中央値.toFixed(1)}</p>
         </div>`;
       }
 
@@ -1382,10 +1526,11 @@
           }
         }
       }
-      // 評価軸（evaluation criteria）— replace basis with "?" button
+      // 評価軸（evaluation criteria）— "?" ボタン：安定キーで判定
+      const _stableKey = LABEL_TO_KEY[label] || label;
       let basisHtml = '';
-      if (evaluationCriteria[label]) {
-        basisHtml = `<div class="mt-1"><button class="text-[10px] px-2 py-0.5 rounded-full th-text-m hover:th-text-s" style="background:rgba(100,116,139,0.2);border:none;cursor:pointer" onclick="showEvaluationCriteria('${label}')">?</button></div>`;
+      if (metricInfoMap[_stableKey] || evaluationCriteria[_stableKey]) {
+        basisHtml = `<div class="mt-1"><button class="text-[10px] px-2 py-0.5 rounded-full th-text-m hover:th-text-s" style="background:rgba(100,116,139,0.2);border:none;cursor:pointer" onclick="event.stopPropagation();showEvaluationCriteria('${label}')">?</button></div>`;
       }
       return `<div class="card-hover sortable-item flex items-center justify-between p-4 rounded-xl th-bg-1 border ${clickable}" style="border-color:var(--border)" draggable="true" ${onclick}>
         <div class="flex items-center gap-3">

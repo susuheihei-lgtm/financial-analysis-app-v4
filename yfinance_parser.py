@@ -106,6 +106,148 @@ def _extract_series(df, mapping):
     return result, dates
 
 
+def _get_year_end_price(hist_df, year_str, is_japan=False):
+    """株価履歴から当該年度末の終値を返す。"""
+    if hist_df is None or hist_df.empty:
+        return None
+    try:
+        year = int(year_str)
+        # 日本株: 3月決算が主流 → 3月末
+        # 米国株: 12月決算が主流 → 12月末
+        target_month = 3 if is_japan else 12
+        target_year = year
+
+        mask = (hist_df.index.year == target_year) & (hist_df.index.month == target_month)
+        prices = hist_df.loc[mask, 'Close']
+        if len(prices) > 0:
+            return float(prices.iloc[-1])
+
+        # 対象月のデータがなければ前後1ヶ月を探す
+        for delta in [1, -1, 2, -2]:
+            m = target_month + delta
+            y = target_year
+            if m > 12:
+                m -= 12
+                y += 1
+            elif m < 1:
+                m += 12
+                y -= 1
+            mask2 = (hist_df.index.year == y) & (hist_df.index.month == m)
+            prices2 = hist_df.loc[mask2, 'Close']
+            if len(prices2) > 0:
+                return float(prices2.iloc[-1])
+    except Exception:
+        pass
+    return None
+
+
+def _assess_esg(sustainability_df):
+    """ESGデータから定性スコアを返す ("○"/"▲"/"×")。"""
+    if sustainability_df is None or sustainability_df.empty:
+        return "○"
+    try:
+        val = sustainability_df.loc['totalEsg', 'Value'] if 'totalEsg' in sustainability_df.index else None
+        if val is None:
+            # カラムが違う形式の場合
+            if 'Value' not in sustainability_df.columns and len(sustainability_df.columns) > 0:
+                col = sustainability_df.columns[0]
+                val = sustainability_df['totalEsg'][col] if 'totalEsg' in sustainability_df.index else None
+        if val is not None:
+            score = float(val)
+            # ESGリスクスコア: 低いほど良い (0-10: negligible, 10-20: low, 20-30: medium, 30+: high)
+            if score < 20:
+                return "○"
+            elif score < 30:
+                return "▲"
+            else:
+                return "×"
+    except Exception:
+        pass
+    return "○"
+
+
+def _assess_ownership(major_holders_df):
+    """機関投資家保有比率から株主構造スコアを返す ("○"/"▲"/"×")。"""
+    if major_holders_df is None or major_holders_df.empty:
+        return "○"
+    try:
+        # major_holders の行構成: 0=insider%, 1=institution%, 2=float%, 3=outstanding%
+        inst_pct = None
+        insider_pct = None
+        for idx in major_holders_df.index:
+            row_label = str(major_holders_df.iloc[idx, 1]).lower() if major_holders_df.shape[1] > 1 else ""
+            val_str = str(major_holders_df.iloc[idx, 0])
+            val = float(val_str.replace('%', '')) / 100 if '%' in val_str else float(val_str)
+            if 'institution' in row_label:
+                inst_pct = val
+            elif 'insider' in row_label:
+                insider_pct = val
+
+        if inst_pct is None:
+            # フォールバック: 最初の数値行
+            try:
+                val_str = str(major_holders_df.iloc[1, 0])
+                val = float(val_str.replace('%', '')) / 100 if '%' in val_str else float(val_str)
+                inst_pct = val
+            except Exception:
+                pass
+
+        if inst_pct is not None:
+            # 機関投資家比率が高い = 透明性が高い・ガバナンス良好
+            if inst_pct >= 0.50:
+                return "○"
+            elif inst_pct >= 0.20:
+                return "▲"
+            else:
+                return "×"
+    except Exception:
+        pass
+    return "○"
+
+
+def _get_analyst_consensus(recommendations_df):
+    """アナリスト推奨から合意評価を返す。"""
+    if recommendations_df is None or recommendations_df.empty:
+        return None, None
+    try:
+        # 直近30件を対象
+        recent = recommendations_df.tail(30)
+        grade_col = None
+        for col in ['To Grade', 'toGrade', 'Action']:
+            if col in recent.columns:
+                grade_col = col
+                break
+        if grade_col is None:
+            return None, None
+
+        grades = recent[grade_col].dropna().str.lower()
+        buy_kw = ['buy', 'outperform', 'overweight', 'strong buy', 'accumulate', 'add']
+        sell_kw = ['sell', 'underperform', 'underweight', 'strong sell', 'reduce']
+        hold_kw = ['hold', 'neutral', 'equal weight', 'market perform', 'in-line']
+
+        buys = sum(1 for g in grades if any(k in g for k in buy_kw))
+        sells = sum(1 for g in grades if any(k in g for k in sell_kw))
+        holds = sum(1 for g in grades if any(k in g for k in hold_kw))
+        total = buys + sells + holds
+        if total == 0:
+            return None, None
+
+        buy_pct = buys / total
+        sell_pct = sells / total
+        if buy_pct >= 0.60:
+            consensus = "Strong Buy"
+        elif buy_pct >= 0.40:
+            consensus = "Buy"
+        elif sell_pct >= 0.40:
+            consensus = "Sell"
+        else:
+            consensus = "Hold"
+
+        return consensus, {"buy": buys, "hold": holds, "sell": sells}
+    except Exception:
+        return None, None
+
+
 def parse_yfinance(ticker_symbol):
     """yfinanceからデータを取得し、parse_excel()と同一形式の(data, ts_data)を返す。
 
@@ -120,7 +262,7 @@ def parse_yfinance(ticker_symbol):
     """
     ticker = yf.Ticker(ticker_symbol)
 
-    # データ取得
+    # ── 基本財務データ取得 ────────────────────────────────────────────────────
     try:
         inc_df = ticker.financials
     except Exception:
@@ -141,19 +283,43 @@ def parse_yfinance(ticker_symbol):
     if (inc_df is None or inc_df.empty) and (bs_df is None or bs_df.empty):
         raise ValueError(f"ティッカー '{ticker_symbol}' のデータを取得できませんでした。シンボルを確認してください。")
 
-    # 各財務諸表からデータ抽出
+    # ── 追加データ取得（エラーは無視して続行）────────────────────────────────
+    try:
+        hist_df = ticker.history(period='6y', interval='1mo')
+    except Exception:
+        hist_df = None
+
+    try:
+        sustainability_df = ticker.sustainability
+    except Exception:
+        sustainability_df = None
+
+    try:
+        recommendations_df = ticker.recommendations
+    except Exception:
+        recommendations_df = None
+
+    try:
+        major_holders_df = ticker.major_holders
+    except Exception:
+        major_holders_df = None
+
+    try:
+        dividends_series = ticker.dividends
+    except Exception:
+        dividends_series = None
+
+    # ── 財務データ抽出 ────────────────────────────────────────────────────────
     inc_data, inc_dates = _extract_series(inc_df, _INCOME_MAP)
     cf_data, cf_dates = _extract_series(cf_df, _CASHFLOW_MAP)
     bs_data, bs_dates = _extract_series(bs_df, _BALANCE_MAP)
 
-    # 統合辞書（incの日付を基準）
     dates = inc_dates or cf_dates or bs_dates
     all_data = {}
     all_data.update(bs_data)
     all_data.update(cf_data)
     all_data.update(inc_data)  # incが最優先
 
-    # ヘルパー
     def g(key, idx=0):
         lst = all_data.get(key, [])
         return lst[idx] if idx < len(lst) else None
@@ -163,8 +329,24 @@ def parse_yfinance(ticker_symbol):
 
     n = len(dates)
 
-    # --- 計算指標 ---
+    # ── 通貨・地域メタデータ（早期決定） ─────────────────────────────────────
+    currency = info.get("currency", "USD")
+    is_jpy = currency == "JPY" or ticker_symbol.endswith(".T") or ticker_symbol.endswith(".J")
 
+    # ── 実効税率（年別）──────────────────────────────────────────────────────
+    # income_tax / pretax_income で実際の税率を計算。異常値はフォールバック。
+    eff_tax_rates = []
+    for i in range(n):
+        pt = g('pretax_income', i)
+        tax = g('income_tax', i)
+        if pt and pt != 0 and tax is not None:
+            rate = abs(tax) / abs(pt)
+            eff_tax_rates.append(rate if 0.01 < rate < 0.60 else 0.25)
+        else:
+            eff_tax_rates.append(0.25)
+    eff_tax_now = eff_tax_rates[0] if eff_tax_rates else 0.25
+
+    # ── 収益性指標（各年）────────────────────────────────────────────────────
     revenue = g_list('revenue')
     op_income = g_list('op_income')
     net_income = g_list('net_income')
@@ -172,110 +354,87 @@ def parse_yfinance(ticker_symbol):
     total_equity = g_list('total_equity')
     ebitda_list = g_list('ebitda')
 
-    # ROE (各年)
     roe_list = []
     for i in range(n):
         ni = g('net_income', i)
         eq = g('total_equity', i)
-        if ni is not None and eq and eq != 0:
-            roe_list.append(ni / eq)
-        else:
-            roe_list.append(None)
+        roe_list.append(ni / eq if (ni is not None and eq and eq != 0) else None)
 
-    # ROA (各年)
     roa_list = []
     for i in range(n):
         ni = g('net_income', i)
         ta = g('total_assets', i)
-        if ni is not None and ta and ta != 0:
-            roa_list.append(ni / ta)
-        else:
-            roa_list.append(None)
+        roa_list.append(ni / ta if (ni is not None and ta and ta != 0) else None)
 
-    # Operating Margin (各年)
     op_margin_list = []
     for i in range(n):
         oi = g('op_income', i)
         rev = g('revenue', i)
-        if oi is not None and rev and rev != 0:
-            op_margin_list.append(oi / rev)
-        else:
-            op_margin_list.append(None)
+        op_margin_list.append(oi / rev if (oi is not None and rev and rev != 0) else None)
 
-    # EBITDA Margin (各年)
     ebitda_margin_list = []
     for i in range(n):
         eb = g('ebitda', i)
         rev = g('revenue', i)
-        if eb is not None and rev and rev != 0:
-            ebitda_margin_list.append(eb / rev)
-        else:
-            ebitda_margin_list.append(None)
+        ebitda_margin_list.append(eb / rev if (eb is not None and rev and rev != 0) else None)
 
-    # %変換ヘルパー
     def to_pct(v):
         return v * 100 if v is not None else None
 
-    # Equity Ratio
+    # ── 財務健全性指標 ────────────────────────────────────────────────────────
     equity_ratio = None
     equity_ratio_5y = None
     eq0 = g('total_equity', 0)
     ta0 = g('total_assets', 0)
     if eq0 and ta0 and ta0 != 0:
         equity_ratio = (eq0 / ta0) * 100
-    eq4 = g('total_equity', min(4, n - 1)) if n > 0 else None
-    ta4 = g('total_assets', min(4, n - 1)) if n > 0 else None
+    i5 = min(4, n - 1) if n > 0 else 0
+    eq4 = g('total_equity', i5)
+    ta4 = g('total_assets', i5)
     if eq4 and ta4 and ta4 != 0:
         equity_ratio_5y = (eq4 / ta4) * 100
 
-    # Current Ratio / Quick Ratio
     current_r = None
     current_r_5y = None
     ca0 = g('current_assets', 0)
     cl0 = g('current_liab', 0)
     if ca0 and cl0 and cl0 != 0:
         current_r = (ca0 / cl0) * 100
-    ca4 = g('current_assets', min(4, n - 1)) if n > 0 else None
-    cl4 = g('current_liab', min(4, n - 1)) if n > 0 else None
+    ca4 = g('current_assets', i5)
+    cl4 = g('current_liab', i5)
     if ca4 and cl4 and cl4 != 0:
         current_r_5y = (ca4 / cl4) * 100
 
-    # Quick Ratio = (Current Assets - Inventory) / Current Liab
     quick_r = None
     quick_r_5y = None
     inv0 = g('inventory', 0)
     if ca0 and cl0 and cl0 != 0:
         quick_r = ((ca0 - (inv0 or 0)) / cl0) * 100
-    inv4 = g('inventory', min(4, n - 1)) if n > 0 else None
+    inv4 = g('inventory', i5)
     if ca4 and cl4 and cl4 != 0:
         quick_r_5y = ((ca4 - (inv4 or 0)) / cl4) * 100
 
-    # Op Margin %
+    # ── ROE/ROA サマリー ──────────────────────────────────────────────────────
     op_margin_vals = [to_pct(v) for v in op_margin_list[:5]]
-
-    # ROE/ROA
-    roe_now = to_pct(g_list('_roe')[0]) if '_roe' in all_data else to_pct(roe_list[0] if roe_list else None)
-    roe_now = to_pct(roe_list[0]) if roe_list and len(roe_list) > 0 else None
+    roe_now = to_pct(roe_list[0]) if roe_list else None
     roe_3y = to_pct(roe_list[2]) if len(roe_list) > 2 else None
-    roe_5y = to_pct(roe_list[min(4, n - 1)]) if roe_list and n > 0 else None
-    roa_now = to_pct(roa_list[0]) if roa_list and len(roa_list) > 0 else None
+    roe_5y = to_pct(roe_list[i5]) if roe_list and n > 0 else None
+    roa_now = to_pct(roa_list[0]) if roa_list else None
     roa_3y = to_pct(roa_list[2]) if len(roa_list) > 2 else None
-    roa_5y = to_pct(roa_list[min(4, n - 1)]) if roa_list and n > 0 else None
-
+    roa_5y = to_pct(roa_list[i5]) if roa_list and n > 0 else None
     roe_growth = roe_now - roe_5y if (roe_now is not None and roe_5y is not None) else None
 
-    # EBITDA Margin
     ebitda_margin_val = to_pct(ebitda_margin_list[0]) if ebitda_margin_list else None
-    ebitda_margin_5y = to_pct(ebitda_margin_list[min(4, n - 1)]) if ebitda_margin_list and n > 0 else None
+    ebitda_margin_5y = to_pct(ebitda_margin_list[i5]) if ebitda_margin_list and n > 0 else None
 
-    # NOPAT
-    nopat = g('op_income', 0) * 0.75 if g('op_income', 0) else None
-    nopat_5y = g('op_income', min(4, n - 1)) * 0.75 if n > 0 and g('op_income', min(4, n - 1)) else None
+    # ── NOPAT（実効税率ベース）────────────────────────────────────────────────
+    nopat = g('op_income', 0) * (1 - eff_tax_now) if g('op_income', 0) else None
+    tax_rate_5y = eff_tax_rates[i5] if i5 < len(eff_tax_rates) else 0.25
+    nopat_5y = g('op_income', i5) * (1 - tax_rate_5y) if n > 0 and g('op_income', i5) else None
 
-    # Invested Capital
+    # ── 投下資本 ──────────────────────────────────────────────────────────────
     ic = g('invested_capital', 0)
-    ic_5y = g('invested_capital', min(4, n - 1)) if n > 0 else None
-    # フォールバック: Equity + Debt - Cash
+    ic_5y = g('invested_capital', i5) if n > 0 else None
     if ic is None:
         eq = g('total_equity', 0)
         debt = g('total_debt', 0)
@@ -283,62 +442,65 @@ def parse_yfinance(ticker_symbol):
         if eq is not None and debt is not None and cash is not None:
             ic = eq + debt - cash
     if ic_5y is None and n > 0:
-        idx = min(4, n - 1)
-        eq = g('total_equity', idx)
-        debt = g('total_debt', idx)
-        cash = g('cash', idx)
-        if eq is not None and debt is not None and cash is not None:
-            ic_5y = eq + debt - cash
+        eq = g('total_equity', i5)
+        debt = g('total_debt', i5)
+        cash_v = g('cash', i5)
+        if eq is not None and debt is not None and cash_v is not None:
+            ic_5y = eq + debt - cash_v
 
-    # WACC
+    # ── WACC（CAPMベース）────────────────────────────────────────────────────
+    # Ke = Rf + β × (Rm - Rf)
+    # Kd = 支払利息 / 総負債（またはフォールバック3%）
+    # WACC = E/V × Ke + D/V × Kd × (1 - 実効税率)
+    beta = _safe(info.get('beta')) or 1.0
+
+    # リスクフリーレート: ^TNX（米10年国債）から取得、失敗時は4.5%
+    rf_rate = 0.045
+    try:
+        tnx = yf.Ticker('^TNX')
+        tnx_price = _safe(tnx.info.get('regularMarketPrice'))
+        if tnx_price and 0 < tnx_price < 20:
+            rf_rate = tnx_price / 100
+    except Exception:
+        pass
+
+    equity_premium = 0.055  # 歴史的株式リスクプレミアム 5.5%
+    ke = rf_rate + beta * equity_premium
+
     wacc_val = None
-    if g('total_equity', 0) and g('total_debt', 0):
-        total_cap = g('total_equity', 0) + g('total_debt', 0)
+    eq_val = g('total_equity', 0)
+    debt_val = g('total_debt', 0)
+    if eq_val and debt_val is not None:
+        total_cap = eq_val + (debt_val or 0)
         if total_cap > 0:
-            d_ratio = g('total_debt', 0) / total_cap
-            e_ratio = 1 - d_ratio
-            wacc_val = e_ratio * 8.0 + d_ratio * 3.0 * 0.75
+            e_ratio = eq_val / total_cap
+            d_ratio = (debt_val or 0) / total_cap
+            # 実際の借入コスト: 支払利息 / 総負債
+            kd = 0.03  # フォールバック
+            int_exp = g('interest_exp', 0)
+            if int_exp and debt_val and debt_val > 0:
+                kd_calc = abs(int_exp) / debt_val
+                if 0.001 < kd_calc < 0.20:
+                    kd = kd_calc
+            wacc_val = e_ratio * ke * 100 + d_ratio * kd * (1 - eff_tax_now) * 100
+    elif eq_val:
+        wacc_val = ke * 100  # 無借金企業
 
-    # SGA Ratio
+    # ── 販管費率 ──────────────────────────────────────────────────────────────
     sga_ratio = None
     sga_ratio_5y = None
     if g('sga', 0) and g('revenue', 0) and g('revenue', 0) != 0:
         sga_ratio = (g('sga', 0) / g('revenue', 0)) * 100
-    if n > 0 and g('sga', min(4, n - 1)) and g('revenue', min(4, n - 1)):
-        rev4 = g('revenue', min(4, n - 1))
+    if n > 0 and g('sga', i5) and g('revenue', i5):
+        rev4 = g('revenue', i5)
         if rev4 and rev4 != 0:
-            sga_ratio_5y = (g('sga', min(4, n - 1)) / rev4) * 100
+            sga_ratio_5y = (g('sga', i5) / rev4) * 100
 
-    # Debt/Equity for equity_ratio fallback
-    debt_equity_list = []
-    for i in range(n):
-        debt = g('total_debt', i)
-        eq = g('total_equity', i)
-        if debt is not None and eq and eq != 0:
-            debt_equity_list.append(debt / eq)
-        else:
-            debt_equity_list.append(None)
-
-    # info系指標
-    per = info.get('trailingPE')
-    pbr = info.get('priceToBook')
-    div_yield = info.get('dividendYield')
-    ev_val = info.get('enterpriseValue')
-    company_name = info.get('shortName') or info.get('longName') or ticker_symbol
-    industry = info.get('industry', '製造・サービス')
-
-    # dividendYieldはyfinanceでは小数 (0.0279 = 2.79%)
-    dividend_yield_pct = div_yield * 100 if div_yield else None
-
-    # 5年前インデックス
-    i5 = min(4, n - 1) if n > 0 else 0
-
-    # FCF
+    # ── キャッシュフロー関連 ──────────────────────────────────────────────────
     fcf_list = g_list('fcf')
     ocf_list = g_list('ocf')
     capex_list = g_list('capex')
 
-    # Debt/FCF
     debt_fcf = None
     debt_fcf_5y = None
     if g('total_debt', 0) is not None and g('fcf', 0) and g('fcf', 0) != 0:
@@ -346,17 +508,101 @@ def parse_yfinance(ticker_symbol):
     if n > 0 and g('total_debt', i5) is not None and g('fcf', i5) and g('fcf', i5) != 0:
         debt_fcf_5y = g('total_debt', i5) / g('fcf', i5)
 
-    # Net Debt / EBITDA
     nd_ebitda = None
     if g('net_debt', 0) is not None and g('ebitda', 0) and g('ebitda', 0) != 0:
         nd_ebitda = g('net_debt', 0) / g('ebitda', 0)
 
-    # Debt/EBITDA
     debt_ebitda_val = None
     if g('total_debt', 0) is not None and g('ebitda', 0) and g('ebitda', 0) != 0:
         debt_ebitda_val = g('total_debt', 0) / g('ebitda', 0)
 
-    # --- data dict (parse_excel互換) ---
+    # ── バリュエーション（info系）────────────────────────────────────────────
+    per = _safe(info.get('trailingPE'))
+    pbr = _safe(info.get('priceToBook'))
+    div_yield = info.get('dividendYield')
+    ev_val = info.get('enterpriseValue')
+    company_name = info.get('shortName') or info.get('longName') or ticker_symbol
+    industry = info.get('industry', '製造・サービス')
+    dividend_yield_pct = div_yield * 100 if div_yield else None
+
+    # 配当性向: info.get('payoutRatio') が小数 (0.30 = 30%)
+    payout_ratio_now = _safe(info.get('payoutRatio'))
+    if payout_ratio_now is not None:
+        payout_ratio_now = payout_ratio_now * 100  # % 変換
+    # 5年前の配当性向: 配当実績 / 純利益 から推計
+    payout_ratio_5y = None
+    if dividends_series is not None and len(dividends_series) > 0 and g('net_income', i5):
+        try:
+            div_5y_total = float(dividends_series[dividends_series.index.year == int(dates[i5])].sum()) if dates and i5 < len(dates) else 0
+            shares_out = _safe(info.get('sharesOutstanding') or info.get('impliedSharesOutstanding'))
+            if div_5y_total > 0 and shares_out and shares_out > 0:
+                dps_5y = div_5y_total
+                ni_5y = g('net_income', i5)
+                eps_5y = g('eps', i5) or (g('eps_diluted', i5))
+                if eps_5y and eps_5y != 0:
+                    payout_ratio_5y = (dps_5y / eps_5y) * 100
+        except Exception:
+            pass
+
+    # 5年前配当利回り: 配当履歴 / 株価履歴 から推計
+    dividend_yield_5y = None
+    if dividends_series is not None and len(dividends_series) > 0 and hist_df is not None and dates:
+        try:
+            year_5y_str = dates[i5] if i5 < len(dates) else None
+            if year_5y_str:
+                price_5y = _get_year_end_price(hist_df, year_5y_str, is_jpy)
+                year_5y_int = int(year_5y_str)
+                div_that_year = float(dividends_series[dividends_series.index.year == year_5y_int].sum())
+                if price_5y and price_5y > 0 and div_that_year > 0:
+                    dividend_yield_5y = (div_that_year / price_5y) * 100
+        except Exception:
+            pass
+
+    # ── PER/PBR 5年履歴（株価履歴×EPS/BPSで計算）────────────────────────────
+    shares_out = _safe(info.get('sharesOutstanding') or info.get('impliedSharesOutstanding'))
+
+    per_ts = []
+    pbr_ts = []
+    for i in range(min(5, n)):
+        price_y = _get_year_end_price(hist_df, dates[i], is_jpy) if dates and i < len(dates) else None
+        # PER = 株価 / EPS
+        eps_y = g('eps', i) or g('eps_diluted', i)
+        if price_y and eps_y and eps_y > 0:
+            per_ts.append(_safe(price_y / eps_y))
+        else:
+            per_ts.append(None)
+        # PBR = 株価 / BPS (BPS = 純資産 / 発行済株式数)
+        eq_y = g('total_equity', i)
+        if price_y and eq_y and shares_out and shares_out > 0:
+            bps = eq_y / shares_out
+            if bps > 0:
+                pbr_ts.append(_safe(price_y / bps))
+            else:
+                pbr_ts.append(None)
+        else:
+            pbr_ts.append(None)
+
+    per_5y_val = per_ts[i5] if i5 < len(per_ts) else None
+    pbr_5y_val = pbr_ts[i5] if i5 < len(pbr_ts) else None
+    # 現在のPER/PBRはinfoの値を優先、なければ計算値
+    per_now = per if per is not None else (per_ts[0] if per_ts else None)
+    pbr_now = pbr if pbr is not None else (pbr_ts[0] if pbr_ts else None)
+
+    # ── アナリスト評価 ────────────────────────────────────────────────────────
+    analyst_consensus, analyst_breakdown = _get_analyst_consensus(recommendations_df)
+    analyst_target = _safe(info.get('targetMeanPrice'))
+    current_price = _safe(info.get('currentPrice') or info.get('regularMarketPrice'))
+    analyst_upside = None
+    if analyst_target and current_price and current_price > 0:
+        analyst_upside = ((analyst_target - current_price) / current_price) * 100
+
+    # ── ESGリスク評価 ─────────────────────────────────────────────────────────
+    d3_esg = _assess_esg(sustainability_df)
+
+    # ── 株主構造評価 ──────────────────────────────────────────────────────────
+    d2_ownership = _assess_ownership(major_holders_df)
+
+    # ── data dict (parse_excel互換) ───────────────────────────────────────────
     data = {
         "company": company_name,
         "ticker": ticker_symbol,
@@ -364,7 +610,7 @@ def parse_yfinance(ticker_symbol):
 
         "revenue": [g('revenue', i) for i in range(min(5, n))],
         "fcf": [g('fcf', i) for i in range(min(5, len(fcf_list)))],
-        "eps": [g('eps', i) for i in range(min(5, len(g_list('eps'))))],
+        "eps": [g('eps', i) or g('eps_diluted', i) for i in range(min(5, n))],
 
         "roe": [roe_now, roe_3y, roe_5y],
         "roe_growth_rate": roe_growth,
@@ -388,10 +634,10 @@ def parse_yfinance(ticker_symbol):
         "debt_fcf_5y": debt_fcf_5y,
         "nd_ebitda": nd_ebitda,
         "ev": _safe(ev_val),
-        "per": _safe(per),
-        "per_5y": None,
-        "pbr": _safe(pbr),
-        "pbr_5y": None,
+        "per": per_now,
+        "per_5y": per_5y_val,
+        "pbr": pbr_now,
+        "pbr_5y": pbr_5y_val,
 
         "nopat": nopat,
         "nopat_5y": nopat_5y,
@@ -435,53 +681,41 @@ def parse_yfinance(ticker_symbol):
         "total_equity_5y": g('total_equity', i5) if n > 0 else None,
 
         "dividend_yield": dividend_yield_pct,
-        "dividend_yield_5y": None,
-        "payout_ratio": None,
-        "payout_ratio_5y": None,
+        "dividend_yield_5y": dividend_yield_5y,
+        "payout_ratio": payout_ratio_now,
+        "payout_ratio_5y": payout_ratio_5y,
 
         "d1_mgmt_change": "○",
-        "d2_ownership": "○",
-        "d3_esg": "○",
+        "d2_ownership": d2_ownership,
+        "d3_esg": d3_esg,
     }
 
-    # --- ts_data dict (時系列、parse_excel互換) ---
+    # ── ts_data dict (時系列、parse_excel互換) ────────────────────────────────
     da_list = g_list('da')
     sga_list_ts = g_list('sga')
     investing_cf_list = g_list('investing_cf')
     financing_cf_list = g_list('financing_cf')
 
-    # Current Ratio 時系列
     current_ratio_ts = []
     for i in range(n):
         ca = g('current_assets', i)
         cl = g('current_liab', i)
-        if ca and cl and cl != 0:
-            current_ratio_ts.append((ca / cl) * 100)
-        else:
-            current_ratio_ts.append(None)
+        current_ratio_ts.append((ca / cl) * 100 if ca and cl and cl != 0 else None)
 
-    # Quick Ratio 時系列
     quick_ratio_ts = []
     for i in range(n):
         ca = g('current_assets', i)
         cl = g('current_liab', i)
         inv = g('inventory', i) or 0
-        if ca and cl and cl != 0:
-            quick_ratio_ts.append(((ca - inv) / cl) * 100)
-        else:
-            quick_ratio_ts.append(None)
+        quick_ratio_ts.append(((ca - inv) / cl) * 100 if ca and cl and cl != 0 else None)
 
-    # Equity Ratio 時系列
     equity_ratio_ts = []
     for i in range(n):
         eq = g('total_equity', i)
         ta = g('total_assets', i)
-        if eq and ta and ta != 0:
-            equity_ratio_ts.append((eq / ta) * 100)
-        else:
-            equity_ratio_ts.append(None)
+        equity_ratio_ts.append((eq / ta) * 100 if eq and ta and ta != 0 else None)
 
-    # ROIC 時系列
+    # ROIC（実効税率ベース）
     roic_ts = []
     for i in range(n):
         oi = g('op_income', i)
@@ -492,47 +726,36 @@ def parse_yfinance(ticker_symbol):
             cash_i = g('cash', i)
             if eq is not None and debt is not None and cash_i is not None:
                 ic_i = eq + debt - cash_i
+        tax_i = eff_tax_rates[i] if i < len(eff_tax_rates) else 0.25
         if oi is not None and ic_i and ic_i != 0:
-            roic_ts.append((oi * 0.75 / ic_i) * 100)
+            roic_ts.append((oi * (1 - tax_i) / ic_i) * 100)
         else:
             roic_ts.append(None)
 
-    # Debt/FCF 時系列
     debt_fcf_ts = []
     for i in range(n):
         debt = g('total_debt', i)
         fcf_i = g('fcf', i)
-        if debt is not None and fcf_i and fcf_i != 0:
-            debt_fcf_ts.append(debt / fcf_i)
-        else:
-            debt_fcf_ts.append(None)
+        debt_fcf_ts.append(debt / fcf_i if (debt is not None and fcf_i and fcf_i != 0) else None)
 
-    # Debt/EBITDA 時系列
     debt_ebitda_ts = []
     for i in range(n):
         debt = g('total_debt', i)
         eb = g('ebitda', i)
-        if debt is not None and eb and eb != 0:
-            debt_ebitda_ts.append(debt / eb)
-        else:
-            debt_ebitda_ts.append(None)
+        debt_ebitda_ts.append(debt / eb if (debt is not None and eb and eb != 0) else None)
 
-    # Net Debt/EBITDA 時系列
     nd_ebitda_ts = []
     for i in range(n):
         nd = g('net_debt', i)
         eb = g('ebitda', i)
-        if nd is not None and eb and eb != 0:
-            nd_ebitda_ts.append(nd / eb)
-        else:
-            nd_ebitda_ts.append(None)
+        nd_ebitda_ts.append(nd / eb if (nd is not None and eb and eb != 0) else None)
 
     ts_data = {
         "dates": dates,
         "revenue": list(revenue),
         "net_income": list(net_income),
         "fcf": list(fcf_list),
-        "eps": list(g_list('eps')),
+        "eps": [g('eps', i) or g('eps_diluted', i) for i in range(n)],
         "ocf": list(ocf_list),
         "investing_cf": list(investing_cf_list),
         "financing_cf": list(financing_cf_list),
@@ -552,15 +775,16 @@ def parse_yfinance(ticker_symbol):
         "capex": list(capex_list),
         "sga": list(sga_list_ts),
         "da": list(da_list),
-        "pe_ratio": [],
-        "pb_ratio": [],
+        "pe_ratio": per_ts,
+        "pb_ratio": pbr_ts,
         "debt_ebitda": debt_ebitda_ts,
         "nd_ebitda": nd_ebitda_ts,
         "dividend_yield": [],
         "payout_ratio": [],
+        "eff_tax_rate": eff_tax_rates,
     }
 
-    # DuPont分解
+    # ── DuPont分解 ────────────────────────────────────────────────────────────
     net_margin_ts = []
     asset_turnover_ts = []
     fin_leverage_ts = []
@@ -569,24 +793,15 @@ def parse_yfinance(ticker_symbol):
         rev = g('revenue', i)
         ta = g('total_assets', i)
         eq = g('total_equity', i)
-        if ni is not None and rev and rev != 0:
-            net_margin_ts.append(round(ni / rev * 100, 2))
-        else:
-            net_margin_ts.append(None)
-        if rev is not None and ta and ta != 0:
-            asset_turnover_ts.append(round(rev / ta, 3))
-        else:
-            asset_turnover_ts.append(None)
-        if ta is not None and eq and eq != 0:
-            fin_leverage_ts.append(round(ta / eq, 3))
-        else:
-            fin_leverage_ts.append(None)
+        net_margin_ts.append(round(ni / rev * 100, 2) if ni is not None and rev and rev != 0 else None)
+        asset_turnover_ts.append(round(rev / ta, 3) if rev is not None and ta and ta != 0 else None)
+        fin_leverage_ts.append(round(ta / eq, 3) if ta is not None and eq and eq != 0 else None)
 
     ts_data["net_margin"] = net_margin_ts
     ts_data["asset_turnover"] = asset_turnover_ts
     ts_data["financial_leverage"] = fin_leverage_ts
 
-    # 純利益率分解
+    # ── 純利益率分解 ──────────────────────────────────────────────────────────
     interest_burden_ts = []
     tax_burden_ts = []
     nonop_burden_ts = []
@@ -615,12 +830,18 @@ def parse_yfinance(ticker_symbol):
     ts_data["nonop_burden"] = nonop_burden_ts
     ts_data["tax_burden"] = tax_burden_ts
 
-    # メタデータ（フロントでのフォーマット判定用）
+    # ── アナリスト・メタデータ ────────────────────────────────────────────────
     ts_data["_source"] = "yfinance"
-    currency = info.get("currency", "USD")
     ts_data["_currency"] = currency
     ts_data["_country"] = info.get("country", "US")
-    # 通貨から地域を自動判定
-    ts_data["_is_jpy"] = currency == "JPY" or ticker_symbol.endswith(".T") or ticker_symbol.endswith(".J")
+    ts_data["_is_jpy"] = is_jpy
+    ts_data["_beta"] = beta
+    ts_data["_risk_free_rate"] = rf_rate * 100
+    ts_data["_analyst_consensus"] = analyst_consensus
+    ts_data["_analyst_breakdown"] = analyst_breakdown
+    ts_data["_analyst_target"] = analyst_target
+    ts_data["_analyst_upside"] = analyst_upside
+    ts_data["_current_price"] = current_price
+    ts_data["_eff_tax_rate_now"] = round(eff_tax_now * 100, 1)
 
     return data, ts_data
