@@ -1060,6 +1060,18 @@
       '◎リスクなし':       { en: '◎ No Risk' },
       '▲リスク注意':       { en: '▲ Risk Alert' },
       '×重要リスク確認':   { en: '× Critical Risk Detected' },
+      // Analyst recommendations
+      'Analyst Consensus':  { ja: 'アナリスト合意' },
+      'Target Price':       { ja: '目標株価' },
+      'Upside':             { ja: '上昇余地' },
+      'Strong Buy':         { ja: '強い買い' },
+      'Buy':                { ja: '買い' },
+      'Hold':               { ja: '中立' },
+      'Sell':               { ja: '売り' },
+      'analyst-breakdown':  { ja: '買い / 中立 / 売り', en: 'Buy / Hold / Sell' },
+      // Missing data reason
+      'Data unavailable':   { ja: 'データ未取得' },
+      'N/A (Finance)':      { ja: 'N/A（金融業）' },
     };
 
     function t(key) {
@@ -1508,7 +1520,7 @@
       modal.classList.add('active');
     }
 
-    function makeItemCard(label, grade, value, detail, chartKey, basis) {
+    function makeItemCard(label, grade, value, detail, chartKey, basis, missingReason) {
       const clickable = chartKey ? 'clickable-card' : '';
       const onclick = chartKey ? `onclick="showItemChart('${chartKey}','${label}')"` : '';
       // Industry benchmark
@@ -1526,6 +1538,11 @@
           }
         }
       }
+      // 欠損理由表示（評価が"未入力"の場合）
+      let missingHtml = '';
+      if ((grade === '未入力' || grade === 'N/A') && missingReason) {
+        missingHtml = `<div class="mt-1"><span class="text-[10px] px-2 py-0.5 rounded-full" style="background:rgba(156,163,175,0.15);color:#9ca3af">${missingReason}</span></div>`;
+      }
       // 評価軸（evaluation criteria）— "?" ボタン：安定キーで判定
       const _stableKey = LABEL_TO_KEY[label] || label;
       let basisHtml = '';
@@ -1536,7 +1553,7 @@
         <div class="flex items-center gap-3">
           <span class="text-[10px] th-text-d cursor-grab drag-handle" style="margin-right:-4px">⠿</span>
           ${gradeIcon(grade)}
-          <div><p class="text-sm font-medium th-text-s">${label}</p>${detail ? `<p class="text-[11px] th-text-m">${detail}</p>` : ''}${benchHtml}${basisHtml}</div>
+          <div><p class="text-sm font-medium th-text-s">${label}</p>${detail ? `<p class="text-[11px] th-text-m">${detail}</p>` : ''}${benchHtml}${missingHtml}${basisHtml}</div>
         </div>
         <div class="flex items-center gap-2">
           ${value !== undefined ? `<span class="text-sm font-bold th-text-s tabular-nums">${value}</span>` : ''}
@@ -1673,8 +1690,8 @@
       const b1 = s['B-1_売上高CAGR']||{}, b2 = s['B-2_EBITDAマージン']||{}, b3 = s['B-3_営業利益率']||{}, b4 = s['B-4_EPS成長率']||{};
       const qRev = q['売上高推移']||{}, qFcf = q['FCF推移']||{}, qEps = q['EPS推移']||{};
       $('growthItems').innerHTML = [
-        makeItemCard(t('売上高推移'), qRev['評価'], qRev['最新値']!==undefined?(qRev['data_warning']?'⚠️ ':'')+smartFormat(qRev['最新値']):'', fmt5Y(qRev['5年変化率'],1,'%'), 'revenue', b1['基準']),
-        makeItemCard(t('EPS推移'), qEps['評価'], qEps['最新値']!==undefined?fmtNum(qEps['最新値'],1)+' '+t('円'):'', fmt5Y(qEps['5年変化率'],1,'%'), 'eps', b4['基準']),
+        makeItemCard(t('売上高推移'), qRev['評価'], qRev['最新値']!==undefined?(qRev['data_warning']?'⚠️ ':'')+smartFormat(qRev['最新値']):'', fmt5Y(qRev['5年変化率'],1,'%'), 'revenue', b1['基準'], qRev['欠損理由']),
+        makeItemCard(t('EPS推移'), qEps['評価'], qEps['最新値']!==undefined?fmtNum(qEps['最新値'],1)+' '+t('円'):'', fmt5Y(qEps['5年変化率'],1,'%'), 'eps', b4['基準'], qEps['欠損理由']),
         makeItemCard(t('EBITDA Margin'), b2['判定'], fmtNum(b2['実績値'],1,'%'), fmt5Y((q['EBITDAマージン']||{})['5年変化pt'],1,'pt'), 'ebitda', b2['基準']),
         makeItemCard(t('営業利益率'), b3['判定'], typeof b3['状況']==='number'?(b3['data_warning']?'⚠️ ':'')+fmtNum(b3['状況'],1,'%'):(b3['状況']||'—'), fmt5Y((q['営業利益率Q']||{})['5年変化pt'],1,'pt'), 'op_margin', b3['基準']),
       ].join('');
@@ -1702,7 +1719,11 @@
 
       // CCC
       const ccc=q['CCC分析']||{};
-      $('cccItems').innerHTML = [makeItemCard('CCC',ccc['評価'],fmtNum(ccc['CCC'],1,'d')), makeItemCard('DSO',null,fmtNum(ccc['DSO'],1,'d')), makeItemCard('DIO',null,fmtNum(ccc['DIO'],1,'d')), makeItemCard('DPO',null,fmtNum(ccc['DPO'],1,'d'))].join('');
+      if (ccc['評価'] === 'N/A') {
+        $('cccItems').innerHTML = makeItemCard('CCC', 'N/A', '', '', null, null, ccc['欠損理由']);
+      } else {
+        $('cccItems').innerHTML = [makeItemCard('CCC',ccc['評価'],fmtNum(ccc['CCC'],1,'d'),null,null,null,ccc['欠損理由']), makeItemCard('DSO',null,fmtNum(ccc['DSO'],1,'d')), makeItemCard('DIO',null,fmtNum(ccc['DIO'],1,'d')), makeItemCard('DPO',null,fmtNum(ccc['DPO'],1,'d'))].join('');
+      }
 
       // CF Analysis (with pattern judgment merged)
       const qInv = q['投資CF']||{}, qFin = q['財務CF']||{};
@@ -1711,7 +1732,7 @@
       const patColor = cfPat['理想型'] ? '#22c55e' : '#f59e0b';
       $('cfItems').innerHTML = [
         makeItemCard(t('営業CF推移'), qCf['評価']||cfItem['判定'], qCf['最新値']!==undefined?smartFormat(qCf['最新値']):(cfItem['状況']||'—'), fmt5Y(qCf['5年変化率'],1,'%'), 'ocf', cfItem['基準']),
-        makeItemCard(t('FCF推移'), qFcf['評価'], qFcf['最新値']!==undefined?smartFormat(qFcf['最新値']):'', fmt5Y(qFcf['5年変化率'],1,'%'), 'fcf'),
+        makeItemCard(t('FCF推移'), qFcf['評価'], qFcf['最新値']!==undefined?smartFormat(qFcf['最新値']):'', fmt5Y(qFcf['5年変化率'],1,'%'), 'fcf', undefined, qFcf['欠損理由']),
         makeItemCard(t('投資CF推移'), qInv['評価'], qInv['最新値']!==undefined?smartFormat(qInv['最新値']):'', fmt5Y(qInv['5年変化率'],1,'%'), 'investing_cf'),
         makeItemCard(t('財務CF推移'), qFin['評価'], qFin['最新値']!==undefined?smartFormat(qFin['最新値']):'', fmt5Y(qFin['5年変化率'],1,'%'), 'financing_cf'),
         `<div class="flex items-center justify-between p-4 rounded-xl th-bg-1 border mt-3" style="border-color:var(--border)">
@@ -1728,11 +1749,42 @@
 
       // ESG
       const d1Item = s['D-1_経営陣変更']||{}, d2Item = s['D-2_株主構造']||{}, d3Item = s['D-3_ESG']||{};
+      const ts = data.timeseries || {};
+      const analystConsensus = ts['_analyst_consensus'];
+      const analystBreakdown = ts['_analyst_breakdown'];
+      const analystTarget = ts['_analyst_target'];
+      const analystUpside = ts['_analyst_upside'];
+      let analystCard = '';
+      if (analystConsensus) {
+        const bdHtml = analystBreakdown
+          ? `${t('analyst-breakdown')}: ${analystBreakdown.buy}/${analystBreakdown.hold}/${analystBreakdown.sell}`
+          : '';
+        const targetHtml = analystTarget
+          ? ` | ${t('Target Price')}: ${fmtNum(analystTarget, 1)} ${analystUpside !== null && analystUpside !== undefined ? `(${analystUpside >= 0 ? '+' : ''}${fmtNum(analystUpside, 1)}%)` : ''}`
+          : '';
+        const consensusLabel = t(analystConsensus) || analystConsensus;
+        const consensusColor = analystConsensus === 'Strong Buy' ? '#22c55e'
+          : analystConsensus === 'Buy' ? '#86efac'
+          : analystConsensus === 'Sell' ? '#ef4444'
+          : '#f59e0b';
+        analystCard = `<div class="sortable-item flex items-center justify-between p-4 rounded-xl th-bg-1 border" style="border-color:var(--border)" draggable="true">
+          <div class="flex items-center gap-3">
+            <span class="text-[10px] th-text-d cursor-grab drag-handle" style="margin-right:-4px">⠿</span>
+            <span class="text-base" style="color:${consensusColor}">★</span>
+            <div>
+              <p class="text-sm font-medium th-text-s">${t('Analyst Consensus')}</p>
+              ${bdHtml ? `<p class="text-[11px] th-text-m">${bdHtml}${targetHtml}</p>` : ''}
+            </div>
+          </div>
+          <span class="text-sm font-bold tabular-nums" style="color:${consensusColor}">${consensusLabel}</span>
+        </div>`;
+      }
       $('esgItems').innerHTML = [
         makeItemCard(t('経営陣変更'), d1Item['判定'], undefined, undefined, undefined, d1Item['基準']),
         makeItemCard(t('株主構造'), d2Item['判定'], undefined, undefined, undefined, d2Item['基準']),
         makeItemCard(t('ESG / 規制リスク'), d3Item['判定'], undefined, undefined, undefined, d3Item['基準']),
-      ].join('');
+        analystCard,
+      ].filter(Boolean).join('');
 
       if (re) renderROETree(re, r);
       if (data.timeseries) { lastTimeseries = data.timeseries; renderCharts(data.timeseries); }

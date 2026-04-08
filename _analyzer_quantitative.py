@@ -62,7 +62,8 @@ def analyze_quantitative(d, benchmark=None):
             "data_warning": data_warning,
         }
     else:
-        results["売上高推移"] = {"評価": "未入力"}
+        reason = "売上高データが4期分未満" if (rev and len(rev) < 4) else "売上高データなし"
+        results["売上高推移"] = {"評価": "未入力", "欠損理由": reason}
 
     # FCF推移
     if fcf and len(fcf) >= 4:
@@ -85,30 +86,34 @@ def analyze_quantitative(d, benchmark=None):
             "3年連続増加": c3, "5年連続増加": c5, "評価": ev_fcf,
         }
     else:
-        results["FCF推移"] = {"評価": "未入力"}
+        reason = "FCFデータが4期分未満" if (fcf and len(fcf) < 4) else "FCFデータなし"
+        results["FCF推移"] = {"評価": "未入力", "欠損理由": reason}
 
     # EPS推移
-    if eps and len(eps) >= 4:
-        e5 = rate_change(eps[0], eps[3])
-        e3 = rate_change(eps[0], eps[2])
+    if eps and len(eps) >= 4 and eps[0] is not None and eps[3] is not None:
+        e0, e3_val = eps[0], eps[3]
+        e3_rate = rate_change(eps[0], eps[2])
         c3 = consecutive_increase([eps[0], eps[1], eps[2]])
         c5 = consecutive_increase([eps[0], eps[1], eps[2], eps[3]])
-        if e5 is None:
-            ev_eps = "×"
-        elif e5 >= 10 and c5:
-            ev_eps = "◎"
-        elif e5 >= 5:
-            ev_eps = "○"
-        elif e5 >= 0:
-            ev_eps = "▲"
+        if e3_val > 0 and e0 > 0:
+            e5 = rate_change(e0, e3_val)
+            ev_eps = "◎" if (e5 is not None and e5 >= 10 and c5) else ("○" if (e5 is not None and e5 >= 5) else ("▲" if (e5 is not None and e5 >= 0) else "×"))
+        elif e3_val < 0 and e0 > 0:
+            e5 = None  # 赤字→黒字転換: CAGR不定
+            ev_eps = "○"  # 黒字転換はポジティブ評価
+        elif e3_val < 0 and e0 < 0:
+            e5 = None
+            ev_eps = "▲" if abs(e0) < abs(e3_val) else "×"
         else:
-            ev_eps = "×"
+            e5 = None
+            ev_eps = "×"  # 黒字→赤字転落
         results["EPS推移"] = {
-            "最新値": eps[0], "5年変化率": e5, "3年変化率": e3,
+            "最新値": e0, "5年変化率": e5, "3年変化率": e3_rate,
             "3年連続増加": c3, "5年連続増加": c5, "評価": ev_eps,
         }
     else:
-        results["EPS推移"] = {"評価": "未入力"}
+        reason = "EPSデータが4期分未満" if (eps and len(eps) < 4) else "EPSデータなし"
+        results["EPS推移"] = {"評価": "未入力", "欠損理由": reason}
 
     # Debt/FCF
     if debt_fcf is not None:
@@ -138,26 +143,29 @@ def analyze_quantitative(d, benchmark=None):
 
         if roe_now is None:
             ev_roe = "未入力"
+        elif roe_now < 0:
+            ev_roe = "×"  # 赤字企業は常に×（ベンチマーク有無に関わらず）
         elif benchmark and "ROE" in evaluation_criteria:
-            roe_median = evaluation_criteria["ROE"].get("業種中央値", roe_now)
-            if roe_median and roe_median != 0:
-                roe_rel = roe_now / roe_median if roe_median > 0 else 0
+            roe_median = evaluation_criteria["ROE"].get("業種中央値")
+            if roe_median and roe_median > 0:
+                roe_rel = roe_now / roe_median
                 if roe_rel >= 1.5 and rg is not None and rg >= 5:
                     ev_roe = "◎"
                 elif roe_rel >= 1.0 and rg is not None and rg >= 3:
                     ev_roe = "○"
-                elif roe_rel >= 0.5 and rg is not None and rg >= 0:
+                elif roe_rel >= 0.5:
                     ev_roe = "▲"
                 else:
                     ev_roe = "×"
             else:
-                ev_roe = "×"
+                # ベンチマークに中央値なし→絶対基準にフォールバック
+                ev_roe = "◎" if (roe_now >= 15 and rg is not None and rg >= 5 and c3) else ("○" if (roe_now >= 10 and rg is not None and rg >= 3) else ("▲" if roe_now >= 5 else "×"))
         else:
             if roe_now >= 15 and rg is not None and rg >= 5 and c3:
                 ev_roe = "◎"
             elif roe_now >= 10 and rg is not None and rg >= 3:
                 ev_roe = "○"
-            elif roe_now >= 0 and rg is not None and rg >= 0:
+            elif roe_now >= 0:
                 ev_roe = "▲"
             else:
                 ev_roe = "×"
@@ -333,9 +341,28 @@ def analyze_quantitative(d, benchmark=None):
         ev_spread = "○" if spread > 0 else ("▲" if spread > wacc * (-0.2) else "×")
         results["ROIC_vs_WACC"] = {"スプレッド": spread, "評価": ev_spread}
 
-    # CCC分析
+    # CCC分析（業種別閾値）
+    # 業種によりCCCの正常値が大きく異なるため、業種特性を反映した閾値を使用
+    _industry = (d.get("industry") or "").lower()
+    _is_finance = any(k in _industry for k in ["bank", "financial", "insurance", "finance", "金融", "銀行", "保険"])
+    _is_retail = any(k in _industry for k in ["retail", "grocer", "小売", "スーパー", "コンビニ"])
+    _is_pharma = any(k in _industry for k in ["pharma", "drug", "biotech", "医薬", "製薬", "バイオ"])
+    # 業種別CCC閾値 (◎, ○, ▲ の上限日数)
+    if _is_finance:
+        # 金融業: CCC概念が適用外 → 評価を省略
+        _ccc_thresholds = None
+    elif _is_retail:
+        _ccc_thresholds = (0, 20, 40)   # 小売: 非常に短い
+    elif _is_pharma:
+        _ccc_thresholds = (60, 120, 180)  # 医薬: 在庫期間が長い
+    else:
+        _ccc_thresholds = (30, 60, 90)   # 製造・サービス・技術: 標準
+
     rev_now = rev[0] if rev else None
-    if all(v is not None for v in [ar, inventory, ap, rev_now, cogs]):
+    if _ccc_thresholds is None:
+        # 金融業はCCC評価不要
+        results["CCC分析"] = {"評価": "N/A", "欠損理由": "金融業にはCCCは適用されません"}
+    elif all(v is not None for v in [ar, inventory, ap, rev_now, cogs]):
         dso = safe_div(ar, rev_now) * 365
         dio = safe_div(inventory, cogs) * 365
         dpo = safe_div(ap, rev_now) * 365
@@ -344,7 +371,17 @@ def analyze_quantitative(d, benchmark=None):
         dio_5y_v = safe_div(inventory_5y, cogs_5y) * 365 if (inventory_5y and cogs_5y) else None
         dpo_5y_v = safe_div(ap_5y, rev_5y) * 365 if (ap_5y and rev_5y) else None
         ccc_5y = dso_5y_v + dio_5y_v - dpo_5y_v if (dso_5y_v is not None and dio_5y_v is not None and dpo_5y_v is not None) else None
-        ev_ccc = "◎" if (ccc and ccc < 30) else ("○" if (ccc and ccc < 60) else ("▲" if (ccc and ccc < 90) else "×"))
+        t_great, t_good, t_warn = _ccc_thresholds
+        if ccc is None:
+            ev_ccc = "未入力"
+        elif ccc < t_great:
+            ev_ccc = "◎"
+        elif ccc < t_good:
+            ev_ccc = "○"
+        elif ccc < t_warn:
+            ev_ccc = "▲"
+        else:
+            ev_ccc = "×"
         results["CCC分析"] = {
             "CCC": ccc, "CCC_5年変化": ccc - ccc_5y if ccc_5y else None,
             "DSO": dso, "DIO": dio, "DPO": dpo,

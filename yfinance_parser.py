@@ -3,7 +3,13 @@ yfinanceからティッカーシンボルで財務データを取得し、
 parse_excel()と同一形式の (data, ts_data) を返すパーサー
 """
 import math
+import time
 import yfinance as yf
+
+# ── モジュールレベルキャッシュ（^TNX リスクフリーレート）─────────────────────
+# Flaskはモジュールをプロセス間で共有するため、^TNXの重複取得を防ぐ
+_tnx_cache: dict = {"rate": None, "ts": 0.0}
+_TNX_CACHE_TTL: float = 86400.0  # 24時間
 
 
 # yfinance行名 → 内部キーのマッピング
@@ -248,6 +254,60 @@ def _get_analyst_consensus(recommendations_df):
         return None, None
 
 
+def _get_risk_free_rate(is_jpy: bool = False) -> float:
+    """リスクフリーレートを返す。米国株は^TNX（24hキャッシュ）、日本株はJGB~1%を使用。"""
+    if is_jpy:
+        # 日本株: 日本国債10年利回り (JGB ~1%)
+        return 0.010
+
+    global _tnx_cache
+    now = time.time()
+    if _tnx_cache["rate"] is not None and (now - _tnx_cache["ts"]) < _TNX_CACHE_TTL:
+        return _tnx_cache["rate"]
+
+    rate = 0.045  # フォールバック: 4.5%
+    try:
+        tnx = yf.Ticker('^TNX')
+        tnx_price = _safe(tnx.info.get('regularMarketPrice'))
+        if tnx_price and 0 < tnx_price < 20:
+            rate = tnx_price / 100
+    except Exception:
+        pass
+
+    _tnx_cache["rate"] = rate
+    _tnx_cache["ts"] = now
+    return rate
+
+
+def _calc_dividend_growth_rate(dividends_series) -> float | None:
+    """配当履歴から5年間の配当成長率(CAGR%)を計算する。"""
+    if dividends_series is None or len(dividends_series) < 2:
+        return None
+    try:
+        # 年次配当合計で計算（直近5年分）
+        by_year = dividends_series.groupby(dividends_series.index.year).sum()
+        by_year = by_year[by_year > 0]
+        if len(by_year) < 2:
+            return None
+
+        years = sorted(by_year.index)
+        # 利用可能な最大5年スパン
+        span = min(5, len(years) - 1)
+        if span < 1:
+            return None
+
+        d_start = float(by_year.loc[years[-(span + 1)]])
+        d_end = float(by_year.loc[years[-1]])
+        if d_start <= 0 or d_end <= 0:
+            return None
+
+        cagr = ((d_end / d_start) ** (1.0 / span) - 1.0) * 100
+        # 極端な値はNone (例: -100% ~ +100%)
+        return round(cagr, 2) if -50 < cagr < 100 else None
+    except Exception:
+        return None
+
+
 def parse_yfinance(ticker_symbol):
     """yfinanceからデータを取得し、parse_excel()と同一形式の(data, ts_data)を返す。
 
@@ -449,22 +509,16 @@ def parse_yfinance(ticker_symbol):
             ic_5y = eq + debt - cash_v
 
     # ── WACC（CAPMベース）────────────────────────────────────────────────────
-    # Ke = Rf + β × (Rm - Rf)
+    # Ke = Rf + β × ERP
     # Kd = 支払利息 / 総負債（またはフォールバック3%）
     # WACC = E/V × Ke + D/V × Kd × (1 - 実効税率)
     beta = _safe(info.get('beta')) or 1.0
 
-    # リスクフリーレート: ^TNX（米10年国債）から取得、失敗時は4.5%
-    rf_rate = 0.045
-    try:
-        tnx = yf.Ticker('^TNX')
-        tnx_price = _safe(tnx.info.get('regularMarketPrice'))
-        if tnx_price and 0 < tnx_price < 20:
-            rf_rate = tnx_price / 100
-    except Exception:
-        pass
+    # リスクフリーレート: 日本株=JGB~1%、米国株=^TNX（24hキャッシュ）
+    rf_rate = _get_risk_free_rate(is_jpy)
 
-    equity_premium = 0.055  # 歴史的株式リスクプレミアム 5.5%
+    # 株式リスクプレミアム: 日本株~5%、米国株~5.5%（Damodaran推計）
+    equity_premium = 0.050 if is_jpy else 0.055
     ke = rf_rate + beta * equity_premium
 
     wacc_val = None
@@ -596,6 +650,9 @@ def parse_yfinance(ticker_symbol):
     if analyst_target and current_price and current_price > 0:
         analyst_upside = ((analyst_target - current_price) / current_price) * 100
 
+    # ── 配当成長率（CAGR）────────────────────────────────────────────────────
+    div_growth_rate = _calc_dividend_growth_rate(dividends_series)
+
     # ── ESGリスク評価 ─────────────────────────────────────────────────────────
     d3_esg = _assess_esg(sustainability_df)
 
@@ -684,6 +741,7 @@ def parse_yfinance(ticker_symbol):
         "dividend_yield_5y": dividend_yield_5y,
         "payout_ratio": payout_ratio_now,
         "payout_ratio_5y": payout_ratio_5y,
+        "dividend_growth_rate": div_growth_rate,
 
         "d1_mgmt_change": "○",
         "d2_ownership": d2_ownership,
@@ -837,6 +895,7 @@ def parse_yfinance(ticker_symbol):
     ts_data["_is_jpy"] = is_jpy
     ts_data["_beta"] = beta
     ts_data["_risk_free_rate"] = rf_rate * 100
+    ts_data["_equity_premium"] = equity_premium * 100
     ts_data["_analyst_consensus"] = analyst_consensus
     ts_data["_analyst_breakdown"] = analyst_breakdown
     ts_data["_analyst_target"] = analyst_target

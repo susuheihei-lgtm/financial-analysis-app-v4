@@ -2,6 +2,7 @@
 個別株式分析ウェブアプリケーション
 Flask ベースのダッシュボード
 """
+import logging
 import os
 import sys
 import json
@@ -23,6 +24,11 @@ app = Flask(
 )
 app.config['MAX_CONTENT_LENGTH'] = 80 * 1024 * 1024  # 80MB (5 Excel files)
 app.secret_key = os.environ.get('SECRET_KEY', 'fin-analysis-secret-key')
+if app.secret_key == 'fin-analysis-secret-key':
+    logging.warning(
+        "セキュリティ警告: デフォルトのSECRET_KEYを使用しています。"
+        "本番環境では環境変数 SECRET_KEY に安全なランダム文字列を設定してください。"
+    )
 
 DATA_DIR = os.path.join(BASE_DIR, 'data')
 
@@ -33,6 +39,13 @@ if os.path.exists(_damodaran_path):
     with open(_damodaran_path, 'r', encoding='utf-8') as _f:
         _damodaran_raw = json.load(_f)
         _damodaran_data = _damodaran_raw.get('industries', {})
+
+
+_VALID_RATINGS = {'○', '▲', '×'}
+
+def _validate_qualitative(val: str, fallback: str = '○') -> str:
+    """d1/d2/d3の定性評価値が有効か検証し、無効なら fallback を返す。"""
+    return val if val in _VALID_RATINGS else fallback
 
 
 def load_sample_data():
@@ -111,9 +124,9 @@ def analyze():
                             data['ticker'] = match.group(1) or match.group(2)
 
                     data['industry'] = industry
-                    data['d1_mgmt_change'] = request.form.get('d1', '○')
-                    data['d2_ownership'] = request.form.get('d2', '○')
-                    data['d3_esg'] = request.form.get('d3', '○')
+                    data['d1_mgmt_change'] = _validate_qualitative(request.form.get('d1', '○'))
+                    data['d2_ownership'] = _validate_qualitative(request.form.get('d2', '○'))
+                    data['d3_esg'] = _validate_qualitative(request.form.get('d3', '○'))
                 elif ext == '.json':
                     data = json.load(f)
                 else:
@@ -155,9 +168,9 @@ def fetch_ticker():
         industry = body.get('industry', '')
         if industry:
             data['industry'] = industry
-        data['d1_mgmt_change'] = body.get('d1', '○')
-        data['d2_ownership'] = body.get('d2', '○')
-        data['d3_esg'] = body.get('d3', '○')
+        data['d1_mgmt_change'] = _validate_qualitative(body.get('d1', '○'))
+        data['d2_ownership'] = _validate_qualitative(body.get('d2', '○'))
+        data['d3_esg'] = _validate_qualitative(body.get('d3', '○'))
 
         damodaran_industry = body.get('damodaran_industry', '')
         benchmark = _damodaran_data.get(damodaran_industry)
@@ -165,11 +178,26 @@ def fetch_ticker():
 
         return jsonify(_build_analysis_response(data, ts_data, benchmark, investor_profile))
     except ValueError as e:
-        return jsonify({'error': str(e)}), 400
+        msg = str(e)
+        hint = (
+            "ヒント: 日本株は '7203.T'（末尾に.T）、"
+            "米国株は 'AAPL' のように入力してください。"
+            "ティッカーシンボルはYahoo Financeで確認できます。"
+        )
+        return jsonify({'error': f'{msg} {hint}'}), 400
     except Exception as e:
         import traceback
         traceback.print_exc()
-        return jsonify({'error': f'データ取得中にエラーが発生しました: {str(e)}'}), 500
+        err_msg = str(e)
+        if 'No data' in err_msg or 'no data' in err_msg or 'delisted' in err_msg.lower():
+            return jsonify({
+                'error': (
+                    f"ティッカー '{symbol}' のデータが見つかりません。"
+                    "上場廃止・シンボル変更の可能性があります。"
+                    "日本株は末尾に '.T'（例: 7203.T）、米国株はそのまま（例: AAPL）を入力してください。"
+                )
+            }), 400
+        return jsonify({'error': f'データ取得中にエラーが発生しました: {err_msg}'}), 500
 
 
 @app.route('/api/sample')

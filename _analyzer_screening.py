@@ -130,11 +130,27 @@ def analyze_screening(d, q_results, benchmark=None, investor_profile='balanced')
     results["B-3_営業利益率"] = {"状況": b3_val, "判定": b3, "基準": b3_basis, "data_warning": op_data_warning}
 
     eps = d.get("eps", [])
-    if len(eps) >= 4 and eps[0] and eps[3]:
-        eps_gr = (eps[0] / eps[3] - 1) * 100
-        b4 = "×" if eps_gr < th["eps_growth_x"] else ("▲" if eps_gr < th["eps_growth_tri"] else "○")
+    eps_gr = None
+    if len(eps) >= 4 and eps[0] is not None and eps[3] is not None:
+        e0, e3 = eps[0], eps[3]
+        if e3 > 0 and e0 > 0:
+            eps_gr = (e0 / e3 - 1) * 100
+            b4 = "×" if eps_gr < th["eps_growth_x"] else ("▲" if eps_gr < th["eps_growth_tri"] else "○")
+        elif e3 < 0 and e0 > 0:
+            # 赤字→黒字転換: ポジティブだがCAGR計算不可
+            eps_gr = None
+            b4 = "○"
+        elif e3 < 0 and e0 < 0:
+            # 両方赤字: 損失縮小なら▲、拡大なら×
+            b4 = "▲" if abs(e0) < abs(e3) else "×"
+        elif e3 > 0 and e0 <= 0:
+            # 黒字→赤字転換: 即×
+            eps_gr = None
+            b4 = "×"
+        else:
+            b4 = "未入力"
     else:
-        eps_gr, b4 = None, "未入力"
+        b4 = "未入力"
     b4_basis = f"○≧{th['eps_growth_tri']}% ▲≧{th['eps_growth_x']}% ×<{th['eps_growth_x']}%（業界期待成長率の±50%基準）"
     results["B-4_EPS成長率"] = {"5年成長率": eps_gr, "判定": b4, "基準": b4_basis}
 
@@ -152,8 +168,17 @@ def analyze_screening(d, q_results, benchmark=None, investor_profile='balanced')
     nd_ebitda = d.get("nd_ebitda")
     cur_r = d.get("current_ratio")
 
-    c1 = "未入力" if per is None else ("×" if (per > th["per_hi"] or per < th["per_lo"]) else ("▲" if (per > th["per_hi"] * 0.8 or per < th["per_lo"] * 1.5) else "○"))
-    c1_basis = f"○={th['per_lo']}～{th['per_hi']}x ▲=やや範囲外 ×<{th['per_lo']}xまたは>{th['per_hi']}x（業界平均PERの0.2～2.5倍基準）"
+    if per is None:
+        c1 = "未入力"
+    elif per < 0:
+        c1 = "×"  # 赤字企業（EPS < 0）: PERは定義不能
+    elif per > th["per_hi"] or per < th["per_lo"]:
+        c1 = "×"
+    elif per > th["per_hi"] * 0.8 or per < th["per_lo"] * 1.5:
+        c1 = "▲"
+    else:
+        c1 = "○"
+    c1_basis = f"○={th['per_lo']}～{th['per_hi']}x ▲=やや範囲外 ×<{th['per_lo']}xまたは>{th['per_hi']}x（EPS<0の場合は×）"
     results["C-1_PER"] = {"実績値": per, "閾値_上限": th["per_hi"], "閾値_下限": th["per_lo"], "判定": c1, "基準": c1_basis}
 
     c2 = "未入力" if pbr is None else ("×" if (pbr > th["pbr_hi"] or pbr < th["pbr_lo"]) else ("▲" if (pbr > th["pbr_hi"] * 0.7 or pbr < th["pbr_lo"] * 1.5) else "○"))
