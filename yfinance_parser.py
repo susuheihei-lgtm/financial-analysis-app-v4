@@ -2,13 +2,18 @@
 yfinanceからティッカーシンボルで財務データを取得し、
 parse_excel()と同一形式の (data, ts_data) を返すパーサー
 """
+import logging
 import math
+import threading
 import time
 import yfinance as yf
 
+logger = logging.getLogger(__name__)
+
 # ── モジュールレベルキャッシュ（^TNX リスクフリーレート）─────────────────────
-# Flaskはモジュールをプロセス間で共有するため、^TNXの重複取得を防ぐ
+# CPython の GIL で単純な代入はスレッドセーフだが、check-then-act を保護するため Lock を使用
 _tnx_cache: dict = {"rate": None, "ts": 0.0}
+_tnx_lock = threading.Lock()
 _TNX_CACHE_TTL: float = 86400.0  # 24時間
 
 
@@ -142,8 +147,8 @@ def _get_year_end_price(hist_df, year_str, is_japan=False):
             prices2 = hist_df.loc[mask2, 'Close']
             if len(prices2) > 0:
                 return float(prices2.iloc[-1])
-    except Exception:
-        pass
+    except Exception as e:
+        logger.warning("_get_year_end_price: 株価取得失敗 (year=%s, month=%s): %s", target_year, target_month, e)
     return None
 
 
@@ -167,8 +172,8 @@ def _assess_esg(sustainability_df):
                 return "▲"
             else:
                 return "×"
-    except Exception:
-        pass
+    except Exception as e:
+        logger.warning("_assess_esg: ESGスコア評価失敗: %s", e)
     return "○"
 
 
@@ -195,8 +200,8 @@ def _assess_ownership(major_holders_df):
                 val_str = str(major_holders_df.iloc[1, 0])
                 val = float(val_str.replace('%', '')) / 100 if '%' in val_str else float(val_str)
                 inst_pct = val
-            except Exception:
-                pass
+            except (IndexError, ValueError, TypeError) as e:
+                logger.warning("_assess_ownership: フォールバック行取得失敗: %s", e)
 
         if inst_pct is not None:
             # 機関投資家比率が高い = 透明性が高い・ガバナンス良好
@@ -206,8 +211,8 @@ def _assess_ownership(major_holders_df):
                 return "▲"
             else:
                 return "×"
-    except Exception:
-        pass
+    except Exception as e:
+        logger.warning("_assess_ownership: 株主構造評価失敗: %s", e)
     return "○"
 
 
@@ -250,7 +255,8 @@ def _get_analyst_consensus(recommendations_df):
             consensus = "Hold"
 
         return consensus, {"buy": buys, "hold": holds, "sell": sells}
-    except Exception:
+    except Exception as e:
+        logger.warning("_get_analyst_consensus: アナリスト推奨集計失敗: %s", e)
         return None, None
 
 
@@ -271,8 +277,8 @@ def _get_risk_free_rate(is_jpy: bool = False) -> float:
         tnx_price = _safe(tnx.info.get('regularMarketPrice'))
         if tnx_price and 0 < tnx_price < 20:
             rate = tnx_price / 100
-    except Exception:
-        pass
+    except Exception as e:
+        logger.warning("_get_risk_free_rate: ^TNX 取得失敗、フォールバック 4.5%% を使用: %s", e)
 
     _tnx_cache["rate"] = rate
     _tnx_cache["ts"] = now

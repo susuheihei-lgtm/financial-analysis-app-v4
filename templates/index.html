@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ja">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -70,6 +70,15 @@
 
     * { letter-spacing: 0.02em; }
     body { background: var(--bg-0); color: var(--text); font-feature-settings: "kern","liga","ss01"; }
+
+    /* ── PC可読性向上: デスクトップ(≥1024px)でフォントを1-2px大きく ─────── */
+    @media (min-width: 1024px) {
+      .text-\[10px\] { font-size: 11px !important; }
+      .text-\[11px\] { font-size: 13px !important; }
+      .text-xs       { font-size: 13px !important; }
+      .text-sm       { font-size: 15px !important; }
+      .text-base     { font-size: 17px !important; }
+    }
     button, a, [role="button"], label[for], input[type="file"] + label { touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
 
     /* Porsche scrollbar */
@@ -198,9 +207,11 @@
     }
     .profile-card:hover { border-color: var(--border-m); background: var(--card-hover-bg); }
     .profile-card.selected { border-color: #d5001c; background: rgba(213,0,28,0.06); }
-    .profile-card .profile-icon { font-size: 1.2rem; line-height: 1; }
-    .profile-card .profile-name { font-size: 0.65rem; font-weight: 700; letter-spacing: 0.15em; text-transform: uppercase; color: var(--text-primary); }
-    .profile-card .profile-sub { font-size: 0.55rem; letter-spacing: 0.08em; color: var(--text-muted, #888); }
+    .profile-card .profile-icon { width: 20px; height: 20px; opacity: 0.7; transition: opacity 0.2s; }
+    .profile-card.selected .profile-icon { opacity: 1; color: #d5001c; }
+    .profile-card .profile-icon svg { width: 20px; height: 20px; stroke: currentColor; fill: none; stroke-width: 1.4; stroke-linecap: round; stroke-linejoin: round; }
+    .profile-card .profile-name { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.15em; text-transform: uppercase; color: var(--text-primary); }
+    .profile-card .profile-sub { font-size: 0.65rem; letter-spacing: 0.08em; color: var(--text-muted, #888); }
 
     /* Hero background image — upload page only, semi-transparent */
     .hero-bg {
@@ -296,11 +307,11 @@
   </div>
 
   <!-- Evaluation Criteria Modal -->
-  <div id="criteriaModal" class="chart-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="criteriaTitle" onclick="this.classList.remove('active')">
+  <div id="criteriaModal" class="chart-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="criteriaTitle" onclick="closeModal('criteriaModal')">
     <div class="chart-modal" style="max-width:500px" onclick="event.stopPropagation()">
       <div class="flex items-center justify-between mb-4">
         <h3 id="criteriaTitle" class="text-sm font-bold th-text-s"></h3>
-        <button class="th-text-m hover:th-text text-lg leading-none" aria-label="Close evaluation criteria" onclick="document.getElementById('criteriaModal').classList.remove('active')">&times;</button>
+        <button class="th-text-m hover:th-text text-lg leading-none" aria-label="Close evaluation criteria" onclick="closeModal('criteriaModal')">&times;</button>
       </div>
       <div id="criteriaContent" class="text-sm th-text-s"></div>
     </div>
@@ -321,7 +332,7 @@
         </div>
         <div>
           <span class="block text-[13px] font-bold tracking-[0.22em] uppercase" style="font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif" data-i18n="Stock Analyzer">Stock Analyzer</span>
-          <span class="block text-[9px] tracking-[0.18em] uppercase" style="color:var(--text-m)">Financial Intelligence</span>
+          <span class="block text-[9px] tracking-[0.18em] uppercase" style="color:var(--text-m)" data-i18n="Financial Intelligence">Financial Intelligence</span>
         </div>
       </div>
       <div class="flex items-center gap-3">
@@ -455,29 +466,34 @@
       <div class="mb-6">
         <p class="text-[10px] font-bold uppercase tracking-[0.2em] th-text-m mb-3" data-i18n="Investor Profile">Investor Profile</p>
         <div class="grid grid-cols-1 sm:grid-cols-5 gap-2" id="profileCards" role="radiogroup" aria-label="Investor Profile">
-          <button type="button" class="profile-card selected" data-profile="balanced" onclick="selectProfile('balanced')" aria-pressed="true">
-            <span class="profile-icon">⚖️</span>
-            <span class="profile-name">Balanced</span>
+          <button type="button" class="profile-card selected" role="radio" data-profile="balanced" onclick="selectProfile('balanced')" aria-checked="true">
+            <!-- Scale / Balance -->
+            <span class="profile-icon"><svg viewBox="0 0 24 24"><path d="M12 3v18M3 8l9-5 9 5M5 10l7 3.5L19 10M6 17h12"/></svg></span>
+            <span class="profile-name" data-i18n="Balanced">Balanced</span>
             <span class="profile-sub">GARP</span>
           </button>
-          <button type="button" class="profile-card" data-profile="value" onclick="selectProfile('value')" aria-pressed="false">
-            <span class="profile-icon">💎</span>
-            <span class="profile-name">Value</span>
+          <button type="button" class="profile-card" role="radio" data-profile="value" onclick="selectProfile('value')" aria-checked="false">
+            <!-- Diamond / Gem -->
+            <span class="profile-icon"><svg viewBox="0 0 24 24"><path d="M6 3h12l4 6-10 12L2 9l4-6z"/><path d="M2 9h20M12 3L8 9l4 12 4-12-4-6z"/></svg></span>
+            <span class="profile-name" data-i18n="Value">Value</span>
             <span class="profile-sub">Buffett / Graham</span>
           </button>
-          <button type="button" class="profile-card" data-profile="growth" onclick="selectProfile('growth')" aria-pressed="false">
-            <span class="profile-icon">🚀</span>
-            <span class="profile-name">Growth</span>
+          <button type="button" class="profile-card" role="radio" data-profile="growth" onclick="selectProfile('growth')" aria-checked="false">
+            <!-- Trending Up -->
+            <span class="profile-icon"><svg viewBox="0 0 24 24"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg></span>
+            <span class="profile-name" data-i18n="Growth">Growth</span>
             <span class="profile-sub">Lynch / Fisher</span>
           </button>
-          <button type="button" class="profile-card" data-profile="quality" onclick="selectProfile('quality')" aria-pressed="false">
-            <span class="profile-icon">🏆</span>
-            <span class="profile-name">Quality</span>
+          <button type="button" class="profile-card" role="radio" data-profile="quality" onclick="selectProfile('quality')" aria-checked="false">
+            <!-- Shield / Quality -->
+            <span class="profile-icon"><svg viewBox="0 0 24 24"><path d="M12 2l7 4v6c0 5-3.5 9.74-7 11-3.5-1.26-7-6-7-11V6l7-4z"/><polyline points="9 12 11 14 15 10"/></svg></span>
+            <span class="profile-name" data-i18n="Quality">Quality</span>
             <span class="profile-sub">Fundsmith / Munger</span>
           </button>
-          <button type="button" class="profile-card" data-profile="income" onclick="selectProfile('income')" aria-pressed="false">
-            <span class="profile-icon">💰</span>
-            <span class="profile-name">Income</span>
+          <button type="button" class="profile-card" role="radio" data-profile="income" onclick="selectProfile('income')" aria-checked="false">
+            <!-- Layers / Income -->
+            <span class="profile-icon"><svg viewBox="0 0 24 24"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg></span>
+            <span class="profile-name" data-i18n="Income">Income</span>
             <span class="profile-sub">Dividend / GPIF</span>
           </button>
         </div>
@@ -722,6 +738,12 @@
 
   <script>
     const $ = id => document.getElementById(id);
+    // H5: HTML エスケープ — innerHTML への文字列挿入時に使用
+    function escapeHtml(s) {
+      return String(s == null ? '' : s)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    }
     const uploadSection = $('uploadSection'), dashboard = $('dashboard');
     const dropZone = $('dropZone'), fileInput = $('fileInput');
     const btnAnalyze = $('btnAnalyze'), btnSample = $('btnSample'), btnReset = $('btnReset');
@@ -730,11 +752,26 @@
     let selectedInvestorProfile = 'balanced';
 
     const PROFILE_DESC = {
-      balanced: '成長・割安・品質を均等に評価する標準的アプローチ。最も一般的な機関投資家の基本形。(例: ウェリントン・マネジメント、Capital Group)',
-      value:    '割安性と安全余白を最重視。低PER・低PBR・強固なバランスシートを優先する。(例: バフェット、グレアム流、Dodge & Cox)',
-      growth:   '高い売上・EPS成長率を最重視。現在の割高は将来成長で正当化できると判断する。(例: リンチ、フィッシャー流、ARK Invest)',
-      quality:  '高ROE・高マージン・経済的な堀を重視。適正価格での優良企業保有。(例: テリー・スミス、マンガー流、Artisan Partners)',
-      income:   '安定配当・低リスク・成熟企業を重視。低ボラティリティの長期保有を前提とする。(例: 年金基金(GPIF等)、バンガード・インカムファンド)',
+      balanced: {
+        ja: '成長・割安・品質を均等に評価する標準的アプローチ。最も一般的な機関投資家の基本形。(例: ウェリントン・マネジメント、Capital Group)',
+        en: 'Balanced approach equally weighting growth, value, and quality. The most common institutional investor framework. (e.g. Wellington Management, Capital Group)',
+      },
+      value: {
+        ja: '割安性と安全余白を最重視。低PER・低PBR・強固なバランスシートを優先する。(例: バフェット、グレアム流、Dodge & Cox)',
+        en: 'Prioritizes undervaluation and margin of safety. Focuses on low P/E, low P/B, and strong balance sheets. (e.g. Buffett, Graham, Dodge & Cox)',
+      },
+      growth: {
+        ja: '高い売上・EPS成長率を最重視。現在の割高は将来成長で正当化できると判断する。(例: リンチ、フィッシャー流、ARK Invest)',
+        en: 'Prioritizes high revenue and EPS growth. Current premium valuations are justified by future growth potential. (e.g. Lynch, Fisher, ARK Invest)',
+      },
+      quality: {
+        ja: '高ROE・高マージン・経済的な堀を重視。適正価格での優良企業保有。(例: テリー・スミス、マンガー流、Artisan Partners)',
+        en: 'Focuses on high ROE, high margins, and economic moats. Holds exceptional businesses at fair prices. (e.g. Terry Smith, Munger, Artisan Partners)',
+      },
+      income: {
+        ja: '安定配当・低リスク・成熟企業を重視。低ボラティリティの長期保有を前提とする。(例: 年金基金(GPIF等)、バンガード・インカムファンド)',
+        en: 'Focuses on stable dividends, low risk, and mature companies. Designed for low-volatility long-term holding. (e.g. GPIF, Vanguard Income Fund)',
+      },
     };
 
     function selectProfile(profile) {
@@ -742,10 +779,13 @@
       document.querySelectorAll('.profile-card').forEach(btn => {
         const sel = btn.dataset.profile === profile;
         btn.classList.toggle('selected', sel);
-        btn.setAttribute('aria-pressed', sel ? 'true' : 'false');
+        btn.setAttribute('aria-checked', sel ? 'true' : 'false');
       });
       const desc = $('profileDesc');
-      if (desc) desc.textContent = PROFILE_DESC[profile] || '';
+      if (desc) {
+        const entry = PROFILE_DESC[profile];
+        desc.textContent = entry ? (currentLang === 'en' ? entry.en : entry.ja) : '';
+      }
     }
 
     // Initialize profile desc
@@ -931,6 +971,11 @@
       'Apply':              { ja: '適用' },
       'Clear All':          { ja: '全解除' },
       'Growth':             { ja: '成長性' },
+      // Investor Profile names
+      'Balanced':           { ja: 'バランス型' },
+      'Value':              { ja: 'バリュー' },
+      'Quality':            { ja: 'クオリティ' },
+      'Income':             { ja: 'インカム' },
       'Profitability':      { ja: '収益性' },
       'Other':              { ja: 'その他' },
       'cat-performance':    { ja: 'パフォーマンス', en: 'Performance' },
@@ -1072,6 +1117,12 @@
       // Missing data reason
       'Data unavailable':   { ja: 'データ未取得' },
       'N/A (Finance)':      { ja: 'N/A（金融業）' },
+      // Loading states
+      'Fetching…':          { ja: '取得中…', en: 'Fetching…' },
+      // Year badge
+      'FY':                 { ja: '年度', en: 'FY' },
+      // Header
+      'Financial Intelligence': { ja: 'ファイナンシャル・インテリジェンス', en: 'Financial Intelligence' },
     };
 
     function t(key) {
@@ -1261,7 +1312,21 @@
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
         pagebreak: { mode: ['avoid-all', 'css', 'legacy'] },
       };
-      html2pdf().set(opt).from(el).save();
+      const exportBtn = $('btnExport');
+      const origText = exportBtn.querySelector('span') ? exportBtn.querySelector('span').textContent : 'Export';
+      if (exportBtn.querySelector('span')) exportBtn.querySelector('span').textContent = currentLang === 'ja' ? '出力中…' : 'Exporting…';
+      exportBtn.disabled = true;
+      html2pdf().set(opt).from(el).save()
+        .then(() => {
+          if (exportBtn.querySelector('span')) exportBtn.querySelector('span').textContent = origText;
+          exportBtn.disabled = false;
+        })
+        .catch((err) => {
+          console.error('PDF export error:', err);
+          if (exportBtn.querySelector('span')) exportBtn.querySelector('span').textContent = origText;
+          exportBtn.disabled = false;
+          alert(currentLang === 'ja' ? 'PDFの出力に失敗しました。' : 'PDF export failed.');
+        });
     });
 
     function setLoading(on) {
@@ -1517,7 +1582,7 @@
       }
 
       modalContent.innerHTML = html;
-      modal.classList.add('active');
+      openModal('criteriaModal', null);
     }
 
     function makeItemCard(label, grade, value, detail, chartKey, basis, missingReason) {
@@ -1553,7 +1618,7 @@
         <div class="flex items-center gap-3">
           <span class="text-[10px] th-text-d cursor-grab drag-handle" style="margin-right:-4px">⠿</span>
           ${gradeIcon(grade)}
-          <div><p class="text-sm font-medium th-text-s">${label}</p>${detail ? `<p class="text-[11px] th-text-m">${detail}</p>` : ''}${benchHtml}${missingHtml}${basisHtml}</div>
+          <div><p class="text-sm font-medium th-text-s">${escapeHtml(label)}</p>${detail ? `<p class="text-[11px] th-text-m">${escapeHtml(detail)}</p>` : ''}${benchHtml}${missingHtml}${basisHtml}</div>
         </div>
         <div class="flex items-center gap-2">
           ${value !== undefined ? `<span class="text-sm font-bold th-text-s tabular-nums">${value}</span>` : ''}
@@ -2127,7 +2192,7 @@
         const perChartContainer = document.getElementById('perChartContainer');
 
         if (latestYear && perYearBadge) {
-          perYearBadge.textContent = latestYear + '年度';
+          perYearBadge.textContent = currentLang === 'ja' ? latestYear + '年度' : 'FY' + latestYear;
         }
 
         if (perCanvas && ts.pe_ratio && ts.pe_ratio.length > 0) {
@@ -2144,7 +2209,7 @@
         const roeChartContainer = document.getElementById('roeChartContainer');
 
         if (latestYear && roeYearBadge) {
-          roeYearBadge.textContent = latestYear + '年度';
+          roeYearBadge.textContent = currentLang === 'ja' ? latestYear + '年度' : 'FY' + latestYear;
         }
 
         if (roeCanvas && ts.roe && ts.roe.length > 0) {
@@ -2480,7 +2545,7 @@
       thtml += `<div class="overflow-x-auto"><table class="w-full text-xs"><thead><tr class="border-b th-border">`;
       thtml += `<th class="text-left py-3 px-2 th-text-m font-medium">${t('Metrics')}</th>`;
       companies.forEach((c, i) => {
-        thtml += `<th class="text-right py-3 px-3 font-bold" style="color:${compColors[i]}">${c.name}</th>`;
+        thtml += `<th class="text-right py-3 px-3 font-bold" style="color:${compColors[i]}">${escapeHtml(c.name)}</th>`;
       });
       thtml += `</tr></thead><tbody>`;
 
@@ -2649,17 +2714,59 @@
       document.querySelectorAll('[data-i18n]').forEach(el => {
         el.textContent = t(el.getAttribute('data-i18n'));
       });
+      // M11: html lang 属性を現在の言語に同期
+      document.documentElement.lang = currentLang === 'ja' ? 'ja' : 'en';
       updateIndustryDropdown();
       updateRegionButton();
       // Re-render dashboard if data exists
       if (lastData) renderDashboard(lastData);
     }
 
+    // H8: モーダルのキーボードアクセシビリティ (Escapeで閉じる + フォーカス管理)
+    const _modalIds = ['chartModal', 'criteriaModal', 'checklistModal'];
+    let _modalOpener = null;  // モーダルを開いたボタンへの参照（閉じた後にフォーカスを戻す）
+
+    function openModal(modalId, openerEl) {
+      const modal = $(modalId);
+      if (!modal) return;
+      _modalOpener = openerEl || document.activeElement;
+      modal.classList.add('active');
+      // フォーカストラップ: モーダル内の最初のフォーカス可能要素にフォーカス
+      const focusable = modal.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+      if (focusable.length > 0) focusable[0].focus();
+    }
+
+    function closeModal(modalId) {
+      const modal = $(modalId);
+      if (!modal) return;
+      modal.classList.remove('active');
+      // 元のボタンにフォーカスを戻す
+      if (_modalOpener && typeof _modalOpener.focus === 'function') {
+        _modalOpener.focus();
+        _modalOpener = null;
+      }
+    }
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        for (const id of _modalIds) {
+          const m = $(id);
+          if (m && m.classList.contains('active')) {
+            closeModal(id);
+            e.preventDefault();
+            break;
+          }
+        }
+      }
+    });
+
     $('langToggle').addEventListener('click', () => {
       currentLang = currentLang === 'en' ? 'ja' : 'en';
       localStorage.setItem('lang', currentLang);
       $('langToggle').textContent = currentLang === 'en' ? 'EN / JA' : 'JA / EN';
       applyLang();
+      // プロファイル説明文を言語に合わせて更新
+      selectProfile(selectedInvestorProfile);
     });
 
     // Init language
@@ -2671,8 +2778,8 @@
     // ── Chart Modal ──
     let modalChart = null;
     const modal = $('chartModal');
-    $('chartModalClose').addEventListener('click', () => modal.classList.remove('active'));
-    modal.addEventListener('click', e => { if (e.target === modal) modal.classList.remove('active'); });
+    $('chartModalClose').addEventListener('click', () => closeModal('chartModal'));
+    modal.addEventListener('click', e => { if (e.target === modal) closeModal('chartModal'); });
 
     // Chart color palette
     const chartColors = {
@@ -2740,7 +2847,7 @@
       const cd = getChartData(key);
       if (!cd || !cd.data.length) return;
 
-      modal.classList.add('active');
+      openModal('chartModal', null);
       $('chartModalTitle').textContent = label;
 
       if (modalChart) modalChart.destroy();
@@ -2829,8 +2936,7 @@
     }
 
     function openChecklist() {
-      const clModal = $('checklistModal');
-      clModal.classList.add('active');
+      openModal('checklistModal', null);
       renderChecklist();
     }
 
@@ -2871,8 +2977,8 @@
 
     $('btnOpenChecklist').addEventListener('click', openChecklist);
     $('btnEditChecklist').addEventListener('click', openChecklist);
-    $('checklistClose').addEventListener('click', () => $('checklistModal').classList.remove('active'));
-    $('checklistModal').addEventListener('click', e => { if (e.target === $('checklistModal')) $('checklistModal').classList.remove('active'); });
+    $('checklistClose').addEventListener('click', () => closeModal('checklistModal'));
+    $('checklistModal').addEventListener('click', e => { if (e.target === $('checklistModal')) closeModal('checklistModal'); });
 
     $('checklistClear').addEventListener('click', () => {
       selectedMetrics.clear();
@@ -2882,7 +2988,7 @@
     $('checklistApply').addEventListener('click', async () => {
       selectedMetrics.clear();
       $('checklistBody').querySelectorAll('.metric-cb:checked').forEach(cb => selectedMetrics.add(cb.dataset.key));
-      $('checklistModal').classList.remove('active');
+      closeModal('checklistModal');
 
       if (selectedMetrics.size === 0) {
         $('customEmpty').classList.remove('hidden');

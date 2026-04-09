@@ -4,9 +4,14 @@ Flask ベースのダッシュボード
 """
 import logging
 import os
+import re
+import secrets
 import sys
 import json
+import pathlib
 import tempfile
+import traceback
+import uuid
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, BASE_DIR)
@@ -23,12 +28,82 @@ app = Flask(
     instance_path=os.path.join(BASE_DIR, 'instance'),
 )
 app.config['MAX_CONTENT_LENGTH'] = 80 * 1024 * 1024  # 80MB (5 Excel files)
-app.secret_key = os.environ.get('SECRET_KEY', 'fin-analysis-secret-key')
-if app.secret_key == 'fin-analysis-secret-key':
-    logging.warning(
-        "セキュリティ警告: デフォルトのSECRET_KEYを使用しています。"
-        "本番環境では環境変数 SECRET_KEY に安全なランダム文字列を設定してください。"
+
+# ── C2: SECRET_KEY — 本番では必ず環境変数で設定。未設定時はセキュアなランダム値を生成。
+_secret = os.environ.get('SECRET_KEY')
+_is_debug = os.environ.get('FLASK_DEBUG', 'false').lower() == 'true'
+if not _secret:
+    if not _is_debug:
+        # 本番環境で SECRET_KEY が未設定の場合、起動を拒否する
+        raise RuntimeError(
+            "SECRET_KEY 環境変数が設定されていません。"
+            "本番環境では `python -c \"import secrets; print(secrets.token_hex(32))\"` で生成した"
+            "値を SECRET_KEY に設定してください。"
+        )
+    # 開発環境: 起動ごとにランダム生成（セッションはプロセス再起動で無効化される）
+    _secret = secrets.token_hex(32)
+    logging.warning("開発用: SECRET_KEY をランダム生成しました。本番では環境変数で固定してください。")
+app.secret_key = _secret
+
+# ── L1: Cookieセキュリティフラグ ──────────────────────────────────────────────
+app.config['SESSION_COOKIE_HTTPONLY'] = True
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+# HTTPS環境では True に変更すること
+app.config['SESSION_COOKIE_SECURE'] = not _is_debug
+
+# ── H3: セキュリティレスポンスヘッダー ─────────────────────────────────────────
+@app.after_request
+def set_security_headers(response):
+    response.headers['X-Frame-Options'] = 'DENY'
+    response.headers['X-Content-Type-Options'] = 'nosniff'
+    response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
+    response.headers['Permissions-Policy'] = 'camera=(), microphone=(), geolocation=()'
+    response.headers['Content-Security-Policy'] = (
+        "default-src 'self'; "
+        "script-src 'self' https://cdn.tailwindcss.com https://cdn.jsdelivr.net "
+        "https://cdnjs.cloudflare.com https://html2canvas.hertzen.com 'unsafe-inline'; "
+        "style-src 'self' https://fonts.googleapis.com 'unsafe-inline'; "
+        "font-src 'self' https://fonts.gstatic.com; "
+        "img-src 'self' https://images.unsplash.com data: blob:; "
+        "connect-src 'self';"
     )
+    return response
+
+# ── C4: セッションに保存する一時ファイルの管理（パストラバーサル対策）──────────────
+# ファイルパスをセッションに直接保存せず、サーバーサイドのUUID→パスマップで管理する
+_temp_file_registry: dict[str, str] = {}  # {token: absolute_path}
+_TEMP_DIR = tempfile.gettempdir()
+
+def _register_temp_file(path: str) -> str:
+    """一時ファイルパスをサーバーサイドに登録し、セッション用トークンを返す。"""
+    token = str(uuid.uuid4())
+    _temp_file_registry[token] = path
+    return token
+
+def _resolve_temp_file(token: str) -> str | None:
+    """トークンから一時ファイルパスを取得。パストラバーサル検証付き。"""
+    path = _temp_file_registry.get(token)
+    if not path:
+        return None
+    # パストラバーサル防止: tempdir 配下のパスのみ許可
+    try:
+        resolved = str(pathlib.Path(path).resolve())
+        if not resolved.startswith(_TEMP_DIR):
+            logging.warning("不正なパスへのアクセス試行: %s", path)
+            return None
+    except Exception:
+        return None
+    return path if os.path.exists(path) else None
+
+# ── H4: ティッカーシンボルのバリデーション ────────────────────────────────────
+_TICKER_RE = re.compile(r'^[A-Z0-9.\-\^]{1,20}$', re.IGNORECASE)
+
+def _validate_ticker(symbol: str) -> str | None:
+    """ティッカーを検証。有効なら正規化したシンボルを返し、無効なら None を返す。"""
+    s = symbol.strip().upper()
+    if _TICKER_RE.match(s):
+        return s
+    return None
 
 DATA_DIR = os.path.join(BASE_DIR, 'data')
 
@@ -55,15 +130,21 @@ def load_sample_data():
 
 
 def _build_analysis_response(data, ts_data, benchmark, investor_profile):
-    """共通の分析実行・レスポンス構築ヘルパー。
-    全分析エンドポイントで同一ロジックを使うことで、追加・変更の漏れを防ぐ。
-    """
+    """共通の分析実行・レスポンス構築ヘルパー。"""
     result = run_full_analysis(data, benchmark=benchmark, investor_profile=investor_profile)
     if ts_data:
         result['timeseries'] = ts_data
     if benchmark:
         result['dynamic_thresholds'] = generate_dynamic_thresholds(benchmark, profile=investor_profile)
     return result
+
+
+# ── C3: 安全なエラーレスポンスヘルパー ───────────────────────────────────────
+def _error_response(user_msg: str, status: int = 500, exc: Exception | None = None) -> tuple:
+    """ユーザー向けメッセージと内部ログを分離する。スタックトレースはサーバー側のみ出力。"""
+    if exc is not None:
+        app.logger.exception("Internal error [%d]: %s", status, user_msg)
+    return jsonify({'error': user_msg}), status
 
 
 @app.route('/')
@@ -104,12 +185,10 @@ def analyze():
                             data, ts_data = parse_excel(tmp.name, currency=currency)
                         finally:
                             os.unlink(tmp.name)
-                    # フォームから追加情報を取得
                     company = request.form.get('company', '').strip()
                     ticker = request.form.get('ticker', '').strip()
                     industry = request.form.get('industry', '製造・サービス')
 
-                    # Set company/ticker from form, or fallback to filename
                     if company:
                         data['company'] = company
                     elif not data.get('company'):
@@ -118,7 +197,6 @@ def analyze():
                     if ticker:
                         data['ticker'] = ticker
                     elif not data.get('ticker'):
-                        import re
                         match = re.search(r'^(\d{4,5})|[-_](\d{4,5})[-_]', f.filename)
                         if match:
                             data['ticker'] = match.group(1) or match.group(2)
@@ -144,25 +222,32 @@ def analyze():
 
         return jsonify(_build_analysis_response(data, ts_data, benchmark, investor_profile))
     except ImportError as e:
-        return jsonify({'error': f'必要なライブラリが不足しています: {str(e)}'}), 500
+        return _error_response('必要なライブラリが不足しています。管理者にお問い合わせください。', 500, e)
     except Exception as e:
-        import traceback
-        traceback.print_exc()
         err_msg = str(e)
         if 'openpyxl does not support' in err_msg or '.xls' in err_msg:
             return jsonify({'error': '.xlsファイルの読み込みに失敗しました。xlrdライブラリをインストールしてください。'}), 500
-        return jsonify({'error': f'分析中にエラーが発生しました: {err_msg}'}), 500
+        return _error_response('分析中にエラーが発生しました。入力データを確認してください。', 500, e)
 
 
 @app.route('/api/fetch_ticker', methods=['POST'])
 def fetch_ticker():
     """ティッカーシンボルからyfinanceでデータを取得して分析"""
-    try:
-        body = request.get_json() or {}
-        symbol = body.get('ticker', '').strip()
-        if not symbol:
-            return jsonify({'error': 'ティッカーシンボルを入力してください'}), 400
+    body = request.get_json() or {}
+    raw_symbol = body.get('ticker', '').strip()
 
+    if not raw_symbol:
+        return jsonify({'error': 'ティッカーシンボルを入力してください'}), 400
+
+    # H4: ティッカー入力バリデーション
+    symbol = _validate_ticker(raw_symbol)
+    if not symbol:
+        return jsonify({
+            'error': '無効なティッカー形式です。'
+                     '日本株は "7203.T"、米国株は "AAPL" のように入力してください（英数字・ドット・ハイフンのみ）。'
+        }), 400
+
+    try:
         data, ts_data = parse_yfinance(symbol)
 
         industry = body.get('industry', '')
@@ -178,26 +263,23 @@ def fetch_ticker():
 
         return jsonify(_build_analysis_response(data, ts_data, benchmark, investor_profile))
     except ValueError as e:
-        msg = str(e)
+        # yfinance_parser が発生させる既知のエラー（データなし等）
         hint = (
-            "ヒント: 日本株は '7203.T'（末尾に.T）、"
-            "米国株は 'AAPL' のように入力してください。"
-            "ティッカーシンボルはYahoo Financeで確認できます。"
+            'ヒント: 日本株は "7203.T"（末尾に .T）、米国株は "AAPL" のように入力してください。'
+            'ティッカーシンボルは Yahoo Finance で確認できます。'
         )
-        return jsonify({'error': f'{msg} {hint}'}), 400
+        return jsonify({'error': f'データを取得できませんでした。{hint}'}), 400
     except Exception as e:
-        import traceback
-        traceback.print_exc()
-        err_msg = str(e)
-        if 'No data' in err_msg or 'no data' in err_msg or 'delisted' in err_msg.lower():
+        err_msg = str(e).lower()
+        if 'no data' in err_msg or 'delisted' in err_msg or 'not found' in err_msg:
             return jsonify({
                 'error': (
-                    f"ティッカー '{symbol}' のデータが見つかりません。"
-                    "上場廃止・シンボル変更の可能性があります。"
-                    "日本株は末尾に '.T'（例: 7203.T）、米国株はそのまま（例: AAPL）を入力してください。"
+                    'ティッカーのデータが見つかりません。'
+                    '上場廃止・シンボル変更の可能性があります。'
+                    '日本株は末尾に ".T"（例: 7203.T）、米国株はそのまま（例: AAPL）入力してください。'
                 )
             }), 400
-        return jsonify({'error': f'データ取得中にエラーが発生しました: {err_msg}'}), 500
+        return _error_response('データ取得中にエラーが発生しました。しばらく待ってから再度お試しください。', 500, e)
 
 
 @app.route('/api/sample')
@@ -218,6 +300,11 @@ def competitor_analyze():
     """最大5社のExcel/ティッカーを受け取り、比較分析データを返す"""
     try:
         slot_types = request.form.getlist('types[]')
+
+        # M1: サーバーサイドで最大件数を強制
+        if len(slot_types) > 5:
+            return jsonify({'error': '比較できるのは最大5社までです'}), 400
+
         names = request.form.getlist('names[]')
         tickers = request.form.getlist('tickers[]')
         files = request.files.getlist('files[]')
@@ -233,11 +320,12 @@ def competitor_analyze():
             name = names[i] if i < len(names) and names[i].strip() else ''
 
             if slot_type == 'ticker':
-                symbol = tickers[ticker_idx] if ticker_idx < len(tickers) else ''
+                raw_sym = tickers[ticker_idx] if ticker_idx < len(tickers) else ''
                 ticker_idx += 1
-                if not symbol.strip():
+                symbol = _validate_ticker(raw_sym)
+                if not symbol:
                     continue
-                data, ts_data = parse_yfinance(symbol.strip())
+                data, ts_data = parse_yfinance(symbol)
                 if not name:
                     name = data.get('company', symbol)
             else:
@@ -278,11 +366,9 @@ def competitor_analyze():
             resp['dynamic_thresholds'] = generate_dynamic_thresholds(benchmark, profile=investor_profile)
         return jsonify(resp)
     except ValueError as e:
-        return jsonify({'error': str(e)}), 400
+        return jsonify({'error': 'データが無効です。入力内容を確認してください。'}), 400
     except Exception as e:
-        import traceback
-        traceback.print_exc()
-        return jsonify({'error': f'競合分析エラー: {str(e)}'}), 500
+        return _error_response('比較分析中にエラーが発生しました。', 500, e)
 
 
 @app.route('/api/scan_metrics', methods=['POST'])
@@ -294,16 +380,25 @@ def scan_metrics():
     ext = os.path.splitext(f.filename)[1].lower()
     if ext not in ('.xlsx', '.xls'):
         return jsonify({'error': 'Excelファイルのみ対応'}), 400
+
     tmp = tempfile.NamedTemporaryFile(suffix=ext, delete=False)
-    f.save(tmp.name)
+    tmp_path = tmp.name
+    f.save(tmp_path)
     tmp.close()
-    # セッションにパスを保存（グローバル変数によるレースコンディション回避）
-    session['uploaded_excel_path'] = tmp.name
+
     try:
-        metrics = scan_available_metrics(tmp.name)
+        metrics = scan_available_metrics(tmp_path)
+        # C4: パスではなくUUIDトークンをセッションに保存
+        token = _register_temp_file(tmp_path)
+        session['excel_token'] = token
         return jsonify({'metrics': metrics})
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        # M4: エラー時も一時ファイルを削除
+        try:
+            os.unlink(tmp_path)
+        except OSError:
+            pass
+        return _error_response('メトリクスのスキャン中にエラーが発生しました。', 500, e)
 
 
 @app.route('/api/custom_analysis', methods=['POST'])
@@ -313,17 +408,22 @@ def custom_analysis():
     selected = body.get('selected', [])
     if not selected:
         return jsonify({'error': '指標が選択されていません'}), 400
-    # セッションからパスを取得（各ユーザーのアップロードを独立して管理）
-    excel_path = session.get('uploaded_excel_path')
-    if not excel_path or not os.path.exists(excel_path):
+
+    # C4: セッションのトークン経由でパスを解決（パストラバーサル検証済み）
+    token = session.get('excel_token')
+    excel_path = _resolve_temp_file(token) if token else None
+
+    if not excel_path:
+        # フォールバック: サンプルデータ
         excel_path = os.path.join(DATA_DIR, '6269-financials.xlsx')
         if not os.path.exists(excel_path):
             return jsonify({'error': 'Excelファイルが見つかりません'}), 400
+
     try:
         ts = extract_custom_timeseries(excel_path, selected)
         return jsonify({'timeseries': ts, 'selected': selected})
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        return _error_response('カスタム分析中にエラーが発生しました。', 500, e)
 
 
 @app.route('/api/scan_sample')
@@ -336,9 +436,14 @@ def scan_sample():
         metrics = scan_available_metrics(excel_path)
         return jsonify({'metrics': metrics})
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        return _error_response('サンプルスキャン中にエラーが発生しました。', 500, e)
 
 
 if __name__ == '__main__':
     os.chdir(BASE_DIR)
-    app.run(debug=True, port=int(os.environ.get("PORT", 5050)), load_dotenv=False)
+    # C1: debug は環境変数 FLASK_DEBUG で制御（デフォルト: off）
+    app.run(
+        debug=_is_debug,
+        port=int(os.environ.get("PORT", 5050)),
+        load_dotenv=False,
+    )
