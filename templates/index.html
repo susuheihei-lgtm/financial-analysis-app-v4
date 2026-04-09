@@ -738,6 +738,8 @@
 
   <script>
     const $ = id => document.getElementById(id);
+    // i18n: currentLang は他の変数より先に宣言（Temporal Dead Zone 回避）
+    let currentLang = localStorage.getItem('lang') || 'en';
     // H5: HTML エスケープ — innerHTML への文字列挿入時に使用
     function escapeHtml(s) {
       return String(s == null ? '' : s)
@@ -893,7 +895,6 @@
     }).catch(() => {});
 
     // ── i18n ──
-    let currentLang = localStorage.getItem('lang') || 'en';
     const i18n = {
       // Header & Upload
       'Stock Analyzer':          { ja: '株式アナライザー' },
