@@ -1,12 +1,21 @@
 """
 yfinanceからティッカーシンボルで財務データを取得し、
 parse_excel()と同一形式の (data, ts_data) を返すパーサー
+
+米国株: SEC EDGAR XBRL API（公式）→ yfinance（市場データ補完）
+日本株: yfinance（そのまま）
 """
+import json
 import logging
 import math
 import threading
 import time
 import yfinance as yf
+
+try:
+    import requests
+except ImportError:
+    requests = None
 
 logger = logging.getLogger(__name__)
 
@@ -15,6 +24,59 @@ logger = logging.getLogger(__name__)
 _tnx_cache: dict = {"rate": None, "ts": 0.0}
 _tnx_lock = threading.Lock()
 _TNX_CACHE_TTL: float = 86400.0  # 24時間
+
+# ── SEC EDGAR キャッシュ（ticker→CIK、companyfacts）──────────────────────────
+_SEC_HEADERS = {
+    'User-Agent': 'FinancialAnalysisApp admin@example.com',
+    'Accept': 'application/json',
+}
+_sec_ticker_cik: dict[str, int] = {}
+_sec_ticker_lock = threading.Lock()
+_sec_ticker_loaded = False
+_sec_facts_cache: dict[str, tuple[float, dict]] = {}
+_sec_facts_lock = threading.Lock()
+_SEC_FACTS_TTL: float = 3600.0  # 1時間
+
+# SEC XBRL コンセプト → 内部キー マッピング
+_SEC_INCOME_TAGS = {
+    'revenue': ['RevenueFromContractWithCustomerExcludingAssessedTax', 'Revenues', 'SalesRevenueNet'],
+    'cogs': ['CostOfGoodsAndServicesSold', 'CostOfRevenue', 'CostOfGoodsSold'],
+    'gross_profit': ['GrossProfit'],
+    'op_income': ['OperatingIncomeLoss'],
+    'net_income': ['NetIncomeLoss'],
+    'sga': ['SellingGeneralAndAdministrativeExpense'],
+    'interest_exp': ['InterestExpense', 'InterestExpenseDebt'],
+    'pretax_income': ['IncomeLossFromContinuingOperationsBeforeIncomeTaxesExtraordinaryItemsNoncontrollingInterest'],
+    'income_tax': ['IncomeTaxExpenseBenefit'],
+    'other_exp': ['OtherNonoperatingIncomeExpense'],
+}
+_SEC_BALANCE_TAGS = {
+    'total_assets': ['Assets'],
+    'total_equity': ['StockholdersEquity'],
+    'current_assets': ['AssetsCurrent'],
+    'current_liab': ['LiabilitiesCurrent'],
+    'cash': ['CashAndCashEquivalentsAtCarryingValue'],
+    'cash_and_st': ['CashCashEquivalentsAndShortTermInvestments'],
+    'receivables': ['AccountsReceivableNetCurrent', 'AccountsReceivableNet'],
+    'inventory': ['InventoryNet'],
+    'payables': ['AccountsPayableCurrent'],
+    'fixed_assets': ['PropertyPlantAndEquipmentNet'],
+    'intangibles': ['Goodwill'],
+    'intangibles_other': ['IntangibleAssetsNetExcludingGoodwill'],
+    'long_term_debt': ['LongTermDebtNoncurrent', 'LongTermDebt'],
+    'retained_earnings': ['RetainedEarningsAccumulatedDeficit'],
+}
+_SEC_CASHFLOW_TAGS = {
+    'ocf': ['NetCashProvidedByUsedInOperatingActivities'],
+    'capex': ['PaymentsToAcquirePropertyPlantAndEquipment'],
+    'investing_cf': ['NetCashProvidedByUsedInInvestingActivities'],
+    'financing_cf': ['NetCashProvidedByUsedInFinancingActivities'],
+    'da': ['DepreciationDepletionAndAmortization'],
+}
+_SEC_EPS_TAGS = {
+    'eps': ['EarningsPerShareBasic'],
+    'eps_diluted': ['EarningsPerShareDiluted'],
+}
 
 
 # yfinance行名 → 内部キーのマッピング
@@ -91,6 +153,208 @@ def _safe(v):
         return float(v)
     except (TypeError, ValueError):
         return None
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# SEC EDGAR XBRL API ヘルパー関数
+# ═══════════════════════════════════════════════════════════════════════════════
+
+def _load_sec_ticker_map():
+    """SEC公式のticker→CIKマッピングをロード（スレッドセーフ）"""
+    global _sec_ticker_cik, _sec_ticker_loaded
+    with _sec_ticker_lock:
+        if _sec_ticker_loaded or not requests:
+            return
+        try:
+            resp = requests.get(
+                'https://www.sec.gov/files/company_tickers.json',
+                headers=_SEC_HEADERS, timeout=15
+            )
+            resp.raise_for_status()
+            for entry in resp.json().values():
+                t = entry.get('ticker', '').upper()
+                cik = entry.get('cik_str')
+                if t and cik:
+                    _sec_ticker_cik[t] = int(cik)
+            _sec_ticker_loaded = True
+            logger.info("SEC ticker→CIK マッピング読込: %d件", len(_sec_ticker_cik))
+        except Exception as e:
+            logger.warning("SEC ticker→CIK 取得失敗: %s", e)
+            _sec_ticker_loaded = True
+
+def _ticker_to_cik(symbol: str) -> str | None:
+    """ティッカー → ゼロパディングCIK (e.g. 'CIK0000320193')"""
+    _load_sec_ticker_map()
+    key = symbol.upper().split('.')[0]
+    cik = _sec_ticker_cik.get(key)
+    if cik is None:
+        key_alt = symbol.upper().replace('.', '-')
+        cik = _sec_ticker_cik.get(key_alt)
+    return f"CIK{cik:010d}" if cik else None
+
+def _fetch_sec_facts(cik_padded: str) -> dict | None:
+    """companyfacts JSONを取得（キャッシュ付き）"""
+    if not requests:
+        return None
+    now = time.time()
+    with _sec_facts_lock:
+        cached = _sec_facts_cache.get(cik_padded)
+        if cached and (now - cached[0]) < _SEC_FACTS_TTL:
+            return cached[1]
+
+    url = f"https://data.sec.gov/api/xbrl/companyfacts/{cik_padded}.json"
+    try:
+        resp = requests.get(url, headers=_SEC_HEADERS, timeout=30)
+        resp.raise_for_status()
+        data = resp.json()
+        with _sec_facts_lock:
+            _sec_facts_cache[cik_padded] = (now, data)
+        return data
+    except Exception as e:
+        logger.warning("SEC companyfacts 取得失敗 (%s): %s", cik_padded, e)
+        return None
+
+def _get_sec_annual_series(
+    us_gaap: dict, concept_names: list[str], unit_key: str = 'USD', max_years: int = 6
+) -> list[tuple[int, float]]:
+    """10-K の FY エントリを [(fiscal_year, value), ...] で新しい順に返す"""
+    for concept in concept_names:
+        if concept not in us_gaap:
+            continue
+        entries = us_gaap[concept].get('units', {}).get(unit_key, [])
+        if not entries:
+            continue
+
+        # 10-K / FY のみ → fy でグループ化（最新filed優先）
+        by_fy: dict[int, dict] = {}
+        for e in entries:
+            if e.get('form') != '10-K' or e.get('fp') != 'FY':
+                continue
+            fy = e.get('fy')
+            if fy is None:
+                continue
+            prev = by_fy.get(fy)
+            if prev is None or e.get('filed', '') > prev.get('filed', ''):
+                by_fy[fy] = e
+
+        if not by_fy:
+            continue
+
+        result = sorted(by_fy.items(), key=lambda x: x[0], reverse=True)[:max_years]
+        return [(fy, e['val']) for fy, e in result]
+    return []
+
+def parse_edgar_us(ticker_symbol: str) -> tuple[dict, dict, dict, list[str]] | None:
+    """
+    SEC EDGAR XBRL API から米国株の財務データを取得。
+    _extract_series() 互換の形式で返す。
+
+    Returns:
+        (inc_data, bs_data, cf_data, dates) or None
+    """
+    if not requests:
+        return None
+
+    cik = _ticker_to_cik(ticker_symbol)
+    if cik is None:
+        return None
+
+    facts = _fetch_sec_facts(cik)
+    if facts is None:
+        return None
+
+    us_gaap = facts.get('facts', {}).get('us-gaap', {})
+    if not us_gaap:
+        logger.warning("SEC EDGAR: us-gaap data not found for %s", ticker_symbol)
+        return None
+
+    # 対象 fiscal years を確定
+    fy_set: set[int] = set()
+    for tag in ('RevenueFromContractWithCustomerExcludingAssessedTax', 'Revenues', 'Assets', 'NetIncomeLoss'):
+        if tag in us_gaap:
+            for e in us_gaap[tag].get('units', {}).get('USD', []):
+                if e.get('form') == '10-K' and e.get('fp') == 'FY' and e.get('fy'):
+                    fy_set.add(e['fy'])
+
+    if not fy_set:
+        return None
+
+    sorted_fy = sorted(fy_set, reverse=True)[:5]
+    dates = [str(y) for y in sorted_fy]
+    n = len(dates)
+
+    def _align(tags_map: dict[str, list[str]], unit: str = 'USD') -> dict[str, list]:
+        """コンセプトマップ → aligned dict"""
+        out: dict[str, list] = {}
+        for key, concepts in tags_map.items():
+            if not concepts:
+                continue
+            series = _get_sec_annual_series(us_gaap, concepts, unit)
+            if not series:
+                continue
+            lookup = {fy: val for fy, val in series}
+            aligned = [lookup.get(y) for y in sorted_fy]
+            if any(v is not None for v in aligned):
+                out[key] = aligned
+        return out
+
+    # 各財務諸表を抽出
+    inc_data = _align(_SEC_INCOME_TAGS)
+    inc_data.update(_align(_SEC_EPS_TAGS, unit='USD/shares'))
+    bs_data = _align(_SEC_BALANCE_TAGS)
+    cf_data = _align(_SEC_CASHFLOW_TAGS)
+
+    # CapEx の符号を yfinance 互換に（負値）
+    if 'capex' in cf_data:
+        cf_data['capex'] = [-abs(v) if v is not None else None for v in cf_data['capex']]
+
+    # EBITDA = Operating Income + |D&A|
+    da_src = cf_data.get('da') or inc_data.get('da')
+    if 'op_income' in inc_data and da_src:
+        ebitda = []
+        for i in range(n):
+            oi = inc_data['op_income'][i] if i < len(inc_data['op_income']) else None
+            da = da_src[i] if i < len(da_src) else None
+            if oi is not None and da is not None:
+                ebitda.append(oi + abs(da))
+            elif oi is not None:
+                ebitda.append(oi)
+            else:
+                ebitda.append(None)
+        inc_data['ebitda'] = ebitda
+
+    # FCF = OCF - |CapEx|
+    if 'ocf' in cf_data and 'capex' in cf_data:
+        fcf = []
+        for i in range(n):
+            o = cf_data['ocf'][i] if i < len(cf_data['ocf']) else None
+            c = cf_data['capex'][i] if i < len(cf_data['capex']) else None
+            if o is not None and c is not None:
+                fcf.append(o + c)  # capex は負値
+            elif o is not None:
+                fcf.append(o)
+            else:
+                fcf.append(None)
+        cf_data['fcf'] = fcf
+
+    # Total Debt （long-term debt が主体）
+    if 'long_term_debt' in bs_data:
+        bs_data['total_debt'] = bs_data['long_term_debt']
+
+    # Net Debt = Total Debt - Cash
+    if 'total_debt' in bs_data and 'cash' in bs_data:
+        net_debt = []
+        for i in range(n):
+            d = bs_data['total_debt'][i] if i < len(bs_data['total_debt']) else None
+            c = bs_data['cash'][i] if i < len(bs_data['cash']) else None
+            if d is not None and c is not None:
+                net_debt.append(d - c)
+            else:
+                net_debt.append(None)
+        bs_data['net_debt'] = net_debt
+
+    logger.info("SEC EDGAR 取得成功: %s (%d年分)", ticker_symbol, n)
+    return inc_data, bs_data, cf_data, dates
 
 
 def _extract_series(df, mapping):
@@ -346,10 +610,25 @@ def parse_yfinance(ticker_symbol):
     except Exception:
         info = {}
 
-    if (inc_df is None or inc_df.empty) and (bs_df is None or bs_df.empty):
+    # ── 米国株判定（ティッカーから早期判定）──────────────────────────────────
+    _is_likely_us = not (ticker_symbol.endswith('.T') or ticker_symbol.endswith('.J'))
+
+    # ── 米国株: SEC EDGAR API で公式財務データ取得を試行 ──────────────────────
+    _sec_data = None
+    if _is_likely_us:
+        try:
+            _sec_data = parse_edgar_us(ticker_symbol)
+            if _sec_data is not None:
+                logger.info("SEC EDGAR データを使用: %s", ticker_symbol)
+        except Exception as e:
+            logger.warning("SEC EDGAR フォールバック (yfinance): %s", e)
+
+    # ── データ存在チェック ───────────────────────────────────────────────────
+    _has_yf = not ((inc_df is None or inc_df.empty) and (bs_df is None or bs_df.empty))
+    if not _has_yf and _sec_data is None:
         raise ValueError(f"ティッカー '{ticker_symbol}' のデータを取得できませんでした。シンボルを確認してください。")
 
-    # ── 追加データ取得（エラーは無視して続行）────────────────────────────────
+    # ── 追加データ取得（yfinance: 株価・ESG・アナリスト等）──────────────────
     try:
         hist_df = ticker.history(period='6y', interval='1mo')
     except Exception:
@@ -376,15 +655,24 @@ def parse_yfinance(ticker_symbol):
         dividends_series = None
 
     # ── 財務データ抽出 ────────────────────────────────────────────────────────
-    inc_data, inc_dates = _extract_series(inc_df, _INCOME_MAP)
-    cf_data, cf_dates = _extract_series(cf_df, _CASHFLOW_MAP)
-    bs_data, bs_dates = _extract_series(bs_df, _BALANCE_MAP)
+    if _sec_data is not None:
+        # SEC EDGAR の公式データを使用
+        _s_inc, _s_bs, _s_cf, dates = _sec_data
+        all_data = {}
+        all_data.update(_s_bs)
+        all_data.update(_s_cf)
+        all_data.update(_s_inc)
+    else:
+        # yfinance フォールバック
+        inc_data, inc_dates = _extract_series(inc_df, _INCOME_MAP)
+        cf_data, cf_dates = _extract_series(cf_df, _CASHFLOW_MAP)
+        bs_data, bs_dates = _extract_series(bs_df, _BALANCE_MAP)
 
-    dates = inc_dates or cf_dates or bs_dates
-    all_data = {}
-    all_data.update(bs_data)
-    all_data.update(cf_data)
-    all_data.update(inc_data)  # incが最優先
+        dates = inc_dates or cf_dates or bs_dates
+        all_data = {}
+        all_data.update(bs_data)
+        all_data.update(cf_data)
+        all_data.update(inc_data)  # incが最優先
 
     def g(key, idx=0):
         lst = all_data.get(key, [])
