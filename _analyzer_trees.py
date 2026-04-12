@@ -316,6 +316,17 @@ def compute_pbr_contribution(roe_tree, screening, data, benchmark=None):
     per_5y = data.get("per_5y")
     pbr_5y = data.get("pbr_5y")
 
+    # PBR フォールバック: PBR = ROE × PER / 100
+    roe_info_pre = roe_tree.get("ROE", {})
+    roe_now_pre = roe_info_pre.get("現在値")
+    if pbr_now is None and per_now is not None and roe_now_pre is not None:
+        pbr_now = round(roe_now_pre * per_now / 100, 2)
+    if pbr_5y is None and per_5y is not None:
+        roe_chg_pre = roe_info_pre.get("5年変化pt")
+        roe_5y_pre = roe_now_pre - roe_chg_pre if (roe_now_pre is not None and roe_chg_pre is not None) else None
+        if roe_5y_pre is not None:
+            pbr_5y = round(roe_5y_pre * per_5y / 100, 2)
+
     per_chg = per_now - per_5y if (per_now is not None and per_5y is not None) else None
     pbr_chg = pbr_now - pbr_5y if (pbr_now is not None and pbr_5y is not None) else None
 

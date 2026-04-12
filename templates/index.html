@@ -424,16 +424,16 @@
           <div>
             <label for="inputCurrency" class="block text-[10px] font-medium th-text-m uppercase tracking-wider mb-1.5" data-i18n="Currency">Currency</label>
             <select id="inputCurrency" class="w-full px-3 py-2.5 th-input rounded-lg text-sm focus:border-brand focus:outline-none transition">
-              <option value="JPY">¥ JPY — 日本円</option>
-              <option value="USD">$ USD — 米ドル</option>
-              <option value="EUR">€ EUR — ユーロ</option>
-              <option value="GBP">£ GBP — 英ポンド</option>
-              <option value="HKD">HK$ HKD — 香港ドル</option>
-              <option value="KRW">₩ KRW — 韓国ウォン</option>
-              <option value="AUD">A$ AUD — 豪ドル</option>
-              <option value="CAD">C$ CAD — カナダドル</option>
-              <option value="CNY">¥ CNY — 人民元</option>
-              <option value="SGD">S$ SGD — シンガポールドル</option>
+              <option value="JPY" data-ja="¥ JPY — 日本円" data-en="¥ JPY — Japanese Yen">¥ JPY — 日本円</option>
+              <option value="USD" data-ja="$ USD — 米ドル" data-en="$ USD — US Dollar">$ USD — 米ドル</option>
+              <option value="EUR" data-ja="€ EUR — ユーロ" data-en="€ EUR — Euro">€ EUR — ユーロ</option>
+              <option value="GBP" data-ja="£ GBP — 英ポンド" data-en="£ GBP — British Pound">£ GBP — 英ポンド</option>
+              <option value="HKD" data-ja="HK$ HKD — 香港ドル" data-en="HK$ HKD — Hong Kong Dollar">HK$ HKD — 香港ドル</option>
+              <option value="KRW" data-ja="₩ KRW — 韓国ウォン" data-en="₩ KRW — Korean Won">₩ KRW — 韓国ウォン</option>
+              <option value="AUD" data-ja="A$ AUD — 豪ドル" data-en="A$ AUD — Australian Dollar">A$ AUD — 豪ドル</option>
+              <option value="CAD" data-ja="C$ CAD — カナダドル" data-en="C$ CAD — Canadian Dollar">C$ CAD — カナダドル</option>
+              <option value="CNY" data-ja="¥ CNY — 人民元" data-en="¥ CNY — Chinese Yuan">¥ CNY — 人民元</option>
+              <option value="SGD" data-ja="S$ SGD — シンガポールドル" data-en="S$ SGD — Singapore Dollar">S$ SGD — シンガポールドル</option>
             </select>
           </div>
           <div class="sm:col-span-2 flex items-end">
@@ -897,50 +897,57 @@
     // ── i18n ──
     const i18n = {
       // Header & Upload
-      'Stock Analyzer':          { ja: '株式アナライザー' },
-      'New Analysis':            { ja: '新規分析' },
-      'Export':                  { ja: 'エクスポート' },
-      'Financial Analysis':      { ja: 'ファイナンシャル分析' },
-      'Upload your financial data to generate a comprehensive investment analysis': { ja: '財務データをアップロードして総合的な投資分析を行います' },
-      'Drop file here or click to browse': { ja: 'ファイルをドロップまたはクリックして選択' },
-      'Excel (.xlsx) or JSON supported':   { ja: 'Excel (.xlsx) または JSON に対応' },
-      'Analyze':        { ja: '分析開始' },
-      'Analyzing…':   { ja: '分析中…' },
-      'Demo':           { ja: 'デモ' },
+      'Stock Analyzer':          { ja: '株式アナライザー', en: 'Stock Analyzer' },
+      'New Analysis':            { ja: '新規分析', en: 'New Analysis' },
+      'Export':                  { ja: 'エクスポート', en: 'Export' },
+      'Exporting…':             { ja: '出力中…', en: 'Exporting…' },
+      'Financial Analysis':      { ja: 'ファイナンシャル分析', en: 'Financial Analysis' },
+      'Upload your financial data to generate a comprehensive investment analysis': { ja: '財務データをアップロードして総合的な投資分析を行います', en: 'Upload your financial data to generate a comprehensive investment analysis' },
+      'Drop file here or click to browse': { ja: 'ファイルをドロップまたはクリックして選択', en: 'Drop file here or click to browse' },
+      'Excel (.xlsx) or JSON supported':   { ja: 'Excel (.xlsx) または JSON に対応', en: 'Excel (.xlsx) or JSON supported' },
+      'Analyze':        { ja: '分析開始', en: 'Analyze' },
+      'Analyzing…':     { ja: '分析中…', en: 'Analyzing…' },
+      'Demo':           { ja: 'デモ', en: 'Demo' },
+      'or upload file': { ja: 'またはファイルをアップロード', en: 'or upload file' },
+      'Fetch & Analyze': { ja: '取得＆分析', en: 'Fetch & Analyze' },
+      'Please enter a ticker symbol': { ja: 'ティッカーを入力してください', en: 'Please enter a ticker symbol' },
+      'ticker-error-suffix': { ja: ' — ティッカーを確認して再試行してください', en: ' — Check the ticker symbol and try again.' },
       // Meta form
-      'Company':    { ja: '企業名' },
-      'Ticker':     { ja: '証券コード' },
-      'Industry':   { ja: '業種' },
-      'Management': { ja: '経営陣' },
-      'Ownership':  { ja: '株主構造' },
-      'ESG Risk':   { ja: 'ESGリスク' },
-      'No Issues':  { ja: '問題なし' },
-      'Monitor':    { ja: '要注視' },
-      'Risk':       { ja: 'リスク有' },
+      'Company':    { ja: '企業名', en: 'Company' },
+      'Ticker':     { ja: '証券コード', en: 'Ticker' },
+      'Industry':   { ja: '業種', en: 'Industry' },
+      'Currency':   { ja: '通貨', en: 'Currency' },
+      'currency-hint': { ja: 'Excelファイルの財務データの通貨を選択してください。ティッカー取得時は自動判定されます。', en: 'Select the currency for your Excel financial data. Auto-detected when fetching by ticker.' },
+      'Management': { ja: '経営陣', en: 'Management' },
+      'Ownership':  { ja: '株主構造', en: 'Ownership' },
+      'ESG Risk':   { ja: 'ESGリスク', en: 'ESG Risk' },
+      'No Issues':  { ja: '問題なし', en: 'No Issues' },
+      'Monitor':    { ja: '要注視', en: 'Monitor' },
+      'Risk':       { ja: 'リスク有', en: 'Risk' },
+      'Investor Profile': { ja: '投資家プロファイル', en: 'Investor Profile' },
       // Verdict
-      'Investment Verdict': { ja: '投資判定' },
+      'Investment Verdict': { ja: '投資判定', en: 'Investment Verdict' },
       // Score sections
-      'A — Financial Health': { ja: 'A — 財務健全性' },
-      'B — Growth':           { ja: 'B — 成長性' },
-      'C — Valuation':        { ja: 'C — バリュエーション' },
-      'D — ESG':              { ja: 'D — ESG' },
-      'Weight:':              { ja: 'ウェイト:' },
+      'A — Financial Health': { ja: 'A — 財務健全性', en: 'A — Financial Health' },
+      'B — Growth':           { ja: 'B — 成長性', en: 'B — Growth' },
+      'C — Valuation':        { ja: 'C — バリュエーション', en: 'C — Valuation' },
+      'D — ESG':              { ja: 'D — ESG', en: 'D — ESG' },
+      'Weight:':              { ja: 'ウェイト:', en: 'Weight:' },
       // Tabs
-      'Analysis':    { ja: '分析' },
-      'Custom':      { ja: 'カスタム' },
-      'Competitor Analysis': { ja: '競合分析' },
+      'Analysis':    { ja: '分析', en: 'Analysis' },
+      'Custom':      { ja: 'カスタム', en: 'Custom' },
+      'Competitor Analysis': { ja: '競合分析', en: 'Competitor Analysis' },
       'comp-upload-msg': { ja: '最大5社のExcelファイルをアップロードして比較', en: 'Upload Excel files for up to 5 companies to compare' },
-      'Compare': { ja: '比較する' },
-      'Select File': { ja: 'ファイル選択' },
-      'Analyzing…': { ja: '分析中…' },
+      'Compare': { ja: '比較する', en: 'Compare' },
+      'Select File': { ja: 'ファイル選択', en: 'Select File' },
       'comp-summary-title': { ja: '競合比較サマリー', en: 'Competitor Comparison Summary' },
-      'Equity Ratio': { ja: '自己資本比率' },
-      'Metrics': { ja: '指標' },
+      'Equity Ratio': { ja: '自己資本比率', en: 'Equity Ratio' },
+      'Metrics': { ja: '指標', en: 'Metrics' },
       'comp-btn-absolute': { ja: '絶対値に切替', en: 'Absolute' },
       'comp-btn-indexed': { ja: 'インデックスに切替', en: 'Indexed (Base=100)' },
       'comp-mode-indexed': { ja: 'インデックス', en: 'Indexed' },
       'comp-base': { ja: '基準年', en: 'Base Year' },
-      'PBR Decomposition':    { ja: 'PBR分解' },
+      'PBR Decomposition':    { ja: 'PBR分解', en: 'PBR Decomposition' },
       // Data states
       'No Data': { ja: 'データなし', en: 'No Data' },
       'Range:': { ja: '範囲:', en: 'Range:' },
@@ -962,23 +969,23 @@
       '円': { ja: '円', en: 'JPY' },
       // Warning messages
       'PBR貢献度分析データ不足': { ja: 'PBR, PER, ROEの5年間データが不足しているため、貢献度分析を実施できません', en: 'Insufficient 5-year data for PBR, PER, ROE to perform contribution analysis' },
-      'ROA Tree':    { ja: 'ROAツリー' },
-      'Time Series': { ja: '時系列' },
+      'ROA Tree':    { ja: 'ROAツリー', en: 'ROA Tree' },
+      'Time Series': { ja: '時系列', en: 'Time Series' },
       // Custom tab
-      'Custom Analysis':    { ja: 'カスタム分析' },
-      'Select Metrics':     { ja: '指標を選択' },
-      'Edit Selection':     { ja: '選択を編集' },
+      'Custom Analysis':    { ja: 'カスタム分析', en: 'Custom Analysis' },
+      'Select Metrics':     { ja: '指標を選択', en: 'Select Metrics' },
+      'Edit Selection':     { ja: '選択を編集', en: 'Edit Selection' },
       'custom-empty-msg':   { ja: '指標を選択してカスタム分析ビューを作成', en: 'Select metrics to build your custom analysis view' },
-      'Apply':              { ja: '適用' },
-      'Clear All':          { ja: '全解除' },
-      'Growth':             { ja: '成長性' },
+      'Apply':              { ja: '適用', en: 'Apply' },
+      'Clear All':          { ja: '全解除', en: 'Clear All' },
+      'Growth':             { ja: '成長性', en: 'Growth' },
       // Investor Profile names
-      'Balanced':           { ja: 'バランス型' },
-      'Value':              { ja: 'バリュー' },
-      'Quality':            { ja: 'クオリティ' },
-      'Income':             { ja: 'インカム' },
-      'Profitability':      { ja: '収益性' },
-      'Other':              { ja: 'その他' },
+      'Balanced':           { ja: 'バランス型', en: 'Balanced' },
+      'Value':              { ja: 'バリュー', en: 'Value' },
+      'Quality':            { ja: 'クオリティ', en: 'Quality' },
+      'Income':             { ja: 'インカム', en: 'Income' },
+      'Profitability':      { ja: '収益性', en: 'Profitability' },
+      'Other':              { ja: 'その他', en: 'Other' },
       'cat-performance':    { ja: 'パフォーマンス', en: 'Performance' },
       'cat-growth':         { ja: '成長性', en: 'Growth' },
       'cat-profitability':  { ja: '収益性', en: 'Profitability' },
@@ -986,144 +993,145 @@
       'cat-valuation':      { ja: 'バリュエーション・リスク', en: 'Valuation & Risk' },
       'cat-other':          { ja: 'その他', en: 'Other' },
       // Analysis sections
-      'Performance':           { ja: 'パフォーマンス' },
-      'Growth & Profitability': { ja: '成長性・収益性' },
-      'Financial Health':       { ja: '財務健全性' },
-      'Valuation & Risk':       { ja: 'バリュエーション・リスク' },
-      'ROIC / WACC':            { ja: 'ROIC / WACC' },
-      'CCC Analysis':           { ja: 'CCC分析' },
-      'CF Analysis':            { ja: 'CF分析' },
-      'CF Pattern':             { ja: 'CF構成分析' },
-      'CF Pattern Result':      { ja: 'CF構成判定' },
+      'Performance':           { ja: 'パフォーマンス', en: 'Performance' },
+      'Growth & Profitability': { ja: '成長性・収益性', en: 'Growth & Profitability' },
+      'Financial Health':       { ja: '財務健全性', en: 'Financial Health' },
+      'Valuation & Risk':       { ja: 'バリュエーション・リスク', en: 'Valuation & Risk' },
+      'ROIC / WACC':            { ja: 'ROIC / WACC', en: 'ROIC / WACC' },
+      'CCC Analysis':           { ja: 'CCC分析', en: 'CCC Analysis' },
+      'CF Analysis':            { ja: 'CF分析', en: 'CF Analysis' },
+      'CF Pattern':             { ja: 'CF構成分析', en: 'CF Pattern' },
+      'CF Pattern Result':      { ja: 'CF構成判定', en: 'CF Pattern Result' },
       'cf-ideal-desc':          { ja: '営業CF(+) 投資CF(-) 財務CF(-) が理想型', en: 'Ideal: OCF(+) ICF(-) FCF(-)' },
-      'Ideal':                  { ja: '理想型' },
-      'Non-Ideal':              { ja: '非理想型' },
-      '投資CF':                 { en: 'Investing CF' },
-      '財務CF':                 { en: 'Financing CF' },
-      '投資CF推移':             { en: 'Investing CF Trend' },
-      '財務CF推移':             { en: 'Financing CF Trend' },
-      'ESG & Qualitative':      { ja: 'ESG・定性評価' },
+      'Ideal':                  { ja: '理想型', en: 'Ideal' },
+      'Non-Ideal':              { ja: '非理想型', en: 'Non-Ideal' },
+      '投資CF':                 { ja: '投資CF', en: 'Investing CF' },
+      '財務CF':                 { ja: '財務CF', en: 'Financing CF' },
+      '投資CF推移':             { ja: '投資CF推移', en: 'Investing CF Trend' },
+      '財務CF推移':             { ja: '財務CF推移', en: 'Financing CF Trend' },
+      'ESG & Qualitative':      { ja: 'ESG・定性評価', en: 'ESG & Qualitative' },
       // Item card labels
-      'EBITDA Margin':    { ja: 'EBITDAマージン' },
-      'P/E Ratio':        { ja: 'PER（株価収益率）' },
-      'P/B Ratio':        { ja: 'PBR（株価純資産倍率）' },
-      'Net Debt / EBITDA': { ja: '純有利子負債 / EBITDA' },
-      'ROIC vs WACC':     { ja: 'ROIC vs WACC' },
-      '経営陣変更':       { en: 'Management Changes' },
-      '株主構造':         { en: 'Shareholder Structure' },
-      'ESG / 規制リスク': { en: 'ESG / Regulatory Risk' },
-      '配当利回り':       { en: 'Dividend Yield' },
-      '配当性向':         { en: 'Payout Ratio' },
-      '自己資本比率':     { en: 'Equity Ratio' },
-      '当座比率':         { en: 'Quick Ratio' },
-      '流動比率':         { en: 'Current Ratio' },
-      '売上高推移':       { en: 'Revenue Trend' },
-      'FCF推移':          { en: 'FCF Trend' },
-      'EPS推移':          { en: 'EPS Trend' },
-      '営業CF推移':       { en: 'Operating CF Trend' },
-      '営業利益率':       { en: 'Operating Margin' },
-      '営業CF':           { en: 'Operating CF' },
-      '売上高 CAGR':      { en: 'Revenue CAGR' },
-      'EPS Growth':       { ja: 'EPS成長率' },
+      'EBITDA Margin':    { ja: 'EBITDAマージン', en: 'EBITDA Margin' },
+      'P/E Ratio':        { ja: 'PER（株価収益率）', en: 'P/E Ratio' },
+      'P/B Ratio':        { ja: 'PBR（株価純資産倍率）', en: 'P/B Ratio' },
+      'Net Debt / EBITDA': { ja: '純有利子負債 / EBITDA', en: 'Net Debt / EBITDA' },
+      'ROIC vs WACC':     { ja: 'ROIC vs WACC', en: 'ROIC vs WACC' },
+      '経営陣変更':       { ja: '経営陣変更', en: 'Management Changes' },
+      '株主構造':         { ja: '株主構造', en: 'Shareholder Structure' },
+      'ESG / 規制リスク': { ja: 'ESG / 規制リスク', en: 'ESG / Regulatory Risk' },
+      '配当利回り':       { ja: '配当利回り', en: 'Dividend Yield' },
+      '配当性向':         { ja: '配当性向', en: 'Payout Ratio' },
+      '自己資本比率':     { ja: '自己資本比率', en: 'Equity Ratio' },
+      '当座比率':         { ja: '当座比率', en: 'Quick Ratio' },
+      '流動比率':         { ja: '流動比率', en: 'Current Ratio' },
+      '売上高推移':       { ja: '売上高推移', en: 'Revenue Trend' },
+      'FCF推移':          { ja: 'FCF推移', en: 'FCF Trend' },
+      'EPS推移':          { ja: 'EPS推移', en: 'EPS Trend' },
+      '営業CF推移':       { ja: '営業CF推移', en: 'Operating CF Trend' },
+      '営業利益率':       { ja: '営業利益率', en: 'Operating Margin' },
+      '営業CF':           { ja: '営業CF', en: 'Operating CF' },
+      '売上高 CAGR':      { ja: '売上高 CAGR', en: 'Revenue CAGR' },
+      'EPS Growth':       { ja: 'EPS成長率', en: 'EPS Growth' },
       // ROA Tree
-      'Return on Assets':         { ja: '総資産利益率' },
-      'Asset Turnover':           { ja: '資産回転率' },
-      'Fixed Asset Turnover':     { ja: '固定資産回転率' },
-      'Tangible Asset Turnover':  { ja: '有形固定資産回転率' },
-      'Intangible Asset Turnover':{ ja: '無形固定資産回転率' },
-      'Working Capital (CCC)':    { ja: '運転資本 (CCC)' },
-      'Operating Margin':         { ja: '営業利益率' },
-      'COGS Ratio':               { ja: '原価率' },
-      'SG&A Ratio':               { ja: '販管費率' },
-      'ROA Contribution Ranking': { ja: 'ROA貢献度ランキング' },
-      '5Y Change:':               { ja: '5年変化:' },
+      'Return on Assets':         { ja: '総資産利益率', en: 'Return on Assets' },
+      'Asset Turnover':           { ja: '資産回転率', en: 'Asset Turnover' },
+      'Fixed Asset Turnover':     { ja: '固定資産回転率', en: 'Fixed Asset Turnover' },
+      'Tangible Asset Turnover':  { ja: '有形固定資産回転率', en: 'Tangible Asset Turnover' },
+      'Intangible Asset Turnover':{ ja: '無形固定資産回転率', en: 'Intangible Asset Turnover' },
+      'Working Capital (CCC)':    { ja: '運転資本 (CCC)', en: 'Working Capital (CCC)' },
+      'Operating Margin':         { ja: '営業利益率', en: 'Operating Margin' },
+      'COGS Ratio':               { ja: '原価率', en: 'COGS Ratio' },
+      'SG&A Ratio':               { ja: '販管費率', en: 'SG&A Ratio' },
+      'ROA Contribution Ranking': { ja: 'ROA貢献度ランキング', en: 'ROA Contribution Ranking' },
+      '5Y Change:':               { ja: '5年変化:', en: '5Y Change:' },
       // PBR Decomposition (Market Valuation Decomposition)
-      'Market Valuation':          { ja: '市場評価分解' },
-      'PBR Decomposition':        { ja: 'PBR分解分析' },
+      'Market Valuation':          { ja: '市場評価分解', en: 'Market Valuation' },
       'pbr-formula':              { ja: 'PBR = ROE × PER', en: 'PBR = ROE × PER' },
-      'Market Expectation':       { ja: '市場期待（PER）' },
-      'Profitability (ROE)':      { ja: '収益性（ROE）' },
+      'Market Expectation':       { ja: '市場期待（PER）', en: 'Market Expectation (PER)' },
+      'Profitability (ROE)':      { ja: '収益性（ROE）', en: 'Profitability (ROE)' },
       'per-desc':                 { ja: '株価 / 1株利益。市場の成長期待を反映', en: 'Price / EPS. Reflects market growth expectations' },
       'roe-desc':                 { ja: '純利益 / 自己資本。企業の収益力を示す', en: 'Net Income / Equity. Indicates profitability' },
-      'Return on Equity (DuPont)': { ja: '自己資本利益率 (デュポン分析)' },
-      'Net Profit Margin':         { ja: '純利益率' },
-      'Financial Leverage':        { ja: '財務レバレッジ' },
-      'ROE Contribution':          { ja: 'ROE貢献度' },
-      'PBR Contribution Ranking':  { ja: 'PBR貢献度ランキング' },
-      'PBR Driver Analysis':       { ja: 'PBR ドライバー分析' },
-      '5年間の各要因がPBRに与えた影響を分解': { en: 'Decomposition of each factor\'s impact on PBR over 5 years' },
-      'Key Insight':               { ja: 'キーインサイト' },
-      'Net Margin':                { ja: '純利益率' },
-      'Leverage':                  { ja: 'レバレッジ' },
+      'Return on Equity (DuPont)': { ja: '自己資本利益率 (デュポン分析)', en: 'Return on Equity (DuPont)' },
+      'Net Profit Margin':         { ja: '純利益率', en: 'Net Profit Margin' },
+      'Financial Leverage':        { ja: '財務レバレッジ', en: 'Financial Leverage' },
+      'ROE Contribution':          { ja: 'ROE貢献度', en: 'ROE Contribution' },
+      'PBR Contribution Ranking':  { ja: 'PBR貢献度ランキング', en: 'PBR Contribution Ranking' },
+      'PBR Driver Analysis':       { ja: 'PBR ドライバー分析', en: 'PBR Driver Analysis' },
+      '5年間の各要因がPBRに与えた影響を分解': { ja: '5年間の各要因がPBRに与えた影響を分解', en: 'Decomposition of each factor\'s impact on PBR over 5 years' },
+      'Key Insight':               { ja: 'キーインサイト', en: 'Key Insight' },
+      'Net Margin':                { ja: '純利益率', en: 'Net Margin' },
+      'Leverage':                  { ja: 'レバレッジ', en: 'Leverage' },
       'breakdown-npm':  { ja: '純利益率 = 営業利益率 × 金利負担率 × 営業外損益率 × 税引後利益率', en: 'Net Margin = Op. Margin × Interest Burden × Non-Op. × Tax Retention' },
       'breakdown-at':   { ja: '資産別の回転率内訳', en: 'Turnover breakdown by asset type' },
       'breakdown-lev':  { ja: '自己資本 + 負債 = 総資産', en: 'Equity + Debt = Total Assets' },
       // PBR Decomposition node labels
-      '純利益率':       { en: 'Net Profit Margin' },
-      '営業利益率_roe': { en: 'Operating Margin' },
-      '原価率':         { en: 'COGS Ratio' },
-      '販管費率':       { en: 'SG&A Ratio' },
-      '総資産回転率':   { en: 'Total Asset Turnover' },
-      '固定資産回転率': { en: 'Fixed Asset Turnover' },
-      '売上債権回転率': { en: 'Accounts Receivable Turnover' },
-      '棚卸資産回転率': { en: 'Inventory Turnover' },
-      '財務レバレッジ': { en: 'Financial Leverage' },
-      '負債比率':       { en: 'Debt Ratio' },
-      '営業利益→純利益ギャップ': { en: 'Operating → Net Income Gap' },
-      '金利負担率':     { en: 'Interest Burden' },
-      '営業外損益率':   { en: 'Non-Op. Income Rate' },
-      '税引後利益率':   { en: 'Tax Retention Rate' },
-      '検算':           { en: 'Check' },
-      '実績':           { en: 'Actual' },
-      'PBR上昇要因':    { en: 'PBR Upside Drivers' },
-      'PBR下落要因':    { en: 'PBR Downside Drivers' },
-      '適正レンジ':     { en: 'Fair Range' },
-      'ROE DuPont Decomposition': { ja: 'ROE DuPont分解' },
-      'PER変動':        { en: 'PER Change' },
+      '純利益率':       { ja: '純利益率', en: 'Net Profit Margin' },
+      '営業利益率_roe': { ja: '営業利益率', en: 'Operating Margin' },
+      '原価率':         { ja: '原価率', en: 'COGS Ratio' },
+      '販管費率':       { ja: '販管費率', en: 'SG&A Ratio' },
+      '総資産回転率':   { ja: '総資産回転率', en: 'Total Asset Turnover' },
+      '固定資産回転率': { ja: '固定資産回転率', en: 'Fixed Asset Turnover' },
+      '売上債権回転率': { ja: '売上債権回転率', en: 'Accounts Receivable Turnover' },
+      '棚卸資産回転率': { ja: '棚卸資産回転率', en: 'Inventory Turnover' },
+      '財務レバレッジ': { ja: '財務レバレッジ', en: 'Financial Leverage' },
+      '負債比率':       { ja: '負債比率', en: 'Debt Ratio' },
+      '営業利益→純利益ギャップ': { ja: '営業利益→純利益ギャップ', en: 'Operating → Net Income Gap' },
+      '金利負担率':     { ja: '金利負担率', en: 'Interest Burden' },
+      '営業外損益率':   { ja: '営業外損益率', en: 'Non-Op. Income Rate' },
+      '税引後利益率':   { ja: '税引後利益率', en: 'Tax Retention Rate' },
+      '検算':           { ja: '検算', en: 'Check' },
+      '実績':           { ja: '実績', en: 'Actual' },
+      'PBR上昇要因':    { ja: 'PBR上昇要因', en: 'PBR Upside Drivers' },
+      'PBR下落要因':    { ja: 'PBR下落要因', en: 'PBR Downside Drivers' },
+      '適正レンジ':     { ja: '適正レンジ', en: 'Fair Range' },
+      'ROE DuPont Decomposition': { ja: 'ROE DuPont分解', en: 'ROE DuPont Decomposition' },
+      'PER変動':        { ja: 'PER変動', en: 'PER Change' },
       // Charts
-      'Revenue':          { ja: '売上高' },
-      'Net Income':       { ja: '純利益' },
-      'Free Cash Flow':   { ja: 'FCF（フリーキャッシュフロー）' },
-      'Earnings Per Share':{ ja: 'EPS（一株当たり利益）' },
-      'Total Assets':     { ja: '総資産' },
-      'Equity':           { ja: '自己資本' },
-      'Debt':             { ja: '有利子負債' },
-      'Balance Sheet':    { ja: '貸借対照表' },
-      'Industry Avg':     { ja: '業界平均' },
-      'vs Industry':      { ja: '対業界' },
+      'Revenue':          { ja: '売上高', en: 'Revenue' },
+      'Net Income':       { ja: '純利益', en: 'Net Income' },
+      'Free Cash Flow':   { ja: 'FCF（フリーキャッシュフロー）', en: 'Free Cash Flow' },
+      'Earnings Per Share':{ ja: 'EPS（一株当たり利益）', en: 'Earnings Per Share' },
+      'Total Assets':     { ja: '総資産', en: 'Total Assets' },
+      'Equity':           { ja: '自己資本', en: 'Equity' },
+      'Debt':             { ja: '有利子負債', en: 'Debt' },
+      'Balance Sheet':    { ja: '貸借対照表', en: 'Balance Sheet' },
+      'Industry Avg':     { ja: '業界平均', en: 'Industry Avg' },
+      'vs Industry':      { ja: '対業界', en: 'vs Industry' },
       // Section A eval texts
-      '◎全項通過':         { en: '◎ All Passed' },
-      '▲要確認':           { en: '▲ Review Required' },
-      '▲要注意':           { en: '▲ Warning' },
-      '×NG（即時回避）':    { en: '× AVOID (Immediate)' },
+      '◎全項通過':         { ja: '◎全項通過', en: '◎ All Passed' },
+      '▲要確認':           { ja: '▲要確認', en: '▲ Review Required' },
+      '▲要注意':           { ja: '▲要注意', en: '▲ Warning' },
+      '×NG（即時回避）':    { ja: '×NG（即時回避）', en: '× AVOID (Immediate)' },
       // Section B eval texts
-      '×投資魅力低下':     { en: '× Low Investment Appeal' },
-      '▲要追加調査':       { en: '▲ Further Review Needed' },
+      '×投資魅力低下':     { ja: '×投資魅力低下', en: '× Low Investment Appeal' },
+      '▲要追加調査':       { ja: '▲要追加調査', en: '▲ Further Review Needed' },
       // Section C eval texts
-      '×タイミング要見直し': { en: '× Timing: Reconsider' },
-      '▲要コスト評価':     { en: '▲ Cost Evaluation Required' },
+      '×タイミング要見直し': { ja: '×タイミング要見直し', en: '× Timing: Reconsider' },
+      '▲要コスト評価':     { ja: '▲要コスト評価', en: '▲ Cost Evaluation Required' },
       // Section D eval texts
-      '◎リスクなし':       { en: '◎ No Risk' },
-      '▲リスク注意':       { en: '▲ Risk Alert' },
-      '×重要リスク確認':   { en: '× Critical Risk Detected' },
+      '◎リスクなし':       { ja: '◎リスクなし', en: '◎ No Risk' },
+      '▲リスク注意':       { ja: '▲リスク注意', en: '▲ Risk Alert' },
+      '×重要リスク確認':   { ja: '×重要リスク確認', en: '× Critical Risk Detected' },
       // Analyst recommendations
-      'Analyst Consensus':  { ja: 'アナリスト合意' },
-      'Target Price':       { ja: '目標株価' },
-      'Upside':             { ja: '上昇余地' },
-      'Strong Buy':         { ja: '強い買い' },
-      'Buy':                { ja: '買い' },
-      'Hold':               { ja: '中立' },
-      'Sell':               { ja: '売り' },
+      'Analyst Consensus':  { ja: 'アナリスト合意', en: 'Analyst Consensus' },
+      'Target Price':       { ja: '目標株価', en: 'Target Price' },
+      'Upside':             { ja: '上昇余地', en: 'Upside' },
+      'Strong Buy':         { ja: '強い買い', en: 'Strong Buy' },
+      'Buy':                { ja: '買い', en: 'Buy' },
+      'Hold':               { ja: '中立', en: 'Hold' },
+      'Sell':               { ja: '売り', en: 'Sell' },
       'analyst-breakdown':  { ja: '買い / 中立 / 売り', en: 'Buy / Hold / Sell' },
       // Missing data reason
-      'Data unavailable':   { ja: 'データ未取得' },
-      'N/A (Finance)':      { ja: 'N/A（金融業）' },
+      'Data unavailable':   { ja: 'データ未取得', en: 'Data unavailable' },
+      'N/A (Finance)':      { ja: 'N/A（金融業）', en: 'N/A (Finance)' },
       // Loading states
       'Fetching…':          { ja: '取得中…', en: 'Fetching…' },
       // Year badge
       'FY':                 { ja: '年度', en: 'FY' },
       // Header
       'Financial Intelligence': { ja: 'ファイナンシャル・インテリジェンス', en: 'Financial Intelligence' },
+      // PDF export
+      'PDF export failed': { ja: 'PDFの出力に失敗しました。', en: 'PDF export failed.' },
     };
 
     function t(key) {
@@ -1263,7 +1271,7 @@
         const res = await fetch('/api/fetch_ticker', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body) });
         const data = await res.json();
         if (data.error) {
-          tickerError.textContent = data.error + ' — Check the ticker symbol and try again.';
+          tickerError.textContent = data.error + t('ticker-error-suffix');
           tickerError.classList.remove('hidden');
           return;
         }
@@ -1315,7 +1323,7 @@
       };
       const exportBtn = $('btnExport');
       const origText = exportBtn.querySelector('span') ? exportBtn.querySelector('span').textContent : 'Export';
-      if (exportBtn.querySelector('span')) exportBtn.querySelector('span').textContent = currentLang === 'ja' ? '出力中…' : 'Exporting…';
+      if (exportBtn.querySelector('span')) exportBtn.querySelector('span').textContent = t('Exporting…');
       exportBtn.disabled = true;
       html2pdf().set(opt).from(el).save()
         .then(() => {
@@ -1326,7 +1334,7 @@
           console.error('PDF export error:', err);
           if (exportBtn.querySelector('span')) exportBtn.querySelector('span').textContent = origText;
           exportBtn.disabled = false;
-          alert(currentLang === 'ja' ? 'PDFの出力に失敗しました。' : 'PDF export failed.');
+          alert(t('PDF export failed'));
         });
     });
 
@@ -2714,6 +2722,10 @@
     function applyLang() {
       document.querySelectorAll('[data-i18n]').forEach(el => {
         el.textContent = t(el.getAttribute('data-i18n'));
+      });
+      // Currency option labels
+      document.querySelectorAll('#inputCurrency option[data-ja]').forEach(opt => {
+        opt.textContent = opt.getAttribute('data-' + currentLang) || opt.getAttribute('data-en');
       });
       // M11: html lang 属性を現在の言語に同期
       document.documentElement.lang = currentLang === 'ja' ? 'ja' : 'en';
