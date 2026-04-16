@@ -12,11 +12,11 @@
       theme: {
         extend: {
           colors: {
-            brand: { DEFAULT: '#d5001c', light: '#ff1a3a', dark: '#a30015' },
+            brand: { DEFAULT: '#D4852A', light: '#e69a3e', dark: '#b06e1e' },
           },
           fontFamily: {
             sans: ['"Inter"', '"Noto Sans JP"', 'system-ui', 'sans-serif'],
-            display: ['"Barlow Condensed"', '"Arial Narrow"', 'Arial', 'sans-serif'],
+            display: ['"Bebas Neue"', '"Barlow Condensed"', '"Arial Narrow"', 'sans-serif'],
           },
         }
       }
@@ -26,8 +26,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="preconnect" href="https://cdn.jsdelivr.net">
   <link rel="preconnect" href="https://cdnjs.cloudflare.com">
-  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700&family=Inter:wght@400;500;600&family=Noto+Sans+JP:wght@400;500;700&display=swap">
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700&family=Inter:wght@400;500;600&family=Noto+Sans+JP:wght@400;500;700&display=swap">
+  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&family=Inter:wght@400;500;600&family=Noto+Sans+JP:wght@400;500;700&display=swap">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&family=Inter:wght@400;500;600&family=Noto+Sans+JP:wght@400;500;700&display=swap">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js" defer></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.2/html2pdf.bundle.min.js" defer></script>
   <style>
@@ -36,22 +36,22 @@
     [data-theme="light"] { color-scheme: light; }
 
     :root {
-      /* Porsche dark palette */
+      /* V0 dark palette */
       --bg-0: #0e0e12; --bg-1: #14141a; --bg-2: #1c1c24; --bg-3: #24242e;
       --text: #f0f0f2; --text-s: rgba(240,240,242,0.78); --text-m: rgba(240,240,242,0.55); --text-d: rgba(240,240,242,0.40);
       --border: rgba(255,255,255,0.04); --border-s: rgba(255,255,255,0.09); --border-m: rgba(255,255,255,0.14);
       --card-hover-bg: #1c1c24; --card-hover-shadow: rgba(0,0,0,0.55);
-      --upload-border: rgba(255,255,255,0.12); --upload-hover-bg: rgba(213,0,28,0.04);
+      --upload-border: rgba(255,255,255,0.12); --upload-hover-bg: rgba(212,133,42,0.04);
       --scrollbar-track: #14141a; --scrollbar-thumb: #2a2a36;
       --chart-text: rgba(240,240,242,0.28); --chart-grid: rgba(255,255,255,0.03); --chart-grid-y: rgba(255,255,255,0.025);
       --metric-bar-bg: #24242e;
       --input-bg: #1c1c24;
-      /* Porsche spacing tokens */
+      /* Spacing tokens */
       --space-xs: clamp(4px, .25vw + 3px, 8px);
       --space-sm: clamp(8px, .5vw + 6px, 16px);
       --space-md: clamp(16px, 1.25vw + 12px, 36px);
       --space-lg: clamp(32px, 2.75vw + 23px, 76px);
-      /* Porsche easing */
+      /* Easing */
       --ease-base: cubic-bezier(.25,.1,.25,1);
       --ease-out: cubic-bezier(.4,0,.5,1);
       --ease-luxury: cubic-bezier(.22,1,.36,1);
@@ -61,7 +61,7 @@
       --text: #0e0e12; --text-s: rgba(14,14,18,0.78); --text-m: rgba(14,14,18,0.58); --text-d: rgba(14,14,18,0.42);
       --border: rgba(0,0,0,0.05); --border-s: rgba(0,0,0,0.09); --border-m: rgba(0,0,0,0.14);
       --card-hover-bg: #ffffff; --card-hover-shadow: rgba(0,0,0,0.07);
-      --upload-border: rgba(0,0,0,0.14); --upload-hover-bg: rgba(213,0,28,0.03);
+      --upload-border: rgba(0,0,0,0.14); --upload-hover-bg: rgba(212,133,42,0.03);
       --scrollbar-track: #e8e8ec; --scrollbar-thumb: #c8c8d0;
       --chart-text: rgba(14,14,18,0.45); --chart-grid: rgba(0,0,0,0.05); --chart-grid-y: rgba(0,0,0,0.04);
       --metric-bar-bg: #dcdce4;
@@ -81,7 +81,7 @@
     }
     button, a, [role="button"], label[for], input[type="file"] + label { touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
 
-    /* Porsche scrollbar */
+    /* Scrollbar */
     ::-webkit-scrollbar { width: 4px; }
     ::-webkit-scrollbar-track { background: var(--scrollbar-track); }
     ::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border-radius: 0; }
@@ -102,10 +102,10 @@
     .verdict-hold { background: linear-gradient(135deg, #451a03 0%, #78350f 100%); color: #fef3c7; border: 1px solid rgba(245,158,11,0.2); }
     .verdict-sell { background: linear-gradient(135deg, #450a0a 0%, #7f1d1d 100%); color: #fee2e2; border: 1px solid rgba(239,68,68,0.2); }
 
-    /* Animations — Porsche timing */
+    /* Animations */
     @keyframes fadeUp   { from { opacity:0; transform:translateY(24px); } to { opacity:1; transform:translateY(0); } }
     @keyframes slideIn  { from { opacity:0; transform:translateX(-16px); } to { opacity:1; transform:translateX(0); } }
-    @keyframes pulse-glow { 0%,100% { box-shadow:0 0 24px rgba(213,0,28,.12); } 50% { box-shadow:0 0 48px rgba(213,0,28,.24); } }
+    @keyframes pulse-glow { 0%,100% { box-shadow:0 0 24px rgba(212,133,42,.12); } 50% { box-shadow:0 0 48px rgba(212,133,42,.24); } }
     .fade-up  { animation: fadeUp  0.7s var(--ease-luxury) forwards; }
     .slide-in { animation: slideIn 0.45s var(--ease-out)   forwards; }
 
@@ -113,19 +113,19 @@
     .card-hover { transition: transform 0.4s var(--ease-base), background 0.3s var(--ease-base), box-shadow 0.4s var(--ease-base); }
     .card-hover:hover { transform: scale3d(1.015,1.015,1); background: var(--card-hover-bg); box-shadow: 0 24px 64px var(--card-hover-shadow); }
 
-    /* Upload zone — Porsche architectural style */
+    /* Upload zone */
     .upload-zone { border: 1px solid var(--upload-border); transition: border-color 0.5s var(--ease-base), background 0.5s var(--ease-base), box-shadow 0.5s var(--ease-base); touch-action: manipulation; }
-    .upload-zone:hover  { border-color: #d5001c; background: var(--upload-hover-bg); box-shadow: 0 0 0 1px rgba(213,0,28,.15), 0 8px 40px rgba(213,0,28,.06); }
-    .upload-zone.dragover { border-color: #d5001c; background: rgba(213,0,28,.05); box-shadow: 0 0 0 2px rgba(213,0,28,.3); }
+    .upload-zone:hover  { border-color: var(--accent-v0); background: var(--upload-hover-bg); box-shadow: 0 0 0 1px rgba(212,133,42,.15), 0 8px 40px rgba(212,133,42,.06); }
+    .upload-zone.dragover { border-color: var(--accent-v0); background: rgba(212,133,42,.05); box-shadow: 0 0 0 2px rgba(212,133,42,.3); }
 
-    /* Tabs — Porsche thin-line style */
-    .tab-active { color: var(--text) !important; border-color: #d5001c !important; }
+    /* Tabs */
+    .tab-active { color: var(--text) !important; border-color: var(--accent-v0) !important; }
 
     /* Divider */
     .divider { height: 1px; background: linear-gradient(90deg, transparent, var(--border-m), transparent); }
 
     canvas { max-height: 280px; }
-    .glow-red { animation: pulse-glow 4s var(--ease-base) infinite; }
+    .glow-accent { animation: pulse-glow 4s var(--ease-base) infinite; }
 
     /* Metric bar */
     .metric-bar      { height: 2px; background: var(--metric-bar-bg); overflow: hidden; }
@@ -145,7 +145,7 @@
     .th-input  { background: var(--input-bg); border-color: var(--border-s); color: var(--text); }
     .th-header { background: color-mix(in srgb, var(--bg-0) 88%, transparent); }
 
-    /* Porsche-style header line */
+    /* Header line */
     header { border-bottom-color: var(--border) !important; }
 
     /* Theme toggle */
@@ -156,11 +156,11 @@
     .theme-toggle-icon.moon { left:5px; }
     .theme-toggle-icon.sun  { right:4px; }
 
-    /* Porsche typography — Barlow Condensed for headings */
-    h1, h2, h3, h4, .font-display { font-family: 'Barlow Condensed', 'Arial Narrow', Arial, sans-serif; letter-spacing: 0.04em; }
+    /* V0 Editorial typography */
+    h1, h2, h3, h4, .font-display { font-family: 'Bebas Neue', 'Barlow Condensed', 'Arial Narrow', sans-serif; letter-spacing: 0.02em; }
     h1, h2 { text-wrap: balance; }
 
-    /* Chart Modal — Porsche sharp corners */
+    /* Chart Modal */
     .chart-modal-overlay { position:fixed; inset:0; z-index:100; background:rgba(14,14,18,0.82); backdrop-filter:blur(8px); display:flex; align-items:center; justify-content:center; opacity:0 !important; pointer-events:none !important; transition:opacity 0.35s var(--ease-base); }
     .chart-modal-overlay.active { opacity:1 !important; pointer-events:auto !important; }
     .chart-modal { background:var(--bg-1); border:1px solid var(--border-s); border-radius:0; padding:2.5rem; width:90%; max-width:720px; max-height:80vh; overflow-y:auto; overscroll-behavior:contain; transform:scale(0.96) translateY(8px); transition:transform 0.4s var(--ease-luxury); }
@@ -172,13 +172,13 @@
     .sortable-item { cursor:grab; user-select:none; }
     .sortable-item:active { cursor:grabbing; }
     .sortable-item.dragging { opacity:0.35; transform:scale(0.985); }
-    .sortable-item.drag-over { border-top:1px solid #d5001c !important; margin-top:-1px; }
+    .sortable-item.drag-over { border-top:1px solid var(--accent-v0) !important; margin-top:-1px; }
     .sortable-ghost { position:relative; }
-    .sortable-ghost::before { content:''; position:absolute; left:0; right:0; top:-1px; height:1px; background:#d5001c; }
+    .sortable-ghost::before { content:''; position:absolute; left:0; right:0; top:-1px; height:1px; background:var(--accent-v0); }
 
-    /* Porsche-style button base */
-    .btn-porsche {
-      font-family: 'Barlow Condensed', 'Arial Narrow', Arial, sans-serif;
+    /* V0 button base */
+    .btn-v0 {
+      font-family: 'IBM Plex Mono', 'Courier New', monospace;
       letter-spacing: 0.12em;
       text-transform: uppercase;
       font-weight: 600;
@@ -187,33 +187,64 @@
       touch-action: manipulation;
     }
 
-    /* Focus rings — Porsche red accent */
-    input:focus-visible, select:focus-visible { outline: none; border-color: #d5001c !important; box-shadow: 0 0 0 1px rgba(213,0,28,.2); }
-    button:focus-visible, [role="button"]:focus-visible, .tab-btn:focus-visible { outline: 2px solid #d5001c; outline-offset: 2px; }
+    /* Focus rings — V0 accent */
+    input:focus-visible, select:focus-visible { outline: none; border-color: var(--accent-v0) !important; box-shadow: 0 0 0 1px rgba(212,133,42,.2); }
+    button:focus-visible, [role="button"]:focus-visible, .tab-btn:focus-visible { outline: 2px solid var(--accent-v0); outline-offset: 2px; }
 
-    /* Porsche score card accent line */
+    /* Score card accent line */
     .score-card-accent { position: relative; overflow: hidden; }
-    .score-card-accent::before { content:''; position:absolute; top:0; left:0; right:0; height:2px; background:#d5001c; transform:scaleX(0); transform-origin:left; transition:transform 0.4s var(--ease-luxury); }
+    .score-card-accent::before { content:''; position:absolute; top:0; left:0; right:0; height:2px; background:var(--accent-v0); transform:scaleX(0); transform-origin:left; transition:transform 0.4s var(--ease-luxury); }
     .score-card-accent:hover::before { transform:scaleX(1); }
 
-    /* Investor Profile Cards */
+    /* Investor Profile Cards — V0 editorial */
     .profile-card {
       display: flex; flex-direction: column; align-items: center; gap: 2px;
       padding: 0.75rem 0.5rem; border: 1px solid var(--border-s);
       background: var(--card-bg); cursor: pointer;
-      transition: border-color 0.2s, background 0.2s;
-      font-family: 'Barlow Condensed','Arial Narrow',Arial,sans-serif;
+      transition: border-color 0.3s, background 0.3s;
+      font-family: 'IBM Plex Mono', 'Courier New', monospace;
       border-radius: 0;
     }
-    .profile-card:hover { border-color: var(--border-m); background: var(--card-hover-bg); }
-    .profile-card.selected { border-color: #d5001c; background: rgba(213,0,28,0.06); }
-    .profile-card .profile-icon { width: 20px; height: 20px; opacity: 0.7; transition: opacity 0.2s; }
-    .profile-card.selected .profile-icon { opacity: 1; color: #d5001c; }
+    .profile-card:hover { border-color: var(--accent-v0); background: rgba(212,133,42,0.04); }
+    .profile-card.selected { border-color: var(--accent-v0); background: rgba(212,133,42,0.08); }
+    .profile-card .profile-icon { width: 20px; height: 20px; opacity: 0.5; transition: opacity 0.3s; }
+    .profile-card.selected .profile-icon { opacity: 1; color: var(--accent-v0); }
     .profile-card .profile-icon svg { width: 20px; height: 20px; stroke: currentColor; fill: none; stroke-width: 1.4; stroke-linecap: round; stroke-linejoin: round; }
-    .profile-card .profile-name { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.15em; text-transform: uppercase; color: var(--text-primary); }
-    .profile-card .profile-sub { font-size: 0.65rem; letter-spacing: 0.08em; color: var(--text-muted, #888); }
+    .profile-card .profile-name { font-family: 'Bebas Neue', sans-serif; font-size: 0.8rem; font-weight: 400; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-primary); }
+    .profile-card.selected .profile-name { color: var(--accent-v0); }
+    .profile-card .profile-sub { font-size: 0.6rem; letter-spacing: 0.06em; color: var(--text-muted, #888); }
 
-    /* Hero background image — upload page only, semi-transparent */
+    /* ── V0 Editorial Design: Grid background + Noise overlay ─── */
+    .grid-bg {
+      position: fixed; inset: 0; pointer-events: none; z-index: 0;
+      background-image:
+        linear-gradient(to right, rgba(255,255,255,0.03) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(255,255,255,0.03) 1px, transparent 1px);
+      background-size: 60px 60px;
+      opacity: 0.4;
+    }
+    [data-theme="light"] .grid-bg {
+      background-image:
+        linear-gradient(to right, rgba(0,0,0,0.04) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(0,0,0,0.04) 1px, transparent 1px);
+    }
+    .noise-overlay {
+      position: fixed; inset: 0; pointer-events: none; z-index: 999;
+      opacity: 0.03;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+    }
+    /* V0 accent color (warm orange) */
+    :root { --accent-v0: #D4852A; }
+    /* V0 editorial fonts */
+    .font-bebas { font-family: 'Bebas Neue', 'Barlow Condensed', 'Arial Narrow', sans-serif; }
+    .font-plex-mono { font-family: 'IBM Plex Mono', 'Courier New', monospace; }
+    .font-plex { font-family: 'IBM Plex Sans', 'Inter', sans-serif; }
+    /* V0 section label */
+    .v0-section-label { font-family: 'IBM Plex Mono', monospace; font-size: 10px; text-transform: uppercase; letter-spacing: 0.3em; color: var(--accent-v0); }
+    /* V0 decorative line */
+    .v0-line { height: 1px; background: var(--accent-v0); opacity: 0.6; transition: width 0.5s ease; }
+
+    /* Hero background — V0 editorial style with restored photo */
     .hero-bg {
       position: relative;
       overflow: hidden;
@@ -222,10 +253,11 @@
       content: '';
       position: absolute;
       inset: 0;
-      background: url('https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=1920&q=80') center/cover no-repeat;
-      opacity: 0.18;
-      transition: opacity 1.2s var(--ease-base);
+      z-index: 0;
+      background: url('https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=1400&q=80') center/cover no-repeat;
+      opacity: 0.08;
     }
+    [data-theme="light"] .hero-bg::before { opacity: 0.06; }
     .hero-bg > * { position: relative; z-index: 1; }
 
     /* Dashboard hero image strip */
@@ -293,6 +325,9 @@
   </style>
 </head>
 <body class="min-h-screen antialiased">
+  <!-- V0 Editorial Design: Grid + Noise overlays -->
+  <div class="grid-bg" aria-hidden="true"></div>
+  <div class="noise-overlay" aria-hidden="true"></div>
   <a href="#mainContent" class="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-[999] focus:bg-brand focus:text-white focus:px-4 focus:py-2 focus:text-sm">Skip to main content</a>
 
   <!-- Chart Modal -->
@@ -320,31 +355,31 @@
   <!-- Async status announcer for screen readers -->
   <div id="srAnnouncer" role="status" aria-live="polite" aria-atomic="true" class="sr-only"></div>
 
-  <!-- Header — Porsche style -->
+  <!-- Header — V0 Editorial style -->
   <header class="fixed top-0 w-full z-50 th-header backdrop-blur-xl border-b" style="border-color:var(--border)">
     <div class="max-w-[1400px] mx-auto px-4 sm:px-8 h-[72px] flex items-center justify-between">
       <div class="flex items-center gap-4">
-        <!-- Porsche-style wordmark -->
-        <div class="w-7 h-7 bg-brand flex items-center justify-center flex-shrink-0" style="clip-path:polygon(0 0,100% 0,100% 75%,50% 100%,0 75%)">
-          <svg class="w-3.5 h-3.5 text-white" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <!-- V0-style wordmark -->
+        <div class="w-7 h-7 flex items-center justify-center flex-shrink-0 border" style="border-color:var(--accent-v0)">
+          <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true" focusable="false" style="color:var(--accent-v0)">
             <path d="M3 3h7v7H3zm11 0h7v7h-7zM3 14h7v7H3zm11 3h2v-2h2v2h2v2h-2v2h-2v-2h-2v-2z"/>
           </svg>
         </div>
         <div>
-          <span class="block text-[13px] font-bold tracking-[0.22em] uppercase" style="font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif" data-i18n="Stock Analyzer">Stock Analyzer</span>
-          <span class="block text-[9px] tracking-[0.18em] uppercase" style="color:var(--text-m)" data-i18n="Financial Intelligence">Financial Intelligence</span>
+          <span class="block font-bebas text-[18px] tracking-[0.12em] uppercase" data-i18n="Stock Analyzer">Stock Analyzer</span>
+          <span class="block font-plex-mono text-[9px] tracking-[0.2em] uppercase" style="color:var(--accent-v0)" data-i18n="Financial Intelligence">Financial Intelligence</span>
         </div>
       </div>
       <div class="flex items-center gap-3">
-        <button id="langToggle" class="text-[10px] font-semibold tracking-[0.14em] uppercase px-3 py-1.5 border hover:border-brand hover:text-brand transition-all duration-300" style="border-color:var(--border-s);border-radius:0" title="Toggle language" aria-label="Toggle language between English and Japanese">EN / JA</button>
+        <button id="langToggle" class="font-plex-mono text-[10px] font-medium tracking-[0.2em] uppercase px-3 py-1.5 border transition-all duration-200" style="border-color:var(--border-s);border-radius:0;color:var(--text-m)" onmouseover="this.style.borderColor='var(--accent-v0)';this.style.color='var(--accent-v0)'" onmouseout="this.style.borderColor='var(--border-s)';this.style.color='var(--text-m)'" title="Toggle language" aria-label="Toggle language between English and Japanese">EN / JA</button>
         <button id="themeToggle" class="theme-toggle" title="Toggle theme" aria-label="Toggle dark and light theme" aria-pressed="false">
           <span class="theme-toggle-icon moon" aria-hidden="true">🌙</span>
           <span class="theme-toggle-icon sun" aria-hidden="true">☀️</span>
         </button>
-        <button id="btnExport" class="hidden text-[10px] font-semibold tracking-[0.14em] uppercase px-5 py-2 border hover:border-brand hover:text-brand transition-all duration-300" style="border-color:var(--border-s);border-radius:0">
+        <button id="btnExport" class="hidden font-plex-mono text-[10px] font-medium tracking-[0.2em] uppercase px-5 py-2 border transition-all duration-200" style="border-color:var(--border-s);border-radius:0" onmouseover="this.style.borderColor='var(--accent-v0)';this.style.color='var(--accent-v0)'" onmouseout="this.style.borderColor='var(--border-s)';this.style.color=''">
           <span data-i18n="Export">Export</span>
         </button>
-        <button id="btnReset" class="hidden text-[10px] font-semibold tracking-[0.14em] uppercase px-5 py-2 border hover:border-brand hover:text-brand transition-all duration-300" style="border-color:var(--border-s);border-radius:0">
+        <button id="btnReset" class="hidden font-plex-mono text-[10px] font-medium tracking-[0.2em] uppercase px-5 py-2 border transition-all duration-200" style="border-color:var(--border-s);border-radius:0" onmouseover="this.style.borderColor='var(--accent-v0)';this.style.color='var(--accent-v0)'" onmouseout="this.style.borderColor='var(--border-s)';this.style.color=''">
           <span data-i18n="New Analysis">New Analysis</span>
         </button>
       </div>
@@ -352,26 +387,26 @@
   </header>
 
   <main id="mainContent">
-  <!-- Upload Section — Porsche style with hero background -->
+  <!-- Upload Section — V0 editorial style with hero background -->
   <section id="uploadSection" class="hero-bg pt-[72px] min-h-screen flex items-center justify-center px-4 sm:px-8">
     <div class="max-w-lg w-full fade-up">
-      <!-- Porsche-style eyebrow + heading -->
+      <!-- V0 Editorial eyebrow + heading -->
       <div class="text-center mb-14">
-        <p class="text-[10px] font-semibold tracking-[0.28em] uppercase mb-4" style="color:#d5001c;font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif">Financial Intelligence</p>
-        <h1 class="text-[clamp(2.8rem,5vw,4.5rem)] font-bold leading-none tracking-[0.04em] uppercase mb-4" style="font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif" data-i18n="Financial Analysis">Financial Analysis</h1>
-        <div class="w-8 h-px bg-brand mx-auto mb-4"></div>
-        <p class="th-text-m text-xs tracking-[0.12em] uppercase" data-i18n="Upload your financial data to generate a comprehensive investment analysis">Upload your financial data to generate a comprehensive investment analysis</p>
+        <span class="v0-section-label mb-4 inline-block">00 / Financial Intelligence</span>
+        <h1 class="font-bebas text-[clamp(3rem,6vw,5.5rem)] leading-[0.9] tracking-[0.02em] uppercase mb-5" data-i18n="Financial Analysis">Financial Analysis</h1>
+        <div class="v0-line w-12 mx-auto mb-5"></div>
+        <p class="font-plex-mono text-[11px] th-text-m tracking-[0.08em] leading-relaxed max-w-sm mx-auto" data-i18n="Upload your financial data to generate a comprehensive investment analysis">Upload your financial data to generate a comprehensive investment analysis</p>
       </div>
 
-      <!-- Ticker Quick Search -->
+      <!-- Ticker Quick Search — V0 editorial -->
       <div class="mb-6">
         <label for="tickerInput" class="sr-only">Ticker symbol</label>
         <div class="flex gap-2 items-stretch">
           <div class="relative flex-1">
-            <input type="text" id="tickerInput" placeholder="7203.T / AAPL…" autocomplete="off" spellcheck="false" aria-label="Ticker symbol (e.g. 7203.T or AAPL)" class="w-full px-4 py-3.5 th-input text-sm tracking-wider focus:border-brand focus:outline-none transition pr-8" style="border-radius:0;font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif">
-            <span class="absolute right-3 top-1/2 -translate-y-1/2 th-text-m text-[10px] tracking-wider pointer-events-none" aria-hidden="true">TICKER</span>
+            <input type="text" id="tickerInput" placeholder="7203.T / AAPL…" autocomplete="off" spellcheck="false" aria-label="Ticker symbol (e.g. 7203.T or AAPL)" class="w-full px-4 py-3.5 th-input font-plex-mono text-sm tracking-wider focus:outline-none transition pr-16" style="border-radius:0;border-color:var(--border-s)">
+            <span class="absolute right-3 top-1/2 -translate-y-1/2 font-plex-mono text-[9px] tracking-[0.2em] uppercase pointer-events-none" style="color:var(--accent-v0)" aria-hidden="true">TICKER</span>
           </div>
-          <button id="btnTickerFetch" class="px-6 bg-brand hover:bg-brand-light text-white font-semibold text-xs uppercase tracking-[0.18em] transition-all duration-300" style="border-radius:0;font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif">
+          <button id="btnTickerFetch" class="px-6 font-plex-mono font-medium text-[11px] uppercase tracking-[0.15em] transition-all duration-300 text-white" style="border-radius:0;background:var(--accent-v0)">
             <span id="btnTickerText" data-i18n="Fetch & Analyze">Fetch &amp; Analyze</span>
             <svg id="btnTickerSpinner" class="hidden animate-spin inline w-4 h-4 ml-1" fill="none" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
               <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -379,51 +414,51 @@
             </svg>
           </button>
         </div>
-        <p id="tickerError" class="hidden mt-2 text-xs text-red-500 tracking-wider" role="alert" aria-live="assertive"></p>
+        <p id="tickerError" class="hidden mt-2 font-plex-mono text-xs text-red-500 tracking-wider" role="alert" aria-live="assertive"></p>
       </div>
 
       <div class="flex items-center gap-4 mb-6">
         <div class="flex-1 h-px" style="background:var(--border-m)"></div>
-        <span class="text-[10px] th-text-m tracking-[0.2em] uppercase" style="font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif" data-i18n="or upload file">or upload file</span>
+        <span class="font-plex-mono text-[9px] th-text-m tracking-[0.25em] uppercase" data-i18n="or upload file">or upload file</span>
         <div class="flex-1 h-px" style="background:var(--border-m)"></div>
       </div>
 
-      <div id="dropZone" class="upload-zone p-6 sm:p-14 text-center cursor-pointer mb-8" style="border-radius:0" role="button" tabindex="0" aria-label="Drop file here or click to browse for Excel or JSON file">
-        <div class="w-14 h-14 mx-auto mb-5 border flex items-center justify-center" style="border-color:var(--border-s);border-radius:0">
-          <svg class="w-6 h-6 th-text-m" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" aria-hidden="true">
+      <div id="dropZone" class="upload-zone p-6 sm:p-12 text-center cursor-pointer mb-8 border transition-all duration-300" style="border-radius:0;border-color:var(--border-s)" role="button" tabindex="0" aria-label="Drop file here or click to browse for Excel or JSON file">
+        <div class="w-12 h-12 mx-auto mb-5 border flex items-center justify-center" style="border-color:var(--accent-v0);border-radius:0">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" aria-hidden="true" style="color:var(--accent-v0)">
             <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"/>
           </svg>
         </div>
-        <p class="th-text-s font-medium text-xs tracking-[0.1em] uppercase mb-1" data-i18n="Drop file here or click to browse">Drop file here or click to browse</p>
-        <p class="th-text-m text-[10px] tracking-wider" data-i18n="Excel (.xlsx) or JSON supported">Excel (.xlsx) or JSON supported</p>
+        <p class="font-plex-mono text-[11px] font-medium tracking-[0.1em] uppercase mb-1.5" data-i18n="Drop file here or click to browse">Drop file here or click to browse</p>
+        <p class="font-plex-mono text-[9px] th-text-m tracking-[0.15em]" data-i18n="Excel (.xlsx) or JSON supported">Excel (.xlsx) or JSON supported</p>
         <input type="file" id="fileInput" accept=".xlsx,.xls,.json" class="hidden">
-        <p id="fileName" class="mt-4 text-xs text-brand font-semibold tracking-wider hidden"></p>
+        <p id="fileName" class="mt-4 font-plex-mono text-xs font-semibold tracking-wider hidden" style="color:var(--accent-v0)"></p>
       </div>
 
       <div id="metaForm" class="hidden space-y-4 mb-8">
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <div>
-            <label for="inputCompany" class="block text-[10px] font-medium th-text-m uppercase tracking-wider mb-1.5" data-i18n="Company">Company</label>
-            <input type="text" id="inputCompany" placeholder="MODEC Inc.…" autocomplete="organization" class="w-full px-3 py-2.5 th-input rounded-lg text-sm focus:border-brand focus:outline-none transition">
+            <label for="inputCompany" class="block font-plex-mono text-[9px] font-medium uppercase tracking-[0.2em] mb-1.5" style="color:var(--accent-v0)" data-i18n="Company">Company</label>
+            <input type="text" id="inputCompany" placeholder="MODEC Inc.…" autocomplete="organization" class="w-full px-3 py-2.5 th-input font-plex-mono text-sm focus:outline-none transition" style="border-radius:0">
           </div>
           <div>
-            <label for="inputTicker" class="block text-[10px] font-medium th-text-m uppercase tracking-wider mb-1.5" data-i18n="Ticker">Ticker</label>
-            <input type="text" id="inputTicker" placeholder="6269…" autocomplete="off" spellcheck="false" class="w-full px-3 py-2.5 th-input rounded-lg text-sm focus:border-brand focus:outline-none transition">
+            <label for="inputTicker" class="block font-plex-mono text-[9px] font-medium uppercase tracking-[0.2em] mb-1.5" style="color:var(--accent-v0)" data-i18n="Ticker">Ticker</label>
+            <input type="text" id="inputTicker" placeholder="6269…" autocomplete="off" spellcheck="false" class="w-full px-3 py-2.5 th-input font-plex-mono text-sm focus:outline-none transition" style="border-radius:0">
           </div>
           <div>
-            <label for="inputIndustry" class="block text-[10px] font-medium th-text-m uppercase tracking-wider mb-1.5" data-i18n="Industry">Industry</label>
+            <label for="inputIndustry" class="block font-plex-mono text-[9px] font-medium uppercase tracking-[0.2em] mb-1.5" style="color:var(--accent-v0)" data-i18n="Industry">Industry</label>
             <div class="flex gap-2">
-              <select id="inputIndustry" class="flex-1 px-3 py-2.5 th-input rounded-lg text-sm focus:border-brand focus:outline-none transition">
+              <select id="inputIndustry" class="flex-1 px-3 py-2.5 th-input font-plex-mono text-sm focus:outline-none transition" style="border-radius:0">
                 <option value="">Loading...</option>
               </select>
-              <button id="regionToggle" type="button" onclick="toggleRegion()" class="px-3 py-2.5 rounded-lg text-sm font-medium th-input border whitespace-nowrap" style="border-color:var(--border);min-width:52px" aria-label="Toggle region between global and Japan"><span aria-hidden="true">🌐</span></button>
+              <button id="regionToggle" type="button" onclick="toggleRegion()" class="px-3 py-2.5 text-sm font-medium th-input border whitespace-nowrap" style="border-color:var(--border);border-radius:0;min-width:52px" aria-label="Toggle region between global and Japan"><span aria-hidden="true">🌐</span></button>
             </div>
           </div>
         </div>
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <div>
-            <label for="inputCurrency" class="block text-[10px] font-medium th-text-m uppercase tracking-wider mb-1.5" data-i18n="Currency">Currency</label>
-            <select id="inputCurrency" class="w-full px-3 py-2.5 th-input rounded-lg text-sm focus:border-brand focus:outline-none transition">
+            <label for="inputCurrency" class="block font-plex-mono text-[9px] font-medium uppercase tracking-[0.2em] mb-1.5" style="color:var(--accent-v0)" data-i18n="Currency">Currency</label>
+            <select id="inputCurrency" class="w-full px-3 py-2.5 th-input font-plex-mono text-sm focus:outline-none transition" style="border-radius:0">
               <option value="JPY" data-ja="¥ JPY — 日本円" data-en="¥ JPY — Japanese Yen">¥ JPY — 日本円</option>
               <option value="USD" data-ja="$ USD — 米ドル" data-en="$ USD — US Dollar">$ USD — 米ドル</option>
               <option value="EUR" data-ja="€ EUR — ユーロ" data-en="€ EUR — Euro">€ EUR — ユーロ</option>
@@ -437,34 +472,34 @@
             </select>
           </div>
           <div class="sm:col-span-2 flex items-end">
-            <p class="text-[10px] th-text-m tracking-wider" data-i18n="currency-hint">Excelファイルの財務データの通貨を選択してください。ティッカー取得時は自動判定されます。</p>
+            <p class="font-plex-mono text-[9px] th-text-m tracking-wider" data-i18n="currency-hint">Excelファイルの財務データの通貨を選択してください。ティッカー取得時は自動判定されます。</p>
           </div>
         </div>
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <div>
-            <label for="inputD1" class="block text-[10px] font-medium th-text-m uppercase tracking-wider mb-1.5" data-i18n="Management">Management</label>
-            <select id="inputD1" class="w-full px-3 py-2.5 th-input rounded-lg text-sm focus:border-brand focus:outline-none transition">
+            <label for="inputD1" class="block font-plex-mono text-[9px] font-medium uppercase tracking-[0.2em] mb-1.5" style="color:var(--accent-v0)" data-i18n="Management">Management</label>
+            <select id="inputD1" class="w-full px-3 py-2.5 th-input font-plex-mono text-sm focus:outline-none transition" style="border-radius:0">
               <option value="○" data-i18n="No Issues">No Issues</option><option value="▲" data-i18n="Monitor">Monitor</option><option value="×" data-i18n="Risk">Risk</option>
             </select>
           </div>
           <div>
-            <label for="inputD2" class="block text-[10px] font-medium th-text-m uppercase tracking-wider mb-1.5" data-i18n="Ownership">Ownership</label>
-            <select id="inputD2" class="w-full px-3 py-2.5 th-input rounded-lg text-sm focus:border-brand focus:outline-none transition">
+            <label for="inputD2" class="block font-plex-mono text-[9px] font-medium uppercase tracking-[0.2em] mb-1.5" style="color:var(--accent-v0)" data-i18n="Ownership">Ownership</label>
+            <select id="inputD2" class="w-full px-3 py-2.5 th-input font-plex-mono text-sm focus:outline-none transition" style="border-radius:0">
               <option value="○" data-i18n="No Issues">No Issues</option><option value="▲" data-i18n="Monitor">Monitor</option><option value="×" data-i18n="Risk">Risk</option>
             </select>
           </div>
           <div>
-            <label for="inputD3" class="block text-[10px] font-medium th-text-m uppercase tracking-wider mb-1.5" data-i18n="ESG Risk">ESG Risk</label>
-            <select id="inputD3" class="w-full px-3 py-2.5 th-input rounded-lg text-sm focus:border-brand focus:outline-none transition">
+            <label for="inputD3" class="block font-plex-mono text-[9px] font-medium uppercase tracking-[0.2em] mb-1.5" style="color:var(--accent-v0)" data-i18n="ESG Risk">ESG Risk</label>
+            <select id="inputD3" class="w-full px-3 py-2.5 th-input font-plex-mono text-sm focus:outline-none transition" style="border-radius:0">
               <option value="○" data-i18n="No Issues">No Issues</option><option value="▲" data-i18n="Monitor">Monitor</option><option value="×" data-i18n="Risk">Risk</option>
             </select>
           </div>
         </div>
       </div>
 
-      <!-- Investor Profile Selector -->
+      <!-- Investor Profile Selector — V0 editorial -->
       <div class="mb-6">
-        <p class="text-[10px] font-bold uppercase tracking-[0.2em] th-text-m mb-3" data-i18n="Investor Profile">Investor Profile</p>
+        <p class="v0-section-label mb-3" data-i18n="Investor Profile">Investor Profile</p>
         <div class="grid grid-cols-1 sm:grid-cols-5 gap-2" id="profileCards" role="radiogroup" aria-label="Investor Profile">
           <button type="button" class="profile-card selected" role="radio" data-profile="balanced" onclick="selectProfile('balanced')" aria-checked="true">
             <!-- Scale / Balance -->
@@ -497,54 +532,54 @@
             <span class="profile-sub">Dividend / GPIF</span>
           </button>
         </div>
-        <p id="profileDesc" class="text-[10px] th-text-m mt-2 leading-relaxed"></p>
+        <p id="profileDesc" class="font-plex-mono text-[10px] th-text-m mt-2 leading-relaxed"></p>
       </div>
 
-      <p id="analyzeError" class="hidden mb-2 text-xs text-red-500 tracking-wider" role="alert" aria-live="assertive"></p>
+      <p id="analyzeError" class="hidden mb-2 font-plex-mono text-xs text-red-500 tracking-wider" role="alert" aria-live="assertive"></p>
       <div class="flex gap-3">
-        <button id="btnAnalyze" class="flex-1 bg-brand hover:bg-brand-light text-white font-semibold text-xs uppercase tracking-[0.18em] py-4 transition-all duration-300 disabled:opacity-20 disabled:cursor-not-allowed" style="border-radius:0;font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif;letter-spacing:0.18em" disabled>
+        <button id="btnAnalyze" class="flex-1 font-plex-mono font-medium text-[11px] uppercase tracking-[0.15em] py-4 text-white transition-all duration-300 disabled:opacity-20 disabled:cursor-not-allowed" style="border-radius:0;background:var(--accent-v0)" disabled>
           <span id="btnText" data-i18n="Analyze">Analyze</span>
           <svg id="btnSpinner" class="hidden animate-spin inline w-4 h-4 ml-2" fill="none" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
           </svg>
         </button>
-        <button id="btnSample" class="px-8 py-4 border hover:border-brand th-text-s font-semibold text-xs uppercase tracking-[0.18em] transition-all duration-300" style="border-color:var(--border-s);border-radius:0;font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif">
+        <button id="btnSample" class="px-8 py-4 border font-plex-mono font-medium text-[11px] uppercase tracking-[0.15em] transition-all duration-300" style="border-color:var(--border-s);border-radius:0" onmouseover="this.style.borderColor='var(--accent-v0)';this.style.color='var(--accent-v0)'" onmouseout="this.style.borderColor='var(--border-s)';this.style.color=''">
           <span data-i18n="Demo">Demo</span>
         </button>
       </div>
     </div>
   </section>
 
-  <!-- Dashboard — Porsche style -->
+  <!-- Dashboard — V0 editorial style -->
   <section id="dashboard" class="hidden pb-16 px-4 sm:px-8" style="padding-top:calc(72px + 2rem)">
     <div class="max-w-[1400px] mx-auto">
 
-      <!-- Hero Header — Porsche architectural layout with image -->
+      <!-- Hero Header — V0 editorial layout with image -->
       <div class="mb-12 fade-up dashboard-hero-img" style="padding:2rem;margin:-2rem;margin-bottom:2rem">
         <!-- Thin top rule -->
-        <div class="w-full h-px mb-8" style="background:var(--border-m)"></div>
+        <div class="v0-line w-full mb-8" style="opacity:0.3"></div>
         <div class="flex flex-col sm:flex-row items-start sm:items-end justify-between gap-6">
           <div>
             <div class="flex items-center gap-4 mb-3 flex-wrap">
-              <span id="tickerBadge" class="text-[10px] font-bold tracking-[0.22em] uppercase px-3 py-1 text-brand" style="background:rgba(213,0,28,0.08);border:1px solid rgba(213,0,28,0.2);font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif"></span>
-              <span id="currencyBadge" class="text-[10px] font-bold tracking-[0.18em] uppercase px-3 py-1 hidden" style="background:rgba(59,130,246,0.08);border:1px solid rgba(59,130,246,0.2);color:#3b82f6;font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif"></span>
-              <span id="profileBadge" class="text-[10px] font-bold tracking-[0.18em] uppercase px-3 py-1 hidden" style="background:rgba(120,53,15,0.08);border:1px solid rgba(120,53,15,0.25);color:#92400e;font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif"></span>
+              <span id="tickerBadge" class="font-plex-mono text-[10px] font-bold tracking-[0.22em] uppercase px-3 py-1" style="background:rgba(212,133,42,0.1);border:1px solid rgba(212,133,42,0.3);color:var(--accent-v0)"></span>
+              <span id="currencyBadge" class="font-plex-mono text-[10px] font-bold tracking-[0.18em] uppercase px-3 py-1 hidden" style="background:rgba(59,130,246,0.08);border:1px solid rgba(59,130,246,0.2);color:#3b82f6"></span>
+              <span id="profileBadge" class="font-plex-mono text-[10px] font-bold tracking-[0.18em] uppercase px-3 py-1 hidden" style="background:rgba(212,133,42,0.06);border:1px solid rgba(212,133,42,0.25);color:var(--accent-v0)"></span>
               <span class="w-px h-3" style="background:var(--border-m)"></span>
-              <span id="industryBadge" class="text-[10px] tracking-[0.14em] uppercase th-text-m" style="font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif"></span>
+              <span id="industryBadge" class="font-plex-mono text-[10px] tracking-[0.14em] uppercase th-text-m"></span>
             </div>
-            <h2 id="companyName" class="text-[clamp(2.4rem,4vw,4rem)] font-bold leading-none tracking-[0.03em] uppercase" style="font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif"></h2>
+            <h2 id="companyName" class="font-bebas text-[clamp(2.4rem,4vw,4.5rem)] leading-none tracking-[0.02em] uppercase"></h2>
           </div>
-          <div id="verdictCard" class="text-center px-10 py-6 glow-red w-full sm:w-auto" style="border-radius:0">
-            <p class="text-[9px] uppercase tracking-[0.24em] opacity-60 mb-2" style="font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif" data-i18n="Investment Verdict">Investment Verdict</p>
-            <p id="verdictText" class="text-4xl font-bold tracking-[0.06em] uppercase" style="font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif"></p>
-            <p id="verdictScore" class="text-[10px] opacity-50 mt-1.5 tracking-[0.14em]"></p>
+          <div id="verdictCard" class="text-center px-10 py-6 glow-accent w-full sm:w-auto" style="border-radius:0">
+            <p class="v0-section-label mb-2" style="opacity:0.6" data-i18n="Investment Verdict">Investment Verdict</p>
+            <p id="verdictText" class="font-bebas text-4xl tracking-[0.04em] uppercase"></p>
+            <p id="verdictScore" class="font-plex-mono text-[10px] opacity-50 mt-1.5 tracking-[0.14em]"></p>
           </div>
         </div>
-        <div class="w-full h-px mt-8" style="background:var(--border)"></div>
+        <div class="v0-line w-full mt-8" style="opacity:0.3"></div>
       </div>
 
-      <!-- Score Cards — Porsche sharp tiles with decorative images -->
+      <!-- Score Cards — sharp tiles with decorative images -->
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
         <div id="scoreA" class="card-hover score-card-accent" style="border-radius:0"></div>
         <div id="scoreB" class="card-hover score-card-accent" style="border-radius:0"></div>
@@ -559,14 +594,14 @@
              sizes="100vw" width="1400" height="120" alt="Financial data visualization" loading="lazy">
       </div>
 
-      <!-- Tabs — Porsche thin underline style -->
+      <!-- Tabs — thin underline style -->
       <div class="mb-8">
         <nav class="flex gap-0 border-b overflow-x-auto scrollbar-hide" id="tabNav" role="tablist" aria-label="Analysis sections" style="border-color:var(--border-s)">
-          <button class="tab-btn tab-active px-6 py-4 text-[10px] font-semibold uppercase tracking-[0.18em] border-b-2 transition-all duration-300 whitespace-nowrap flex-shrink-0" style="font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif" role="tab" aria-selected="true" aria-controls="tab-analysis" data-tab="analysis" data-i18n="Analysis">Analysis</button>
-          <button class="tab-btn px-6 py-4 text-[10px] font-semibold uppercase tracking-[0.18em] th-text-m border-b-2 border-transparent transition-all duration-300 whitespace-nowrap flex-shrink-0" style="font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif" role="tab" aria-selected="false" aria-controls="tab-roe" data-tab="roe" data-i18n="PBR Decomposition">PBR Decomposition</button>
-          <button class="tab-btn px-6 py-4 text-[10px] font-semibold uppercase tracking-[0.18em] th-text-m border-b-2 border-transparent transition-all duration-300 whitespace-nowrap flex-shrink-0" style="font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif" role="tab" aria-selected="false" aria-controls="tab-charts" data-tab="charts" data-i18n="Time Series">Time Series</button>
-          <button class="tab-btn px-6 py-4 text-[10px] font-semibold uppercase tracking-[0.18em] th-text-m border-b-2 border-transparent transition-all duration-300 whitespace-nowrap flex-shrink-0" style="font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif" role="tab" aria-selected="false" aria-controls="tab-custom" data-tab="custom" data-i18n="Custom">Custom</button>
-          <button class="tab-btn px-6 py-4 text-[10px] font-semibold uppercase tracking-[0.18em] th-text-m border-b-2 border-transparent transition-all duration-300 whitespace-nowrap flex-shrink-0" style="font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif" role="tab" aria-selected="false" aria-controls="tab-competitor" data-tab="competitor" data-i18n="Competitor Analysis">Competitor Analysis</button>
+          <button class="tab-btn tab-active px-6 py-4 text-[10px] font-semibold uppercase tracking-[0.18em] border-b-2 transition-all duration-300 whitespace-nowrap flex-shrink-0" style="font-family:'IBM Plex Mono','Courier New',monospace" role="tab" aria-selected="true" aria-controls="tab-analysis" data-tab="analysis" data-i18n="Analysis">Analysis</button>
+          <button class="tab-btn px-6 py-4 text-[10px] font-semibold uppercase tracking-[0.18em] th-text-m border-b-2 border-transparent transition-all duration-300 whitespace-nowrap flex-shrink-0" style="font-family:'IBM Plex Mono','Courier New',monospace" role="tab" aria-selected="false" aria-controls="tab-roe" data-tab="roe" data-i18n="PBR Decomposition">PBR Decomposition</button>
+          <button class="tab-btn px-6 py-4 text-[10px] font-semibold uppercase tracking-[0.18em] th-text-m border-b-2 border-transparent transition-all duration-300 whitespace-nowrap flex-shrink-0" style="font-family:'IBM Plex Mono','Courier New',monospace" role="tab" aria-selected="false" aria-controls="tab-charts" data-tab="charts" data-i18n="Time Series">Time Series</button>
+          <button class="tab-btn px-6 py-4 text-[10px] font-semibold uppercase tracking-[0.18em] th-text-m border-b-2 border-transparent transition-all duration-300 whitespace-nowrap flex-shrink-0" style="font-family:'IBM Plex Mono','Courier New',monospace" role="tab" aria-selected="false" aria-controls="tab-custom" data-tab="custom" data-i18n="Custom">Custom</button>
+          <button class="tab-btn px-6 py-4 text-[10px] font-semibold uppercase tracking-[0.18em] th-text-m border-b-2 border-transparent transition-all duration-300 whitespace-nowrap flex-shrink-0" style="font-family:'IBM Plex Mono','Courier New',monospace" role="tab" aria-selected="false" aria-controls="tab-competitor" data-tab="competitor" data-i18n="Competitor Analysis">Competitor Analysis</button>
         </nav>
       </div>
 
@@ -579,18 +614,18 @@
                sizes="100vw" width="1400" height="80" alt="Financial analysis header" loading="lazy">
         </div>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-          <div><h3 class="text-[10px] font-bold uppercase tracking-[0.2em] th-text-m mb-5" data-i18n="Performance">Performance</h3><div id="perfItems" class="space-y-2"></div></div>
-          <div><h3 class="text-[10px] font-bold uppercase tracking-[0.2em] th-text-m mb-5" data-i18n="Growth & Profitability">Growth & Profitability</h3><div id="growthItems" class="space-y-2"></div></div>
-          <div><h3 class="text-[10px] font-bold uppercase tracking-[0.2em] th-text-m mb-5" data-i18n="Financial Health">Financial Health</h3><div id="healthItems" class="space-y-2"></div></div>
-          <div><h3 class="text-[10px] font-bold uppercase tracking-[0.2em] th-text-m mb-5" data-i18n="Valuation & Risk">Valuation & Risk</h3><div id="valuationItems" class="space-y-2"></div></div>
+          <div><h3 class="v0-section-label mb-5" data-i18n="Performance">Performance</h3><div id="perfItems" class="space-y-2"></div></div>
+          <div><h3 class="v0-section-label mb-5" data-i18n="Growth & Profitability">Growth & Profitability</h3><div id="growthItems" class="space-y-2"></div></div>
+          <div><h3 class="v0-section-label mb-5" data-i18n="Financial Health">Financial Health</h3><div id="healthItems" class="space-y-2"></div></div>
+          <div><h3 class="v0-section-label mb-5" data-i18n="Valuation & Risk">Valuation & Risk</h3><div id="valuationItems" class="space-y-2"></div></div>
           <div>
-            <h3 class="text-[10px] font-bold uppercase tracking-[0.2em] th-text-m mb-5" data-i18n="ROIC / WACC">ROIC / WACC</h3><div id="roicItems" class="space-y-2"></div>
+            <h3 class="v0-section-label mb-5" data-i18n="ROIC / WACC">ROIC / WACC</h3><div id="roicItems" class="space-y-2"></div>
             <h3 class="text-[10px] font-bold uppercase tracking-[0.2em] th-text-m mb-5 mt-8" data-i18n="CCC Analysis">CCC Analysis</h3><div id="cccItems" class="space-y-2"></div>
           </div>
           <div>
-            <h3 class="text-[10px] font-bold uppercase tracking-[0.2em] th-text-m mb-5" data-i18n="CF Analysis">CF Analysis</h3><div id="cfItems" class="space-y-2"></div>
+            <h3 class="v0-section-label mb-5" data-i18n="CF Analysis">CF Analysis</h3><div id="cfItems" class="space-y-2"></div>
           </div>
-          <div><h3 class="text-[10px] font-bold uppercase tracking-[0.2em] th-text-m mb-5" data-i18n="ESG & Qualitative">ESG & Qualitative</h3><div id="esgItems" class="space-y-2"></div></div>
+          <div><h3 class="v0-section-label mb-5" data-i18n="ESG & Qualitative">ESG & Qualitative</h3><div id="esgItems" class="space-y-2"></div></div>
         </div>
       </div>
 
@@ -598,24 +633,24 @@
       <div id="tab-custom" class="tab-content hidden" role="tabpanel" aria-labelledby="tab-custom-btn">
         <div id="customEmpty" class="text-center py-16">
           <p class="th-text-m text-sm mb-4" data-i18n="custom-empty-msg">Select metrics to build your custom analysis view</p>
-          <button id="btnOpenChecklist" class="px-6 py-3 bg-brand text-white text-xs font-bold uppercase tracking-widest rounded-xl hover:bg-brand-dark transition-all">
+          <button id="btnOpenChecklist" class="px-6 py-3 text-white font-plex-mono text-[11px] font-medium uppercase tracking-[0.15em] transition-all" style="border-radius:0;background:var(--accent-v0)">
             <span data-i18n="Select Metrics">Select Metrics</span>
           </button>
         </div>
         <div id="customContent" class="hidden">
           <div class="flex items-center justify-between mb-6">
             <h3 class="text-sm font-bold th-text-s" data-i18n="Custom Analysis">Custom Analysis</h3>
-            <button id="btnEditChecklist" class="px-4 py-2 text-[10px] font-bold uppercase tracking-widest border th-border-s rounded-lg hover:border-brand hover:text-brand transition-all">
+            <button id="btnEditChecklist" class="px-4 py-2 font-plex-mono text-[10px] font-medium uppercase tracking-[0.15em] border transition-all" style="border-radius:0;border-color:var(--border-s)" onmouseover="this.style.borderColor='var(--accent-v0)';this.style.color='var(--accent-v0)'" onmouseout="this.style.borderColor='var(--border-s)';this.style.color=''">
               <span data-i18n="Edit Selection">Edit Selection</span>
             </button>
           </div>
           <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div id="customCat-performance" class="hidden"><h3 class="text-[10px] font-bold uppercase tracking-[0.2em] th-text-m mb-5" data-i18n="Performance">Performance</h3><div class="custom-cat-items space-y-2"></div></div>
-            <div id="customCat-growth" class="hidden"><h3 class="text-[10px] font-bold uppercase tracking-[0.2em] th-text-m mb-5" data-i18n="Growth">Growth</h3><div class="custom-cat-items space-y-2"></div></div>
-            <div id="customCat-profitability" class="hidden"><h3 class="text-[10px] font-bold uppercase tracking-[0.2em] th-text-m mb-5" data-i18n="Profitability">Profitability</h3><div class="custom-cat-items space-y-2"></div></div>
-            <div id="customCat-health" class="hidden"><h3 class="text-[10px] font-bold uppercase tracking-[0.2em] th-text-m mb-5" data-i18n="Financial Health">Financial Health</h3><div class="custom-cat-items space-y-2"></div></div>
-            <div id="customCat-valuation" class="hidden"><h3 class="text-[10px] font-bold uppercase tracking-[0.2em] th-text-m mb-5" data-i18n="Valuation & Risk">Valuation & Risk</h3><div class="custom-cat-items space-y-2"></div></div>
-            <div id="customCat-other" class="hidden"><h3 class="text-[10px] font-bold uppercase tracking-[0.2em] th-text-m mb-5" data-i18n="Other">Other</h3><div class="custom-cat-items space-y-2"></div></div>
+            <div id="customCat-performance" class="hidden"><h3 class="v0-section-label mb-5" data-i18n="Performance">Performance</h3><div class="custom-cat-items space-y-2"></div></div>
+            <div id="customCat-growth" class="hidden"><h3 class="v0-section-label mb-5" data-i18n="Growth">Growth</h3><div class="custom-cat-items space-y-2"></div></div>
+            <div id="customCat-profitability" class="hidden"><h3 class="v0-section-label mb-5" data-i18n="Profitability">Profitability</h3><div class="custom-cat-items space-y-2"></div></div>
+            <div id="customCat-health" class="hidden"><h3 class="v0-section-label mb-5" data-i18n="Financial Health">Financial Health</h3><div class="custom-cat-items space-y-2"></div></div>
+            <div id="customCat-valuation" class="hidden"><h3 class="v0-section-label mb-5" data-i18n="Valuation & Risk">Valuation & Risk</h3><div class="custom-cat-items space-y-2"></div></div>
+            <div id="customCat-other" class="hidden"><h3 class="v0-section-label mb-5" data-i18n="Other">Other</h3><div class="custom-cat-items space-y-2"></div></div>
           </div>
         </div>
       </div>
@@ -629,8 +664,8 @@
           </div>
           <div id="checklistBody" class="space-y-6"></div>
           <div class="flex justify-end gap-3 mt-6 pt-4 border-t" style="border-color:var(--border)">
-            <button id="checklistClear" class="px-4 py-2 text-[10px] font-bold uppercase tracking-widest border th-border-s rounded-lg hover:border-brand transition-all" data-i18n="Clear All">Clear All</button>
-            <button id="checklistApply" class="px-6 py-2 bg-brand text-white text-[10px] font-bold uppercase tracking-widest rounded-lg hover:bg-brand-dark transition-all" data-i18n="Apply">Apply</button>
+            <button id="checklistClear" class="px-4 py-2 font-plex-mono text-[10px] font-medium uppercase tracking-[0.15em] border transition-all" style="border-radius:0;border-color:var(--border-s)" data-i18n="Clear All">Clear All</button>
+            <button id="checklistApply" class="px-6 py-2 text-white font-plex-mono text-[10px] font-medium uppercase tracking-[0.15em] transition-all" style="border-radius:0;background:var(--accent-v0)" data-i18n="Apply">Apply</button>
           </div>
         </div>
       </div>
@@ -639,12 +674,12 @@
 
       <div id="tab-charts" class="tab-content hidden" role="tabpanel" aria-labelledby="tab-charts-btn">
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div class="th-bg-1 p-4 sm:p-6 border th-border" style="border-radius:0"><h4 class="text-[9px] font-semibold uppercase tracking-[0.22em] th-text-m mb-4" style="font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif" data-i18n="Revenue">Revenue</h4><canvas id="chartRevenue" role="img" aria-label="Revenue time series chart"></canvas></div>
-          <div class="th-bg-1 p-4 sm:p-6 border th-border" style="border-radius:0"><h4 class="text-[9px] font-semibold uppercase tracking-[0.22em] th-text-m mb-4" style="font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif" data-i18n="Net Income">Net Income</h4><canvas id="chartNetIncome" role="img" aria-label="Net income time series chart"></canvas></div>
-          <div class="th-bg-1 p-4 sm:p-6 border th-border" style="border-radius:0"><h4 class="text-[9px] font-semibold uppercase tracking-[0.22em] th-text-m mb-4" style="font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif" data-i18n="Free Cash Flow">Free Cash Flow</h4><canvas id="chartFCF" role="img" aria-label="Free cash flow time series chart"></canvas></div>
-          <div class="th-bg-1 p-4 sm:p-6 border th-border" style="border-radius:0"><h4 class="text-[9px] font-semibold uppercase tracking-[0.22em] th-text-m mb-4" style="font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif" data-i18n="Earnings Per Share">Earnings Per Share</h4><canvas id="chartEPS" role="img" aria-label="Earnings per share time series chart"></canvas></div>
-          <div class="th-bg-1 p-4 sm:p-6 border th-border" style="border-radius:0"><h4 class="text-[9px] font-semibold uppercase tracking-[0.22em] th-text-m mb-4" style="font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif">ROE / ROA</h4><canvas id="chartROE" role="img" aria-label="ROE and ROA time series chart"></canvas></div>
-          <div class="th-bg-1 p-4 sm:p-6 border th-border" style="border-radius:0"><h4 class="text-[9px] font-semibold uppercase tracking-[0.22em] th-text-m mb-4" style="font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif" data-i18n="Balance Sheet">Balance Sheet</h4><canvas id="chartBS" role="img" aria-label="Balance sheet time series chart"></canvas></div>
+          <div class="th-bg-1 p-4 sm:p-6 border th-border" style="border-radius:0"><h4 class="font-plex-mono text-[9px] font-semibold uppercase tracking-[0.22em] th-text-m mb-4" data-i18n="Revenue">Revenue</h4><canvas id="chartRevenue" role="img" aria-label="Revenue time series chart"></canvas></div>
+          <div class="th-bg-1 p-4 sm:p-6 border th-border" style="border-radius:0"><h4 class="font-plex-mono text-[9px] font-semibold uppercase tracking-[0.22em] th-text-m mb-4" data-i18n="Net Income">Net Income</h4><canvas id="chartNetIncome" role="img" aria-label="Net income time series chart"></canvas></div>
+          <div class="th-bg-1 p-4 sm:p-6 border th-border" style="border-radius:0"><h4 class="font-plex-mono text-[9px] font-semibold uppercase tracking-[0.22em] th-text-m mb-4" data-i18n="Free Cash Flow">Free Cash Flow</h4><canvas id="chartFCF" role="img" aria-label="Free cash flow time series chart"></canvas></div>
+          <div class="th-bg-1 p-4 sm:p-6 border th-border" style="border-radius:0"><h4 class="font-plex-mono text-[9px] font-semibold uppercase tracking-[0.22em] th-text-m mb-4" data-i18n="Earnings Per Share">Earnings Per Share</h4><canvas id="chartEPS" role="img" aria-label="Earnings per share time series chart"></canvas></div>
+          <div class="th-bg-1 p-4 sm:p-6 border th-border" style="border-radius:0"><h4 class="font-plex-mono text-[9px] font-semibold uppercase tracking-[0.22em] th-text-m mb-4">ROE / ROA</h4><canvas id="chartROE" role="img" aria-label="ROE and ROA time series chart"></canvas></div>
+          <div class="th-bg-1 p-4 sm:p-6 border th-border" style="border-radius:0"><h4 class="font-plex-mono text-[9px] font-semibold uppercase tracking-[0.22em] th-text-m mb-4" data-i18n="Balance Sheet">Balance Sheet</h4><canvas id="chartBS" role="img" aria-label="Balance sheet time series chart"></canvas></div>
         </div>
       </div>
 
@@ -654,11 +689,11 @@
           <p class="text-sm font-medium th-text-s mb-6" data-i18n="comp-upload-msg">Enter ticker symbols or upload Excel files for up to 5 companies to compare</p>
           <div id="competitorSlots" class="space-y-2">
             <div class="comp-slot flex flex-wrap sm:flex-nowrap items-center gap-3 p-4 th-bg-1 border th-border" style="border-radius:0" data-slot="0" data-mode="ticker">
-              <span class="text-xs font-bold tracking-[0.2em] w-6 text-center" style="color:#d5001c;font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif">01</span>
+              <span class="text-xs font-bold tracking-[0.2em] w-6 text-center" style="color:var(--accent-v0);font-family:'IBM Plex Mono','Courier New',monospace">01</span>
               <input type="text" placeholder="Company A…" aria-label="Company name" autocomplete="off" class="comp-name px-3 py-2 th-input text-xs border focus:border-brand outline-none" style="border-radius:0;width:120px;min-width:90px">
-              <button class="comp-mode-toggle px-2 py-2 border text-[10px] font-semibold tracking-wider hover:border-brand transition-all" style="border-color:var(--border-s);border-radius:0;font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif" title="Toggle between ticker and file input" aria-label="Switch input mode between Ticker and File">TKR</button>
+              <button class="comp-mode-toggle px-2 py-2 border text-[10px] font-semibold tracking-wider hover:border-brand transition-all" style="border-color:var(--border-s);border-radius:0;font-family:'IBM Plex Mono','Courier New',monospace" title="Toggle between ticker and file input" aria-label="Switch input mode between Ticker and File">TKR</button>
               <input type="text" placeholder="7203.T" aria-label="Ticker symbol" autocomplete="off" spellcheck="false" class="comp-ticker flex-1 px-3 py-2 th-input text-xs border focus:border-brand outline-none" style="border-radius:0">
-              <label class="comp-file-label cursor-pointer px-4 py-2 border text-[10px] font-semibold tracking-[0.14em] uppercase hover:border-brand transition-all flex items-center gap-2 hidden" style="border-color:var(--border-s);border-radius:0;font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif">
+              <label class="comp-file-label cursor-pointer px-4 py-2 border text-[10px] font-semibold tracking-[0.14em] uppercase hover:border-brand transition-all flex items-center gap-2 hidden" style="border-color:var(--border-s);border-radius:0;font-family:'IBM Plex Mono','Courier New',monospace">
                 <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5-5m0 0l5 5m-5-5v12"/></svg>
                 <span data-i18n="Select File">Select File</span>
                 <input type="file" accept=".xlsx,.xls" class="comp-file hidden">
@@ -667,11 +702,11 @@
               <button class="comp-remove text-base th-text-d hover:text-red-500 transition-all leading-none hidden" aria-label="Remove competitor">&times;</button>
             </div>
             <div class="comp-slot flex flex-wrap sm:flex-nowrap items-center gap-3 p-4 th-bg-1 border th-border" style="border-radius:0" data-slot="1" data-mode="ticker">
-              <span class="text-xs font-bold tracking-[0.2em] w-6 text-center" style="color:#3b82f6;font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif">02</span>
+              <span class="text-xs font-bold tracking-[0.2em] w-6 text-center" style="color:#3b82f6;font-family:'IBM Plex Mono','Courier New',monospace">02</span>
               <input type="text" placeholder="Company B…" aria-label="Company name" autocomplete="off" class="comp-name px-3 py-2 th-input text-xs border focus:border-brand outline-none" style="border-radius:0;width:120px;min-width:90px">
-              <button class="comp-mode-toggle px-2 py-2 border text-[10px] font-semibold tracking-wider hover:border-brand transition-all" style="border-color:var(--border-s);border-radius:0;font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif" title="Toggle between ticker and file input" aria-label="Switch input mode between Ticker and File">TKR</button>
+              <button class="comp-mode-toggle px-2 py-2 border text-[10px] font-semibold tracking-wider hover:border-brand transition-all" style="border-color:var(--border-s);border-radius:0;font-family:'IBM Plex Mono','Courier New',monospace" title="Toggle between ticker and file input" aria-label="Switch input mode between Ticker and File">TKR</button>
               <input type="text" placeholder="AAPL" aria-label="Ticker symbol" autocomplete="off" spellcheck="false" class="comp-ticker flex-1 px-3 py-2 th-input text-xs border focus:border-brand outline-none" style="border-radius:0">
-              <label class="comp-file-label cursor-pointer px-4 py-2 border text-[10px] font-semibold tracking-[0.14em] uppercase hover:border-brand transition-all flex items-center gap-2 hidden" style="border-color:var(--border-s);border-radius:0;font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif">
+              <label class="comp-file-label cursor-pointer px-4 py-2 border text-[10px] font-semibold tracking-[0.14em] uppercase hover:border-brand transition-all flex items-center gap-2 hidden" style="border-color:var(--border-s);border-radius:0;font-family:'IBM Plex Mono','Courier New',monospace">
                 <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5-5m0 0l5 5m-5-5v12"/></svg>
                 <span data-i18n="Select File">Select File</span>
                 <input type="file" accept=".xlsx,.xls" class="comp-file hidden">
@@ -680,11 +715,11 @@
               <button class="comp-remove text-base th-text-d hover:text-red-500 transition-all leading-none hidden" aria-label="Remove competitor">&times;</button>
             </div>
             <div class="comp-slot flex flex-wrap sm:flex-nowrap items-center gap-3 p-4 th-bg-1 border th-border" style="border-radius:0" data-slot="2" data-mode="ticker">
-              <span class="text-xs font-bold tracking-[0.2em] w-6 text-center" style="color:#22c55e;font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif">03</span>
+              <span class="text-xs font-bold tracking-[0.2em] w-6 text-center" style="color:#22c55e;font-family:'IBM Plex Mono','Courier New',monospace">03</span>
               <input type="text" placeholder="Company C…" aria-label="Company name" autocomplete="off" class="comp-name px-3 py-2 th-input text-xs border focus:border-brand outline-none" style="border-radius:0;width:120px;min-width:90px">
-              <button class="comp-mode-toggle px-2 py-2 border text-[10px] font-semibold tracking-wider hover:border-brand transition-all" style="border-color:var(--border-s);border-radius:0;font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif" title="Toggle between ticker and file input" aria-label="Switch input mode between Ticker and File">TKR</button>
+              <button class="comp-mode-toggle px-2 py-2 border text-[10px] font-semibold tracking-wider hover:border-brand transition-all" style="border-color:var(--border-s);border-radius:0;font-family:'IBM Plex Mono','Courier New',monospace" title="Toggle between ticker and file input" aria-label="Switch input mode between Ticker and File">TKR</button>
               <input type="text" placeholder="9984.T" aria-label="Ticker symbol" autocomplete="off" spellcheck="false" class="comp-ticker flex-1 px-3 py-2 th-input text-xs border focus:border-brand outline-none" style="border-radius:0">
-              <label class="comp-file-label cursor-pointer px-4 py-2 border text-[10px] font-semibold tracking-[0.14em] uppercase hover:border-brand transition-all flex items-center gap-2 hidden" style="border-color:var(--border-s);border-radius:0;font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif">
+              <label class="comp-file-label cursor-pointer px-4 py-2 border text-[10px] font-semibold tracking-[0.14em] uppercase hover:border-brand transition-all flex items-center gap-2 hidden" style="border-color:var(--border-s);border-radius:0;font-family:'IBM Plex Mono','Courier New',monospace">
                 <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5-5m0 0l5 5m-5-5v12"/></svg>
                 <span data-i18n="Select File">Select File</span>
                 <input type="file" accept=".xlsx,.xls" class="comp-file hidden">
@@ -693,11 +728,11 @@
               <button class="comp-remove text-base th-text-d hover:text-red-500 transition-all leading-none hidden" aria-label="Remove competitor">&times;</button>
             </div>
             <div class="comp-slot flex flex-wrap sm:flex-nowrap items-center gap-3 p-4 th-bg-1 border th-border" style="border-radius:0" data-slot="3" data-mode="ticker">
-              <span class="text-xs font-bold tracking-[0.2em] w-6 text-center" style="color:#f59e0b;font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif">04</span>
+              <span class="text-xs font-bold tracking-[0.2em] w-6 text-center" style="color:#f59e0b;font-family:'IBM Plex Mono','Courier New',monospace">04</span>
               <input type="text" placeholder="Company D…" aria-label="Company name" autocomplete="off" class="comp-name px-3 py-2 th-input text-xs border focus:border-brand outline-none" style="border-radius:0;width:120px;min-width:90px">
-              <button class="comp-mode-toggle px-2 py-2 border text-[10px] font-semibold tracking-wider hover:border-brand transition-all" style="border-color:var(--border-s);border-radius:0;font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif" title="Toggle between ticker and file input" aria-label="Switch input mode between Ticker and File">TKR</button>
+              <button class="comp-mode-toggle px-2 py-2 border text-[10px] font-semibold tracking-wider hover:border-brand transition-all" style="border-color:var(--border-s);border-radius:0;font-family:'IBM Plex Mono','Courier New',monospace" title="Toggle between ticker and file input" aria-label="Switch input mode between Ticker and File">TKR</button>
               <input type="text" placeholder="6758.T" aria-label="Ticker symbol" autocomplete="off" spellcheck="false" class="comp-ticker flex-1 px-3 py-2 th-input text-xs border focus:border-brand outline-none" style="border-radius:0">
-              <label class="comp-file-label cursor-pointer px-4 py-2 border text-[10px] font-semibold tracking-[0.14em] uppercase hover:border-brand transition-all flex items-center gap-2 hidden" style="border-color:var(--border-s);border-radius:0;font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif">
+              <label class="comp-file-label cursor-pointer px-4 py-2 border text-[10px] font-semibold tracking-[0.14em] uppercase hover:border-brand transition-all flex items-center gap-2 hidden" style="border-color:var(--border-s);border-radius:0;font-family:'IBM Plex Mono','Courier New',monospace">
                 <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5-5m0 0l5 5m-5-5v12"/></svg>
                 <span data-i18n="Select File">Select File</span>
                 <input type="file" accept=".xlsx,.xls" class="comp-file hidden">
@@ -706,11 +741,11 @@
               <button class="comp-remove text-base th-text-d hover:text-red-500 transition-all leading-none hidden" aria-label="Remove competitor">&times;</button>
             </div>
             <div class="comp-slot flex flex-wrap sm:flex-nowrap items-center gap-3 p-4 th-bg-1 border th-border" style="border-radius:0" data-slot="4" data-mode="ticker">
-              <span class="text-xs font-bold tracking-[0.2em] w-6 text-center" style="color:#8b5cf6;font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif">05</span>
+              <span class="text-xs font-bold tracking-[0.2em] w-6 text-center" style="color:#8b5cf6;font-family:'IBM Plex Mono','Courier New',monospace">05</span>
               <input type="text" placeholder="Company E…" aria-label="Company name" autocomplete="off" class="comp-name px-3 py-2 th-input text-xs border focus:border-brand outline-none" style="border-radius:0;width:120px;min-width:90px">
-              <button class="comp-mode-toggle px-2 py-2 border text-[10px] font-semibold tracking-wider hover:border-brand transition-all" style="border-color:var(--border-s);border-radius:0;font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif" title="Toggle between ticker and file input" aria-label="Switch input mode between Ticker and File">TKR</button>
+              <button class="comp-mode-toggle px-2 py-2 border text-[10px] font-semibold tracking-wider hover:border-brand transition-all" style="border-color:var(--border-s);border-radius:0;font-family:'IBM Plex Mono','Courier New',monospace" title="Toggle between ticker and file input" aria-label="Switch input mode between Ticker and File">TKR</button>
               <input type="text" placeholder="MSFT" aria-label="Ticker symbol" autocomplete="off" spellcheck="false" class="comp-ticker flex-1 px-3 py-2 th-input text-xs border focus:border-brand outline-none" style="border-radius:0">
-              <label class="comp-file-label cursor-pointer px-4 py-2 border text-[10px] font-semibold tracking-[0.14em] uppercase hover:border-brand transition-all flex items-center gap-2 hidden" style="border-color:var(--border-s);border-radius:0;font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif">
+              <label class="comp-file-label cursor-pointer px-4 py-2 border text-[10px] font-semibold tracking-[0.14em] uppercase hover:border-brand transition-all flex items-center gap-2 hidden" style="border-color:var(--border-s);border-radius:0;font-family:'IBM Plex Mono','Courier New',monospace">
                 <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5-5m0 0l5 5m-5-5v12"/></svg>
                 <span data-i18n="Select File">Select File</span>
                 <input type="file" accept=".xlsx,.xls" class="comp-file hidden">
@@ -720,7 +755,7 @@
             </div>
           </div>
           <div class="flex items-center gap-4 mt-6">
-            <button id="btnCompetitorAnalyze" class="bg-brand hover:bg-red-700 text-white font-semibold text-[10px] uppercase tracking-[0.18em] py-3 px-8 transition-all duration-300 disabled:opacity-30" style="border-radius:0;font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif" disabled>
+            <button id="btnCompetitorAnalyze" class="text-white font-plex-mono font-medium text-[10px] uppercase tracking-[0.15em] py-3 px-8 transition-all duration-300 disabled:opacity-30" style="border-radius:0;background:var(--accent-v0)" disabled>
               <span data-i18n="Compare">Compare</span>
             </button>
             <span id="compLoading" class="hidden text-[10px] th-text-m animate-pulse tracking-wider" data-i18n="Analyzing…" role="status" aria-live="polite">Analyzing…</span>
@@ -1623,7 +1658,7 @@
       if (metricInfoMap[_stableKey] || evaluationCriteria[_stableKey]) {
         basisHtml = `<div class="mt-1"><button class="text-[10px] px-2 py-0.5 rounded-full th-text-m hover:th-text-s" style="background:rgba(100,116,139,0.2);border:none;cursor:pointer" onclick="event.stopPropagation();showEvaluationCriteria('${label}')">?</button></div>`;
       }
-      return `<div class="card-hover sortable-item flex items-center justify-between p-4 rounded-xl th-bg-1 border ${clickable}" style="border-color:var(--border)" draggable="true" ${onclick}>
+      return `<div class="card-hover sortable-item flex items-center justify-between p-4 th-bg-1 border ${clickable}" style="border-color:var(--border);border-radius:0" draggable="true" ${onclick}>
         <div class="flex items-center gap-3">
           <span class="text-[10px] th-text-d cursor-grab drag-handle" style="margin-right:-4px">⠿</span>
           ${gradeIcon(grade)}
@@ -1653,7 +1688,7 @@
           ${judgeBadge(si.judge)}
         </div>`
       ).join('');
-      el.innerHTML = `<div class="th-bg-1 border rounded-xl p-5 h-full" style="border-color:var(--border)">
+      el.innerHTML = `<div class="th-bg-1 border p-5 h-full" style="border-color:var(--border);border-radius:0">
         <div class="flex items-center justify-between mb-3">
           <span class="text-[10px] font-bold uppercase tracking-[0.15em] th-text-m">${label}</span>
           <span class="text-2xl font-black tabular-nums" style="color:${accent}">${fmtNum(score, 1)}</span>
@@ -1709,7 +1744,8 @@
 
       const verdict = s['最終投資判定'];
       const vc = $('verdictCard');
-      vc.className = 'text-center px-10 py-5 rounded-2xl text-white ' + (verdict === 'BUY' ? 'verdict-buy' : (verdict === 'HOLD' ? 'verdict-hold' : 'verdict-sell glow-red'));
+      vc.className = 'text-center px-10 py-5 text-white ' + (verdict === 'BUY' ? 'verdict-buy' : (verdict === 'HOLD' ? 'verdict-hold' : 'verdict-sell glow-accent'));
+      vc.style.borderRadius = '0';
       $('verdictText').textContent = verdict;
       $('verdictScore').textContent = `Risk Score ${fmtNum(s['総合スコア'], 1)}`;
 
@@ -1809,7 +1845,7 @@
         makeItemCard(t('FCF推移'), qFcf['評価'], qFcf['最新値']!==undefined?smartFormat(qFcf['最新値']):'', fmt5Y(qFcf['5年変化率'],1,'%'), 'fcf', undefined, qFcf['欠損理由']),
         makeItemCard(t('投資CF推移'), qInv['評価'], qInv['最新値']!==undefined?smartFormat(qInv['最新値']):'', fmt5Y(qInv['5年変化率'],1,'%'), 'investing_cf'),
         makeItemCard(t('財務CF推移'), qFin['評価'], qFin['最新値']!==undefined?smartFormat(qFin['最新値']):'', fmt5Y(qFin['5年変化率'],1,'%'), 'financing_cf'),
-        `<div class="flex items-center justify-between p-4 rounded-xl th-bg-1 border mt-3" style="border-color:var(--border)">
+        `<div class="flex items-center justify-between p-4 th-bg-1 border mt-3" style="border-color:var(--border);border-radius:0">
           <div class="flex items-center gap-3">
             <span class="text-lg" style="color:${patColor}">${patIcon}</span>
             <div>
@@ -1841,7 +1877,7 @@
           : analystConsensus === 'Buy' ? '#86efac'
           : analystConsensus === 'Sell' ? '#ef4444'
           : '#f59e0b';
-        analystCard = `<div class="sortable-item flex items-center justify-between p-4 rounded-xl th-bg-1 border" style="border-color:var(--border)" draggable="true">
+        analystCard = `<div class="sortable-item flex items-center justify-between p-4 th-bg-1 border" style="border-color:var(--border);border-radius:0" draggable="true">
           <div class="flex items-center gap-3">
             <span class="text-[10px] th-text-d cursor-grab drag-handle" style="margin-right:-4px">⠿</span>
             <span class="text-base" style="color:${consensusColor}">★</span>
@@ -1944,7 +1980,7 @@
         const roeText = roeContrib !== null ? `<p class="text-[10px] th-text-m tabular-nums">ROE ${roeContrib > 0 ? '+' : ''}${fmtNum(roeContrib,2)}pt</p>` : '';
 
         return `<div class="flex items-center gap-4 p-4 border ${bgColor} transition-all hover:scale-[1.01]" style="border-radius:0">
-          <span class="w-8 h-8 flex items-center justify-center text-xs font-bold ${badgeColor}" style="border-radius:0;font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif">${item['順位']}</span>
+          <span class="w-8 h-8 flex items-center justify-center text-xs font-bold ${badgeColor}" style="border-radius:0;font-family:'IBM Plex Mono','Courier New',monospace">${item['順位']}</span>
           <div class="flex-1 min-w-0">
             <div class="flex items-center gap-2 mb-1">
               <span class="text-xs font-semibold th-text">${t(item['指標'])}</span>
@@ -1955,7 +1991,7 @@
             </div>
           </div>
           <div class="text-right shrink-0 min-w-[120px]">
-            <p class="text-xs font-bold tabular-nums ${textColor}" style="font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif">${arrow} PBR ${pbrImpact > 0 ? '+' : ''}${fmtNum(pbrImpact,3)}x</p>
+            <p class="text-xs font-bold tabular-nums ${textColor}" style="font-family:'IBM Plex Mono','Courier New',monospace">${arrow} PBR ${pbrImpact > 0 ? '+' : ''}${fmtNum(pbrImpact,3)}x</p>
             ${roeText}
           </div>
         </div>`;
@@ -1971,7 +2007,7 @@
         : pbrEval === '適正水準' || pbrEval === t('適正水準') ? '#3b82f6'
         : pbrEval === 'やや割高' || pbrEval === t('やや割高') ? '#f59e0b'
         : pbrEval === 'データなし' || pbrEval === t('データなし') ? '#9ca3af' : '#ef4444';
-      const pbrEvalBadge = `<div class="mt-2"><span class="text-[10px] px-3 py-1 font-bold tracking-wider uppercase" style="background:${pbrEvalColor}20;color:${pbrEvalColor};border-radius:0;font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif">${t(pbrEval)}</span><span class="text-[10px] th-text-m ml-2">${t('適正レンジ')}: ${pbrRange}</span></div>`;
+      const pbrEvalBadge = `<div class="mt-2"><span class="text-[10px] px-3 py-1 font-bold tracking-wider uppercase" style="background:${pbrEvalColor}20;color:${pbrEvalColor};border-radius:0;font-family:'IBM Plex Mono','Courier New',monospace">${t(pbrEval)}</span><span class="text-[10px] th-text-m ml-2">${t('適正レンジ')}: ${pbrRange}</span></div>`;
 
       // PBR 5Y change summary
       const pbrChgVal = pbr ? pbr.pbr_change : null;
@@ -2015,7 +2051,7 @@
       if (v === undefined || v === null) return '';
       if (invert) v = 1 - v;
       if (multiply) v = v * multiply;
-      return `<span class="text-[9px] px-2 py-0.5 tracking-wider" style="background:rgba(59,130,246,0.15);color:#3b82f6;border-radius:0;font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif">${t('Industry Avg')}: ${fmtNum(v, unit === '%' ? 1 : 2)}${unit}</span>`;
+      return `<span class="text-[9px] px-2 py-0.5 tracking-wider" style="background:rgba(59,130,246,0.15);color:#3b82f6;border-radius:0;font-family:'IBM Plex Mono','Courier New',monospace">${t('Industry Avg')}: ${fmtNum(v, unit === '%' ? 1 : 2)}${unit}</span>`;
     }
 
     function renderROETree(re, r) {
@@ -2048,19 +2084,19 @@
         <div class="text-center mb-6">
           <p class="text-[10px] uppercase tracking-[0.2em] th-text-m mb-2">${t('PBR Decomposition')}</p>
           <div class="inline-block px-14 py-6 th-bg-2 border-2" style="border-color:var(--brand);border-radius:0">
-            <p class="text-[10px] uppercase tracking-[0.2em] th-text-m mb-1" style="font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif">PBR</p>
-            <p class="text-5xl font-bold tabular-nums" style="color:var(--brand);font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif">${fmtNum(pbrVal,2)}<span class="text-2xl th-text-m">x</span></p>
+            <p class="text-[10px] uppercase tracking-[0.2em] th-text-m mb-1" style="font-family:'IBM Plex Mono','Courier New',monospace">PBR</p>
+            <p class="text-5xl font-bold tabular-nums" style="color:var(--brand);font-family:'IBM Plex Mono','Courier New',monospace">${fmtNum(pbrVal,2)}<span class="text-2xl th-text-m">x</span></p>
             <p class="text-xs mt-2">${pbrData['判定']==='○'?`<span class="text-green-500">${t('適正水準')}</span>`:pbrData['判定']==='◎'?`<span class="text-green-500">${t('割安')}</span>`:pbrData['判定']==='▲'?`<span class="text-amber-500">${t('やや割高')}</span>`:pbrData['判定']==='×'?`<span class="text-red-500">${t('割高')}</span>`:'<span class="th-text-m">—</span>'}</p>
             <p class="text-[11px] th-text-m mt-1">${t('5Y Change:')} <span class="${pbrChg>0?'text-green-400':pbrChg<0?'text-red-400':'th-text-m'}">${pbrChg!==null?((pbrChg>0?'+':'')+fmtNum(pbrChg,2)+'x'):'—'}</span></p>
             ${benchBadge('pbr', null, 'x')}
           </div>
         </div>
         <div class="flex justify-center items-center gap-3 mb-8 text-sm th-text-m">
-          <span class="px-4 py-2 th-bg-2 border font-bold text-xs tracking-wider" style="border-color:var(--border);border-radius:0;font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif">PBR <strong class="th-text">${fmtNum(pbrVal,2)}x</strong></span>
+          <span class="px-4 py-2 th-bg-2 border font-bold text-xs tracking-wider" style="border-color:var(--border);border-radius:0;font-family:'IBM Plex Mono','Courier New',monospace">PBR <strong class="th-text">${fmtNum(pbrVal,2)}x</strong></span>
           <span class="text-lg">=</span>
-          <span class="px-4 py-2 th-bg-2 border font-bold text-xs tracking-wider cursor-pointer hover:border-brand/50 transition-all" style="border-color:var(--border);border-radius:0;font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif" onclick="showItemChart('roe','ROE')">ROE <strong class="th-text">${fmtNum(roeVal,1)}%</strong></span>
+          <span class="px-4 py-2 th-bg-2 border font-bold text-xs tracking-wider cursor-pointer hover:border-brand/50 transition-all" style="border-color:var(--border);border-radius:0;font-family:'IBM Plex Mono','Courier New',monospace" onclick="showItemChart('roe','ROE')">ROE <strong class="th-text">${fmtNum(roeVal,1)}%</strong></span>
           <span class="text-lg">&times;</span>
-          <span class="px-4 py-2 th-bg-2 border font-bold text-xs tracking-wider cursor-pointer hover:border-brand/50 transition-all" style="border-color:var(--border);border-radius:0;font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif" onclick="showItemChart('pe_ratio','PER')">PER <strong class="th-text">${fmtNum(perVal,1)}x</strong></span>
+          <span class="px-4 py-2 th-bg-2 border font-bold text-xs tracking-wider cursor-pointer hover:border-brand/50 transition-all" style="border-color:var(--border);border-radius:0;font-family:'IBM Plex Mono','Courier New',monospace" onclick="showItemChart('pe_ratio','PER')">PER <strong class="th-text">${fmtNum(perVal,1)}x</strong></span>
         </div>
 
         <!-- ===== PER & ROE side by side ===== -->
@@ -2069,11 +2105,11 @@
           <div class="p-6 th-bg-2 border" style="border-color:var(--border-s);border-radius:0">
             <div class="flex items-center gap-2 mb-2">
               <div class="w-3 h-3 bg-brand" style="border-radius:0"></div>
-              <span class="text-[10px] font-bold uppercase tracking-[0.18em] th-text-m" style="font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif">${t('Market Expectation')}</span>
+              <span class="text-[10px] font-bold uppercase tracking-[0.18em] th-text-m" style="font-family:'IBM Plex Mono','Courier New',monospace">${t('Market Expectation')}</span>
             </div>
             <div class="flex items-baseline gap-2 mb-1">
-              <p class="text-3xl font-bold tabular-nums" style="font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif">${perVal !== null && perVal !== undefined ? fmtNum(perVal,1) : '—'}<span class="text-lg th-text-m">x</span></p>
-              <span id="perYearBadge" class="text-[9px] px-2 py-0.5 tracking-wider" style="background:rgba(213,0,28,0.15);color:#d5001c;border-radius:0;font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif"></span>
+              <p class="text-3xl font-bold tabular-nums" style="font-family:'IBM Plex Mono','Courier New',monospace">${perVal !== null && perVal !== undefined ? fmtNum(perVal,1) : '—'}<span class="text-lg th-text-m">x</span></p>
+              <span id="perYearBadge" class="text-[9px] px-2 py-0.5 tracking-wider" style="background:rgba(212,133,42,0.15);color:var(--accent-v0);border-radius:0;font-family:'IBM Plex Mono','Courier New',monospace"></span>
             </div>
             <p class="text-[10px] th-text-m mb-2">${t('per-desc')}</p>
             <div class="mb-2">${benchBadge('pe_aggregate_all', null, 'x')}</div>
@@ -2087,11 +2123,11 @@
           <div class="p-6 th-bg-2 border" style="border-color:var(--border-s);border-radius:0">
             <div class="flex items-center gap-2 mb-2">
               <div class="w-3 h-3 bg-green-500" style="border-radius:0"></div>
-              <span class="text-[10px] font-bold uppercase tracking-[0.18em] th-text-m" style="font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif">${t('Profitability (ROE)')}</span>
+              <span class="text-[10px] font-bold uppercase tracking-[0.18em] th-text-m" style="font-family:'IBM Plex Mono','Courier New',monospace">${t('Profitability (ROE)')}</span>
             </div>
             <div class="flex items-baseline gap-2 mb-1">
-              <p class="text-3xl font-bold tabular-nums" style="font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif">${roeVal !== null && roeVal !== undefined ? fmtNum(roeVal,1) : '—'}<span class="text-lg th-text-m">%</span></p>
-              <span id="roeYearBadge" class="text-[9px] px-2 py-0.5 tracking-wider" style="background:rgba(34,197,94,0.15);color:#22c55e;border-radius:0;font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif"></span>
+              <p class="text-3xl font-bold tabular-nums" style="font-family:'IBM Plex Mono','Courier New',monospace">${roeVal !== null && roeVal !== undefined ? fmtNum(roeVal,1) : '—'}<span class="text-lg th-text-m">%</span></p>
+              <span id="roeYearBadge" class="text-[9px] px-2 py-0.5 tracking-wider" style="background:rgba(34,197,94,0.15);color:#22c55e;border-radius:0;font-family:'IBM Plex Mono','Courier New',monospace"></span>
             </div>
             <p class="text-[10px] th-text-m mb-1">${t('roe-desc')}</p>
             <div class="mb-1">${benchBadge(benchmarkRegion === 'japan' ? 'roe_japan' : 'roe_global', 100, '%')}</div>
@@ -2117,8 +2153,8 @@
         </div>
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
           <div class="p-5 th-bg-2 border" style="border-color:var(--border-s);border-radius:0">
-            <div class="flex items-center gap-2 mb-2"><div class="w-2 h-2 bg-blue-500" style="border-radius:0"></div><span class="text-[10px] font-bold uppercase tracking-[0.18em] th-text-m" style="font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif">${t('Net Profit Margin')}</span></div>
-            <p class="text-2xl font-bold tabular-nums mb-1" style="font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif">${fmtNum(npm['現在値'],1)}<span class="text-sm th-text-m">%</span></p>
+            <div class="flex items-center gap-2 mb-2"><div class="w-2 h-2 bg-blue-500" style="border-radius:0"></div><span class="text-[10px] font-bold uppercase tracking-[0.18em] th-text-m" style="font-family:'IBM Plex Mono','Courier New',monospace">${t('Net Profit Margin')}</span></div>
+            <p class="text-2xl font-bold tabular-nums mb-1" style="font-family:'IBM Plex Mono','Courier New',monospace">${fmtNum(npm['現在値'],1)}<span class="text-sm th-text-m">%</span></p>
             <p class="text-[10px] th-text-m mb-1">${t('Net Margin')} = ${t('Net Income')} / ${t('Revenue')}</p>
             ${benchBadge('net_margin', 100, '%')}
             <p class="text-[11px] th-text-m mb-3">${t('5Y Change:')} ${fmtNum(npm['5年変化pt'],1)}pt</p>
@@ -2139,8 +2175,8 @@
             </div>
           </div>
           <div class="p-5 th-bg-2 border" style="border-color:var(--border-s);border-radius:0">
-            <div class="flex items-center gap-2 mb-2"><div class="w-2 h-2 bg-brand" style="border-radius:0"></div><span class="text-[10px] font-bold uppercase tracking-[0.18em] th-text-m" style="font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif">${t('Asset Turnover')}</span></div>
-            <p class="text-2xl font-bold tabular-nums mb-1" style="font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif">${fmtNum(at['現在値'],2)}<span class="text-sm th-text-m">x</span></p>
+            <div class="flex items-center gap-2 mb-2"><div class="w-2 h-2 bg-brand" style="border-radius:0"></div><span class="text-[10px] font-bold uppercase tracking-[0.18em] th-text-m" style="font-family:'IBM Plex Mono','Courier New',monospace">${t('Asset Turnover')}</span></div>
+            <p class="text-2xl font-bold tabular-nums mb-1" style="font-family:'IBM Plex Mono','Courier New',monospace">${fmtNum(at['現在値'],2)}<span class="text-sm th-text-m">x</span></p>
             <p class="text-[10px] th-text-m mb-1">${t('Asset Turnover')} = ${t('Revenue')} / ${t('Total Assets')}</p>
             <p class="text-[11px] th-text-m mb-3">${t('5Y Change:')} ${fmtNum(at['5年変化'],2)}</p>
             <canvas id="dupontATChart" style="max-height:120px"></canvas>
@@ -2155,8 +2191,8 @@
             </div>
           </div>
           <div class="p-5 th-bg-2 border" style="border-color:var(--border-s);border-radius:0">
-            <div class="flex items-center gap-2 mb-2"><div class="w-2 h-2 bg-amber-500" style="border-radius:0"></div><span class="text-[10px] font-bold uppercase tracking-[0.18em] th-text-m" style="font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif">${t('Financial Leverage')}</span></div>
-            <p class="text-2xl font-bold tabular-nums mb-1" style="font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif">${fmtNum(em['現在値'],2)}<span class="text-sm th-text-m">x</span></p>
+            <div class="flex items-center gap-2 mb-2"><div class="w-2 h-2 bg-amber-500" style="border-radius:0"></div><span class="text-[10px] font-bold uppercase tracking-[0.18em] th-text-m" style="font-family:'IBM Plex Mono','Courier New',monospace">${t('Financial Leverage')}</span></div>
+            <p class="text-2xl font-bold tabular-nums mb-1" style="font-family:'IBM Plex Mono','Courier New',monospace">${fmtNum(em['現在値'],2)}<span class="text-sm th-text-m">x</span></p>
             <p class="text-[10px] th-text-m mb-1">${t('Leverage')} = ${t('Total Assets')} / ${t('Equity')}</p>
             <p class="text-[11px] th-text-m mb-3">${t('5Y Change:')} ${fmtNum(em['5年変化'],2)}</p>
             <canvas id="dupontLEVChart" style="max-height:120px"></canvas>
@@ -2205,8 +2241,8 @@
         }
 
         if (perCanvas && ts.pe_ratio && ts.pe_ratio.length > 0) {
-          new Chart(perCanvas, { ...miniOpts('#d5001c', metricFmt('pe_ratio')), data: {
-            labels: dates, datasets: [{ data: ts.pe_ratio.slice().reverse(), backgroundColor: '#d5001c33', borderColor: '#d5001c', borderWidth: 1, borderRadius: 2 }]
+          new Chart(perCanvas, { ...miniOpts('#D4852A', metricFmt('pe_ratio')), data: {
+            labels: dates, datasets: [{ data: ts.pe_ratio.slice().reverse(), backgroundColor: '#D4852A33', borderColor: '#D4852A', borderWidth: 1, borderRadius: 2 }]
           }});
         } else if (perChartContainer) {
           perChartContainer.innerHTML = `<div class="flex items-center justify-center gap-2 p-3 border border-yellow-500/20 bg-yellow-500/5" style="border-radius:0"><span class="text-yellow-400">⚠</span><p class="text-[10px] th-text-m">${t('時系列データなし')}</p></div>`;
@@ -2231,7 +2267,7 @@
         // DuPont decomposition charts
         const dupontCharts = [
           { id: 'dupontNPMChart', key: 'net_margin', color: '#3b82f6' },
-          { id: 'dupontATChart',  key: 'asset_turnover', color: '#d5001c' },
+          { id: 'dupontATChart',  key: 'asset_turnover', color: '#D4852A' },
           { id: 'dupontLEVChart', key: 'financial_leverage', color: '#f59e0b' },
         ];
         dupontCharts.forEach(({ id, key, color }) => {
@@ -2361,13 +2397,13 @@
         charts[id] = new Chart($(id), { type: 'line', data: { labels: dates, datasets }, options: useOpts || opts });
       }
 
-      areaLine('chartRevenue', t('Revenue'), tsR.revenue, '#d5001c');
+      areaLine('chartRevenue', t('Revenue'), tsR.revenue, '#D4852A');
       areaLine('chartNetIncome', t('Net Income'), tsR.net_income, '#22c55e');
       areaLine('chartFCF', 'FCF', tsR.fcf, '#8b5cf6');
       areaLine('chartEPS', 'EPS', tsR.eps, '#f59e0b');
 
       multiLine('chartROE', [
-        { label: 'ROE (%)', data: tsR.roe, borderColor: '#d5001c', backgroundColor: 'rgba(213,0,28,0.05)', fill: true, borderWidth: 2, pointRadius: 2, tension: 0.4 },
+        { label: 'ROE (%)', data: tsR.roe, borderColor: '#D4852A', backgroundColor: 'rgba(212,133,42,0.05)', fill: true, borderWidth: 2, pointRadius: 2, tension: 0.4 },
         { label: 'ROA (%)', data: tsR.roa, borderColor: '#3b82f6', backgroundColor: 'rgba(59,130,246,0.05)', fill: true, borderWidth: 2, pointRadius: 2, tension: 0.4 },
       ], pctOpts);
 
@@ -2379,7 +2415,7 @@
     }
 
     // ── Competitor Analysis ──
-    const compColors = ['#d5001c', '#3b82f6', '#22c55e', '#f59e0b', '#8b5cf6'];
+    const compColors = ['#D4852A', '#3b82f6', '#22c55e', '#f59e0b', '#8b5cf6'];
     let competitorFiles = [null, null, null, null, null];
     let compCharts = {};
 
@@ -2420,7 +2456,7 @@
           fileLabel.classList.add('hidden');
           nameSpan.textContent = '';
           modeBtn.textContent = 'TKR';
-          modeBtn.style.color = '#d5001c';
+          modeBtn.style.color = '#D4852A';
         } else {
           tickerInput.classList.add('hidden');
           tickerInput.value = '';
@@ -2613,7 +2649,8 @@
         compChartModes[metric.key] = mode;
 
         const card = document.createElement('div');
-        card.className = 'th-bg-1 rounded-2xl p-6 border th-border';
+        card.className = 'th-bg-1 p-6 border th-border';
+        card.style.borderRadius = '0';
 
         // Header with toggle button
         const isIndexed = mode === 'indexed';
@@ -2623,7 +2660,7 @@
         let headerHtml = `<div class="flex items-center justify-between mb-4">
           <h4 class="text-[10px] font-bold uppercase tracking-[0.2em] th-text-m flex items-center">${metric.label()}${modeLabel}</h4>`;
         if (metric.scaleRisk) {
-          headerHtml += `<button class="comp-toggle-btn text-[9px] font-bold uppercase tracking-wider px-3 py-1 rounded-lg border th-border-s hover:border-brand hover:text-brand transition-all" data-metric="${metric.key}">${toggleLabel}</button>`;
+          headerHtml += `<button class="comp-toggle-btn font-plex-mono text-[9px] font-medium uppercase tracking-wider px-3 py-1 border transition-all" style="border-radius:0;border-color:var(--border-s)" data-metric="${metric.key}">${toggleLabel}</button>`;
         }
         headerHtml += `</div><canvas id="${canvasId}"></canvas>`;
         card.innerHTML = headerHtml;
@@ -2796,14 +2833,14 @@
 
     // Chart color palette
     const chartColors = {
-      revenue:'#d5001c', fcf:'#8b5cf6', eps:'#f59e0b', ocf:'#3b82f6',
-      roe:'#d5001c', roa:'#3b82f6', op_margin:'#22c55e', ebitda:'#f59e0b',
+      revenue:'#D4852A', fcf:'#8b5cf6', eps:'#f59e0b', ocf:'#3b82f6',
+      roe:'#D4852A', roa:'#3b82f6', op_margin:'#22c55e', ebitda:'#f59e0b',
       equity_ratio:'#3b82f6', quick_ratio:'#f59e0b', current_ratio:'#22c55e',
       debt_fcf:'#ef4444', roic:'#22c55e',
       investing_cf:'#ef4444', financing_cf:'#8b5cf6',
-      pe_ratio:'#d5001c', pb_ratio:'#f59e0b', nd_ebitda:'#6366f1',
+      pe_ratio:'#D4852A', pb_ratio:'#f59e0b', nd_ebitda:'#6366f1',
       ebitda_margin:'#f59e0b', debt_ebitda:'#ef4444',
-      net_margin:'#3b82f6', asset_turnover:'#d5001c', financial_leverage:'#f59e0b',
+      net_margin:'#3b82f6', asset_turnover:'#D4852A', financial_leverage:'#f59e0b',
       dividend_yield:'#22c55e', payout_ratio:'#8b5cf6',
     };
 
@@ -2868,7 +2905,7 @@
       const cs = getComputedStyle(document.documentElement);
       const chartText = cs.getPropertyValue('--chart-text').trim();
       const chartGridY = cs.getPropertyValue('--chart-grid-y').trim();
-      const color = chartColors[key] || '#d5001c';
+      const color = chartColors[key] || '#D4852A';
       const mFmt = metricFmt(key);
 
       modalChart = new Chart($('chartModalCanvas'), {
@@ -2975,7 +3012,7 @@
           const checked = selectedMetrics.has(m.key) ? 'checked' : '';
           const label = currentLang === 'ja' ? m.ja : m.en;
           const latestStr = m.latest !== null && m.latest !== undefined ? ` (${fmtNum(m.latest,1)})` : '';
-          html += `<label class="flex items-center gap-3 p-3 rounded-lg th-bg-2 border cursor-pointer hover:border-brand/30 transition-all" style="border-color:var(--border)">
+          html += `<label class="flex items-center gap-3 p-3 th-bg-2 border cursor-pointer transition-all" style="border-color:var(--border);border-radius:0">
             <input type="checkbox" class="metric-cb accent-brand" data-key="${m.key}" ${checked}>
             <div>
               <span class="text-xs font-medium th-text-s">${label}</span>
@@ -3071,7 +3108,7 @@
 
           // Card with embedded mini chart
           const canvasId = 'customChart_' + key;
-          const cardHtml = `<div class="p-4 rounded-xl th-bg-1 border mb-3" style="border-color:var(--border)">
+          const cardHtml = `<div class="p-4 th-bg-1 border mb-3" style="border-color:var(--border);border-radius:0">
             <div class="flex items-center justify-between mb-3">
               <p class="text-sm font-medium th-text-s">${label}</p>
               <span class="text-sm font-bold th-text-s tabular-nums">${latestStr}</span>
@@ -3087,7 +3124,7 @@
             const cs = getComputedStyle(document.documentElement);
             const chartText = cs.getPropertyValue('--chart-text').trim();
             const chartGridY = cs.getPropertyValue('--chart-grid-y').trim();
-            const color = chartColors[key] || '#d5001c';
+            const color = chartColors[key] || '#D4852A';
             customCharts[key] = new Chart(canvas, {
               type: 'bar',
               data: {

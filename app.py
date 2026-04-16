@@ -16,6 +16,13 @@ import uuid
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, BASE_DIR)
 
+# ── .env 読み込み（python-dotenv が無くても動作するよう try/except）──
+try:
+    from dotenv import load_dotenv
+    load_dotenv(os.path.join(BASE_DIR, '.env'))
+except ImportError:
+    pass
+
 from flask import Flask, render_template, request, jsonify, session
 from analyzer import run_full_analysis, INDUSTRY_LIST, generate_dynamic_thresholds
 from excel_parser import parse_excel, scan_available_metrics, extract_custom_timeseries

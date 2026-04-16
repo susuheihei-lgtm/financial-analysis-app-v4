@@ -3,8 +3,8 @@
   "configurations": [
     {
       "name": "Flask Dev Server",
-      "runtimeExecutable": "python3",
-      "runtimeArgs": ["app.py"],
+      "runtimeExecutable": "/Users/iwasaosamutaira/Desktop/マイデジタルプロダクト/ウェブアプリ/financial anarlysis automation v4/.venv/bin/python3",
+      "runtimeArgs": ["/Users/iwasaosamutaira/Desktop/マイデジタルプロダクト/ウェブアプリ/financial anarlysis automation v4/app.py"],
       "port": 5050
     }
   ]
