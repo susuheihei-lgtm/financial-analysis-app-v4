@@ -335,7 +335,14 @@
     <div class="chart-modal">
       <div class="flex items-center justify-between mb-4">
         <h3 id="chartModalTitle" class="text-sm font-bold th-text-s"></h3>
-        <button id="chartModalClose" class="th-text-m hover:th-text text-lg leading-none" aria-label="Close chart">&times;</button>
+        <div class="flex items-center gap-3">
+          <!-- Chart type toggle -->
+          <div class="flex" style="border:1px solid var(--border-s)">
+            <button id="chartTypeBtnBar" onclick="setModalChartType('bar')" class="font-plex-mono text-[10px] uppercase tracking-wider px-3 py-1 transition-colors" style="border-radius:0;border-right:1px solid var(--border-s)">BAR</button>
+            <button id="chartTypeBtnLine" onclick="setModalChartType('line')" class="font-plex-mono text-[10px] uppercase tracking-wider px-3 py-1 transition-colors" style="border-radius:0">LINE</button>
+          </div>
+          <button id="chartModalClose" class="th-text-m hover:th-text text-lg leading-none" aria-label="Close chart">&times;</button>
+        </div>
       </div>
       <canvas id="chartModalCanvas" role="img" aria-label="Enlarged chart view"></canvas>
     </div>
@@ -2790,6 +2797,12 @@
       const modal = $(modalId);
       if (!modal) return;
       modal.classList.remove('active');
+      // チャートモーダルを閉じたらキーをリセット（次回はBAR表示から）
+      if (modalId === 'chartModal') {
+        modalChartKey   = null;
+        modalChartLabel = null;
+        modalChartType  = 'bar';
+      }
       // 元のボタンにフォーカスを戻す
       if (_modalOpener && typeof _modalOpener.focus === 'function') {
         _modalOpener.focus();
@@ -2827,6 +2840,70 @@
 
     // ── Chart Modal ──
     let modalChart = null;
+    let modalChartType = 'bar'; // 'bar' or 'line'
+    let modalChartKey = null;
+    let modalChartLabel = null;
+
+    function _syncModalToggleBtns(type) {
+      const btnBar  = document.getElementById('chartTypeBtnBar');
+      const btnLine = document.getElementById('chartTypeBtnLine');
+      if (!btnBar || !btnLine) return;
+      const active   = 'background:var(--accent-v0);color:#fff;border-radius:0;';
+      const inactive = 'background:transparent;color:var(--text-m);border-radius:0;';
+      btnBar.style.cssText  = type === 'bar'  ? active : inactive;
+      btnLine.style.cssText = type === 'line' ? active : inactive;
+    }
+
+    function setModalChartType(type) {
+      modalChartType = type;
+      _syncModalToggleBtns(type);
+      // チャートが既に表示中なら再描画（showItemChart は呼ばず直接描画）
+      if (modalChartKey) renderModalChart(modalChartKey, modalChartLabel);
+    }
+
+    function renderModalChart(key, label) {
+      const cd = getChartData(key);
+      if (!cd || !cd.data.length) return;
+      if (modalChart) { modalChart.destroy(); modalChart = null; }
+
+      const cs = getComputedStyle(document.documentElement);
+      const chartText  = cs.getPropertyValue('--chart-text').trim();
+      const chartGridY = cs.getPropertyValue('--chart-grid-y').trim();
+      const color = chartColors[key] || '#D4852A';
+      const mFmt  = metricFmt(key);
+
+      const datasets = modalChartType === 'line'
+        ? [{
+            type: 'line', label, data: cd.data,
+            borderColor: color, backgroundColor: color + '18', fill: true,
+            borderWidth: 2, pointRadius: 4, pointBackgroundColor: color,
+            pointBorderColor: 'transparent', tension: 0,
+          }]
+        : [{
+            type: 'bar', label, data: cd.data,
+            backgroundColor: color + 'CC', borderColor: 'transparent',
+            borderWidth: 0, borderRadius: 0, borderSkipped: false,
+          }];
+
+      modalChart = new Chart($('chartModalCanvas'), {
+        type: modalChartType,
+        data: { labels: cd.labels, datasets },
+        options: {
+          responsive: true, maintainAspectRatio: true,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              mode: 'index', intersect: false,
+              callbacks: { label: ctx => label + ': ' + mFmt(ctx.parsed.y) },
+            },
+          },
+          scales: {
+            x: { grid: { display: false }, ticks: { font: { size: 11 }, color: chartText } },
+            y: { grid: { color: chartGridY }, ticks: { font: { size: 10 }, color: chartText, callback: mFmt } },
+          },
+        },
+      });
+    }
     const modal = $('chartModal');
     $('chartModalClose').addEventListener('click', () => closeModal('chartModal'));
     modal.addEventListener('click', e => { if (e.target === modal) closeModal('chartModal'); });
@@ -2894,69 +2971,13 @@
     }
 
     function showItemChart(key, label) {
-      const cd = getChartData(key);
-      if (!cd || !cd.data.length) return;
-
+      if (!getChartData(key)) return;
+      modalChartKey   = key;
+      modalChartLabel = label;
       openModal('chartModal', null);
       $('chartModalTitle').textContent = label;
-
-      if (modalChart) modalChart.destroy();
-
-      const cs = getComputedStyle(document.documentElement);
-      const chartText = cs.getPropertyValue('--chart-text').trim();
-      const chartGridY = cs.getPropertyValue('--chart-grid-y').trim();
-      const color = chartColors[key] || '#D4852A';
-      const mFmt = metricFmt(key);
-
-      modalChart = new Chart($('chartModalCanvas'), {
-        type: 'bar',
-        data: {
-          labels: cd.labels,
-          datasets: [
-            {
-              type: 'bar',
-              label: label,
-              data: cd.data,
-              backgroundColor: color + 'CC',
-              borderColor: 'transparent',
-              borderWidth: 0,
-              borderRadius: 6,
-              borderSkipped: false,
-              order: 2,
-            },
-            {
-              type: 'line',
-              label: label + ' (Trend)',
-              data: cd.data,
-              borderColor: chartText,
-              backgroundColor: 'transparent',
-              borderWidth: 2,
-              pointRadius: 4,
-              pointBackgroundColor: chartText,
-              pointBorderColor: 'transparent',
-              pointBorderWidth: 0,
-              tension: 0.3,
-              order: 1,
-            }
-          ]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: true,
-          plugins: {
-            legend: { display: false },
-            tooltip: {
-              mode: 'index',
-              intersect: false,
-              callbacks: { label: ctx => ctx.dataset.type === 'bar' ? label + ': ' + mFmt(ctx.parsed.y) : '' }
-            },
-          },
-          scales: {
-            x: { grid: { display: false }, ticks: { font: { size: 11 }, color: chartText } },
-            y: { grid: { color: chartGridY }, ticks: { font: { size: 10 }, color: chartText, callback: mFmt } },
-          },
-        }
-      });
+      _syncModalToggleBtns(modalChartType);
+      renderModalChart(key, label);
     }
 
     // ========== Custom Analysis ==========
